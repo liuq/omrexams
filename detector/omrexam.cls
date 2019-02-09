@@ -85,11 +85,11 @@ rectangle/.default={0.2cm}}
 
     \draw 
         (current page.north west)
-        node [below right, text width=2cm, xshift=1cm, yshift=-1cm] (TL) {};
+        node [below right, text width=2cm, xshift=1cm, yshift=-1cm] (TL) {X};
     
     \draw 
         (current page.south east)
-        node[above left, text width=2cm, xshift=-1cm, yshift=1cm] (BR) {};
+        node[above left, align=right, text width=2cm, xshift=-1cm, yshift=1cm] (BR) {X};
 
     \XDistance{current page.north west}{current page.south east};
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
