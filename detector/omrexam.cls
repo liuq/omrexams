@@ -85,23 +85,25 @@ rectangle/.default={0.2cm}}
 
     \draw 
         (current page.north west)
-        node [below right, text width=2cm, xshift=1cm, yshift=-1cm] (TL) {X};
+        node [below right, text width=2cm, xshift=1cm, yshift=-1cm] (TL) {};
     
     \draw 
         (current page.south east)
-        node[above left, align=right, text width=2cm, xshift=-1cm, yshift=1cm] (BR) {X};
+        node[above left, align=right, text width=2cm, xshift=-1cm, yshift=1cm] (BR) {};
 
-    \XDistance{current page.north west}{current page.south east};
+    \XDistance{TL.north west}{BR.south east};
+%    \ExtractCoordinates{current page.north west}{\Page@TopLeft@XCoord}{\Page@TopLeft@YCoord};
+%    \ExtractCoordinates{current page.south east}{\Page@BottomRight@XCoord}{\Page@BottomRight@YCoord};
+    \ExtractCoordinates{TL.north west}{\CroppedPage@TopLeft@XCoord}{\CroppedPage@TopLeft@YCoord};
+    \ExtractCoordinates{BR.south east}{\CroppedPage@BottomRight@XCoord}{\CroppedPage@BottomRight@YCoord};  
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
-    \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{\OMR@TopLeft@XCoord / \DistanceX * 100.0 + 0.5};
-    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-\OMR@TopLeft@YCoord / \DistanceX * 100.0 + 0.5};
+    \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord) / \DistanceX * 100.0 + 0.5};
+    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord) / \DistanceX * 100.0 + 0.5};
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
-    \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{\OMR@BottomRight@XCoord / \DistanceX * 100.0 + 0.5};
-    \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-\OMR@BottomRight@YCoord / \DistanceX * 100.0 + 0.5};   
-    \ExtractCoordinates{current page.north west}{\Page@TopLeft@XCoord}{\Page@TopLeft@YCoord};
-    \ExtractCoordinates{current page.south east}{\Page@BottomRight@XCoord}{\Page@BottomRight@YCoord};
+    \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord) / \DistanceX * 100.0 + 0.5};
+    \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord) / \DistanceX * 100.0 + 0.5};   
     % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in mm
-    \pgfmathtruncatemacro{\QR@Diagonal}{0.351459804 * veclen(\Page@TopLeft@XCoord + 1cm - \Page@BottomRight@XCoord + 1cm, \Page@TopLeft@YCoord - 1cm - \Page@BottomRight@YCoord - 1cm) + 0.5};
+    \pgfmathtruncatemacro{\QR@Diagonal}{0.351459804 * veclen(\CroppedPage@TopLeft@XCoord - \CroppedPage@BottomRight@XCoord, \CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord) + 0.5};
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal}
     \draw
         (current page header area.north west)
