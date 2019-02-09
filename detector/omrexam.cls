@@ -150,13 +150,15 @@ rectangle/.default={0.2cm}}
 \newcommand{\omrchoices}[1]{%
 \marginpar{
 \begin{checkomrchoiceswidth}{\marginparwidth}
+\raisebox{-0.5\baselineskip}{
 \begin{tikzpicture}
 \foreach \position in {1, ..., #1} {
-\setcounter{omranswers}{\position}
-\node [draw, ultra thick, fill, circle, inner sep=2pt, minimum size=13pt, color=gray!50] at (-1, 0) {\phantom{A}};
-\node [draw, ultra thick, circle, inner sep=2pt, minimum size=13pt, color=gray!50] at ($({0.75 * \position}, 0) - (1, 0)$) {\Alph{omranswers}};
+  \setcounter{omranswers}{\position}
+\node [draw=black, ultra thick, fill=gray!50, circle, inner sep=0pt, minimum size=14pt, text=white] at (-1, 0) {\thequestion};
+\node [draw, ultra thick, circle, inner sep=2pt, minimum size=14pt, color=gray!50] at ($({0.75 * \position}, 0) - (1, 0)$) {\Alph{omranswers}};
 };
 \end{tikzpicture}
+}
 \end{checkomrchoiceswidth}
 }
 }
