@@ -152,15 +152,21 @@ rectangle/.default={0.2cm}}
 \begin{checkomrchoiceswidth}{\marginparwidth}
 \raisebox{-0.5\baselineskip}{
 \begin{tikzpicture}
-\foreach \position in {1, ..., #1} {
+\foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
-\node [draw=black, ultra thick, fill=gray!50, circle, inner sep=0pt, minimum size=14pt, text=white] at (-1, 0) {\thequestion};
-\node [draw, ultra thick, circle, inner sep=2pt, minimum size=14pt, color=gray!50] at ($({0.75 * \position}, 0) - (1, 0)$) {\Alph{omranswers}};
+\node [draw, fill=gray!75, circle, inner sep=0pt, minimum size=14pt, text=white] at (-1, 0) {\small\thequestion};
+\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=14pt] at (-1, 0) {};
+\node [circle, inner sep=0pt, minimum size=14pt, color=gray!50] at ($({0.75 * \position}, 0) - (1, 0)$) {\small\Alph{omranswers}};
+\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=14pt] at ($({0.75 * \position}, 0) - (1, 0)$) {};
 };
 \end{tikzpicture}
 }
 \end{checkomrchoiceswidth}
 }
 }
+
+% FIXME: only for testing (in order to prevent transparent background), it shoudl be removed later
+%\usepackage{xcolor}
+%\pagecolor[HTML]{FEFEFE}
 
 \endinput
