@@ -107,7 +107,7 @@ rectangle/.default={0.2cm}}
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
-    \pgfmathtruncatemacro{\OMR@Diameter}{\OMR@Size + 2};
+    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size + 1.6pt};
 
     % All distances/sizes are expressed in points
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
@@ -161,9 +161,9 @@ rectangle/.default={0.2cm}}
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
 \node [draw, fill=gray, circle, inner sep=0pt, minimum size=\OMR@Size, text=white] at (-1, 0) {\small\thequestion};
-\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=\OMR@Size] at (-1, 0) {};
+\node [draw=black, line width=1.6pt, circle, inner sep=0pt, minimum size=\OMR@Size] at (-1, 0) {};
 \node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({0.75 * \position}, 0) - (1, 0)$) {\small\Alph{omranswers}};
-\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({0.75 * \position}, 0) - (1, 0)$) {};
+\node [draw=black, line width=1.6pt, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({0.75 * \position}, 0) - (1, 0)$) {};
 };
 \end{tikzpicture}
 }
