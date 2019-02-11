@@ -32,7 +32,7 @@ def read_pdf(filename, resolution=300):
                 img.alpha_channel = 'remove'
                 img_buffer = np.asarray(bytearray(img.make_blob('bmp')), dtype=np.uint8)
                 if img_buffer is not None:
-                    yield cv2.imdecode(img_buffer, cv2.IMREAD_REDUCED_COLOR_8) 
+                    yield cv2.imdecode(img_buffer, cv2.IMREAD_UNCHANGED)
 
 # this seems to be slower, actually to be tested
 def read_pdf_new(filename, resolution=300):
@@ -42,7 +42,7 @@ def read_pdf_new(filename, resolution=300):
         img.background_color = Color('white')
         img.alpha_channel = 'remove'
         img_buffer = np.asarray(bytearray(Image(image=img).make_blob('bmp')), dtype=np.uint8)
-        yield cv2.imdecode(img_buffer, cv2.IMREAD_REDUCED_COLOR_8)
+        yield cv2.imdecode(img_buffer, cv2.IMREAD_UNCHANGED)
 
 #%%
 
@@ -51,6 +51,7 @@ def prepare_omr_roi(image, highlight=True):
     _retval, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)
     barcodes = pyzbar.decode(binary)
     assert len(barcodes) == 2, "Each page should have exactly two barcodes, found {}".format(len(barcodes))
+    barcodes.sort(key=lambda b: b.rect[0])
     if highlight:
         for barcode in barcodes:
             # extract the bounding box location of the qrcode and draw a green 
@@ -62,12 +63,14 @@ def prepare_omr_roi(image, highlight=True):
     br = np.array(barcodes[1].rect[:2]) + np.array(barcodes[1].rect[2:])
     image = image[tl[1]:br[1], tl[0]:br[0]]
     # get bounding box of the omr area from the bottom-right qrcode
-    br_match = re.search(r'\((?P<tl_x>\d+),(?P<tl_y>\d+)\)-\((?P<br_x>\d+),(?P<br_y>\d+)\)/(?P<diag>\d+),(?P<page>\d+)(?:,(?P<qrange_start>\d+)-(?P<qrange_end>\d+))?', str(barcodes[1].data))
+    br_match = re.search(r'\((?P<tl_x>\d+),(?P<tl_y>\d+)\)-\((?P<br_x>\d+),(?P<br_y>\d+)\)/(?P<diag>\d+)/(?P<size>\d+),(?P<page>\d+)(?:,(?P<qrange_start>\d+)-(?P<qrange_end>\d+))?', str(barcodes[1].data))
     if not br_match:
         raise RuntimeError("Bottom-right qrcode encoded information do not comply with the expected format:\nfound {}".format(barcodes[1].data))
     tl, br = np.array([br_match.group('tl_x'), br_match.group('tl_y')], dtype=float), np.array([br_match.group('br_x'), br_match.group('br_y')], dtype=float)
-    tl = (tl * image.shape[1] / 100.0 + 0.5).astype(int)
-    br = (br * image.shape[1] / 100.0 + 0.5).astype(int)
+    diag = np.linalg.norm(tl - br)
+    expected_diag = int(br_match.group('diag'))
+    tl = (tl * diag / expected_diag + 0.5).astype(int)
+    br = (br * diag / expected_diag + 0.5).astype(int)
     roi = image[tl[1]:br[1], tl[0]:br[0]]  
     if highlight:
         # draw a frame around the omr area
@@ -205,15 +208,15 @@ def process_page(page, highlight=True):
 
 #%%
 
-def run():
-    pdf = read_pdf("detector/prova_scansione_risposte.pdf")
-    for page in pdf:
+def run(filename="prova.pdf", **kwargs):
+    pdf = read_pdf("detector/" + filename)
+    for i, page in enumerate(pdf):
+        if 'only' in kwargs and i != kwargs['only'] - 1:
+            continue
         correction = process_page(page)
         print(correction)    
     #    print(correction)
-        #plt.imshow(page)
-    return page
-
+        plt.imshow(page)
 #%%
 
 def check_answer_correctness(correction, **kwargs):
@@ -223,6 +226,12 @@ def check_answer_correctness(correction, **kwargs):
         wrong_rate = len(question[0] - question[1]) / len(question[1])
         marking.append((2.0 * correct_rate - wrong_rate) / 2.0)
     return marking
+
+
+#%%
+
+
+#%%
 
 
 #%%

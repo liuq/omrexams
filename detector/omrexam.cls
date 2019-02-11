@@ -37,6 +37,7 @@
 \usepackage{tikzpagenodes} % for tikz measures relative to page elements
 \usetikzlibrary{shapes.misc}
 \usetikzlibrary{calc}
+\usetikzlibrary{decorations.markings}
 \usepackage{amsmath, amssymb}
 \usepackage[a4paper, %textwidth=12.5cm, 
   top=4cm, 
@@ -69,6 +70,9 @@ rectangle/.default={0.2cm}}
 \newcommand\thesolution{None}
 \DeclareRobustCommand{\solution}[1]{\renewcommand\thesolution{#1}}
 
+\newlength{\OMR@Size}
+\setlength{\OMR@Size}{14pt}
+
 \newcounter{total@questions}
 \newcounter{current@question@start}
 \newcommand*{\ExtractCoordinates}[3]{\path (#1); \pgfgetlastxy{#2}{#3}}%
@@ -90,21 +94,23 @@ rectangle/.default={0.2cm}}
     \draw 
         (current page.south east)
         node[above left, align=right, text width=2cm, xshift=-1cm, yshift=1cm] (BR) {};
-
-    \XDistance{TL.north west}{BR.south east};
-%    \ExtractCoordinates{current page.north west}{\Page@TopLeft@XCoord}{\Page@TopLeft@YCoord};
-%    \ExtractCoordinates{current page.south east}{\Page@BottomRight@XCoord}{\Page@BottomRight@YCoord};
+    
+    
     \ExtractCoordinates{TL.north west}{\CroppedPage@TopLeft@XCoord}{\CroppedPage@TopLeft@YCoord};
-    \ExtractCoordinates{BR.south east}{\CroppedPage@BottomRight@XCoord}{\CroppedPage@BottomRight@YCoord};  
+    \ExtractCoordinates{BR.south east}{\CroppedPage@BottomRight@XCoord}{\CroppedPage@BottomRight@YCoord};
+    % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in pt
+    \pgfmathtruncatemacro{\QR@Diagonal}{veclen(\CroppedPage@TopLeft@XCoord - \CroppedPage@BottomRight@XCoord, \CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord)};
+     
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
-    \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord) / \DistanceX * 100.0 + 0.5};
-    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord) / \DistanceX * 100.0 + 0.5};
+    \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord)};
+    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord)};
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
-    \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord) / \DistanceX * 100.0 + 0.5};
-    \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord) / \DistanceX * 100.0 + 0.5};   
-    % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in mm
-    \pgfmathtruncatemacro{\QR@Diagonal}{0.351459804 * veclen(\CroppedPage@TopLeft@XCoord - \CroppedPage@BottomRight@XCoord, \CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord) + 0.5};
-    \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal}
+    \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
+    \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
+    \pgfmathtruncatemacro{\OMR@Diameter}{\OMR@Size};
+
+    % All distances/sizes are expressed in points
+    \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
     \draw
         (current page header area.north west)
         node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{{\Large \theexam} \\ \@date \\ \thematriculationno, \thestudent}};  
@@ -154,10 +160,10 @@ rectangle/.default={0.2cm}}
 \begin{tikzpicture}
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
-\node [draw, fill=gray!75, circle, inner sep=0pt, minimum size=14pt, text=white] at (-1, 0) {\small\thequestion};
-\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=14pt] at (-1, 0) {};
-\node [circle, inner sep=0pt, minimum size=14pt, color=gray!50] at ($({0.75 * \position}, 0) - (1, 0)$) {\small\Alph{omranswers}};
-\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=14pt] at ($({0.75 * \position}, 0) - (1, 0)$) {};
+\node [draw, fill=gray, circle, inner sep=0pt, minimum size=\OMR@Size, text=white] at (-1, 0) {\small\thequestion};
+\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=\OMR@Size] at (-1, 0) {};
+\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({0.75 * \position}, 0) - (1, 0)$) {\small\Alph{omranswers}};
+\node [draw=black, ultra thick, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({0.75 * \position}, 0) - (1, 0)$) {};
 };
 \end{tikzpicture}
 }
