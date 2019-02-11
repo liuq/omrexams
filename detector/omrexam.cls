@@ -107,7 +107,7 @@ rectangle/.default={0.2cm}}
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
-    \pgfmathtruncatemacro{\OMR@Diameter}{\OMR@Size};
+    \pgfmathtruncatemacro{\OMR@Diameter}{\OMR@Size + 2};
 
     % All distances/sizes are expressed in points
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
