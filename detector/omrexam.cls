@@ -37,6 +37,7 @@
 \usepackage{tikzpagenodes} % for tikz measures relative to page elements
 \usetikzlibrary{shapes.misc}
 \usetikzlibrary{calc}
+\usetikzlibrary{positioning}
 \usetikzlibrary{decorations.markings}
 \usepackage{amsmath, amssymb}
 \usepackage[a4paper, %textwidth=12.5cm, 
@@ -51,6 +52,8 @@
 \usepackage{environ}
 \usepackage{xifthen}
 \usepackage{calc}
+\usepackage[ocr-b]{ocr}
+\usepackage[T1]{fontenc}
 
 \pagestyle{empty}
 
@@ -72,6 +75,9 @@ rectangle/.default={0.2cm}}
 
 \newlength{\OMR@Size}
 \setlength{\OMR@Size}{14pt}
+
+\newlength{\OMR@BorderWidth}
+\setlength{\OMR@BorderWidth}{1pt}
 
 \newcounter{total@questions}
 \newcounter{current@question@start}
@@ -107,7 +113,7 @@ rectangle/.default={0.2cm}}
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
-    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size + 1.6pt};
+    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size + \OMR@BorderWidth};
 
     % All distances/sizes are expressed in points
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
@@ -157,13 +163,14 @@ rectangle/.default={0.2cm}}
 \marginpar{
 \begin{checkomrchoiceswidth}{\marginparwidth}
 \raisebox{-0.5\baselineskip}{
-\begin{tikzpicture}
+\begin{tikzpicture}[x=\OMR@Size, y=1\OMR@Size]
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
-\node [draw, fill=gray, circle, inner sep=0pt, minimum size=\OMR@Size, text=white] at (-1, 0) {\small\thequestion};
-\node [draw=black, line width=1.6pt, circle, inner sep=0pt, minimum size=\OMR@Size] at (-1, 0) {};
-\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({0.75 * \position}, 0) - (1, 0)$) {\small\Alph{omranswers}};
-\node [draw=black, line width=1.6pt, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({0.75 * \position}, 0) - (1, 0)$) {};
+\node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
+%\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
+%\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
+\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.25 * \OMR@Size)$) {\small\ocr{\Alph{omranswers}}};
+\node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
 };
 \end{tikzpicture}
 }
