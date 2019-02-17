@@ -113,7 +113,7 @@ rectangle/.default={0.2cm}}
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
-    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size + \OMR@BorderWidth};
+    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size}; 
 
     % All distances/sizes are expressed in points
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
@@ -122,7 +122,9 @@ rectangle/.default={0.2cm}}
         node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{{\Large \theexam} \\ \@date \\ \thematriculationno, \thestudent}};  
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\@date,[\thesolution]}};           
+        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\@date,[\thesolution]}};          \draw
+        (current page.north east)
+        node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
     \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
@@ -130,9 +132,12 @@ rectangle/.default={0.2cm}}
           \qrcode[height=2cm]{\OMR@Sizes,\thepage,\thecurrent@question@start-\thetotal@questions}
         }{\qrcode[height=2cm]{\OMR@Sizes,\thepage}}
         };
+    \draw
+        (current page.south west)
+        node[above right, rectangle, draw, fill=black, xshift=1cm, yshift=1cm, minimum size=0.5*\OMR@Size] {~};    
   \end{tikzpicture}  
   }{}
-}
+} 
 
 % Check that \student and \exam have been set
 \AtBeginDocument{
