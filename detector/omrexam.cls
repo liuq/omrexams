@@ -174,7 +174,7 @@ rectangle/.default={0.2cm}}
 \node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
 %\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
 %\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
-\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.25 * \OMR@Size)$) {\small\ocr{\Alph{omranswers}}};
+\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
 \node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
 };
 \end{tikzpicture}
