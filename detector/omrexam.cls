@@ -105,7 +105,8 @@ rectangle/.default={0.2cm}}
     \ExtractCoordinates{TL.north west}{\CroppedPage@TopLeft@XCoord}{\CroppedPage@TopLeft@YCoord};
     \ExtractCoordinates{BR.south east}{\CroppedPage@BottomRight@XCoord}{\CroppedPage@BottomRight@YCoord};
     % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in pt
-    \pgfmathtruncatemacro{\QR@Diagonal}{veclen(\CroppedPage@TopLeft@XCoord - \CroppedPage@BottomRight@XCoord, \CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord)};
+    \pgfmathtruncatemacro{\QR@Width}{\CroppedPage@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord};
+    \pgfmathtruncatemacro{\QR@Height}{\CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord};
      
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
     \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord)};
@@ -116,7 +117,7 @@ rectangle/.default={0.2cm}}
     \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size}; 
 
     % All distances/sizes are expressed in points
-    \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/\QR@Diagonal/\OMR@Diameter}
+    \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
     \draw
         (current page header area.north west)
         node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{{\Large \theexam} \\ \@date \\ \thematriculationno, \thestudent}};  
