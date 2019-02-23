@@ -3,41 +3,51 @@ Main Window of the application.
 """
 
 import wx
+import wx.aui
 from pubsub import pub
 #from pubsub.utils.notification import useNotifyByWriteFile
 import sys
-from . grid import StudentsGrid
+from . studentsgrid import StudentsGrid
+#from . questioneditor import QuestionEditor
+import gettext
+_ = gettext.gettext
 
 #useNotifyByWriteFile(sys.stdout)
 
 from . models.students import Students
 
-class HelloFrame(wx.Frame):
+class MainFrame(wx.Frame):
     """
     A Frame that says Hello World
     """
 
     def __init__(self, *args, **kw):
         # ensure the parent's __init__ is called
-        super(HelloFrame, self).__init__(*args, **kw)
+        super().__init__(*args, **kw)
 
         # create the models
         self.students = Students()
 
         # create a panel in the frame
         panel = wx.Panel(self)
+        self.notebook = wx.aui.AuiNotebook(panel, style=wx.BK_DEFAULT)
 
-        self.grid = StudentsGrid(self.students, panel)
+        self.grid = StudentsGrid(self.students, self.notebook)
+        self.notebook.AddPage(self.grid, _("Students List"))
+        self.editor = wx.TextCtrl(self.notebook, wx.ID_ANY, style=wx.TE_MULTILINE) 
+        self.notebook.AddPage(self.editor, _("Question Editor"))
+
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.grid, 1, wx.EXPAND)
+        sizer.Add(self.notebook, 1, wx.ALL | wx.EXPAND, 5)
         panel.SetSizer(sizer)
+        #self.Fit()
 
         # create a menu bar
         self.makeMenuBar()
 
         # and a status bar
         self.CreateStatusBar()
-        self.SetStatusText("Welcome to OMR Exam")
+        self.SetStatusText(_("Welcome to OMR Exam"))
 
         pub.subscribe(self.file_status, "file")
 
@@ -53,7 +63,7 @@ class HelloFrame(wx.Frame):
 
         # Make a file menu with Hello and Exit items
         fileMenu = wx.Menu()
-        openItem = fileMenu.Append(-1, "File &Open\tCtrl-O", "Open File")
+        openItem = fileMenu.Append(-1, _("File &Open") + _("\tCtrl-O"), _("Open File"))
         self.Bind(wx.EVT_MENU, self.OnOpen, openItem)
         fileMenu.AppendSeparator()
         exitItem = fileMenu.Append(wx.ID_EXIT)
@@ -66,18 +76,17 @@ class HelloFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OnAbout, aboutItem)
 
         menuBar = wx.MenuBar()
-        menuBar.Append(fileMenu, "&File")
-        menuBar.Append(helpMenu, "&Help")
+        menuBar.Append(fileMenu, _("&File"))
+        menuBar.Append(helpMenu, _("&Help"))
 
         self.SetMenuBar(menuBar)
 
     def OnOpen(self, event):
-        with wx.FileDialog(self, "Open Excel file", wildcard="Excel files (*.xls[x])|*.xls;*.xlsx",
+        with wx.FileDialog(self, _("Open Excel file"), wildcard=_("Excel files (*.xls[x])|*.xls;*.xlsx"),
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
             if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return     # the user changed their mind
-            pathname = fileDialog.GetPath()
-            self.students.load(pathname)
+                return  # the user changed their mind
+            self.students.load(fileDialog.GetPath())
 
     def OnExit(self, event):
         """Close the frame, terminating the application."""
@@ -85,15 +94,15 @@ class HelloFrame(wx.Frame):
 
     def OnAbout(self, event):
         """Display an About Dialog"""
-        wx.MessageBox("A simple OMR Exam generation",
-                      "About OMR Exam",
-                      wx.OK|wx.ICON_INFORMATION)
+        wx.MessageBox(_("A simple OMR Exam generation"),
+                      _("About OMR Exam"),
+                      wx.OK | wx.ICON_INFORMATION)
 
 def start():
     # When this module is run (not imported) then create the app, the
     # frame, show it, and start the event loop.
     app = wx.App()
-    app.SetAppName('OMR Exams')
-    frm = HelloFrame(None, title='OMR Exams')
+    app.SetAppName(_('OMR Exams'))
+    frm = MainFrame(None, title=_('OMR Exams'))
     frm.Show()
     app.MainLoop()
