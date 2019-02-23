@@ -25,6 +25,8 @@ def caesar_unshift(encrypted, places):
     return "".join(substitute(char) for char in encrypted)
 
 def vigenere_encrypt(text, key):
+    if type(key) is not str:
+        key = str(key)
     tmp = []
     for k in key:
         if k.isalpha():
@@ -34,6 +36,8 @@ def vigenere_encrypt(text, key):
     return "".join(caesar_shift(c, k) for c, k in zip(text, cycle(tmp)))
 
 def vigenere_decrypt(text, key):
+    if type(key) is not str:
+        key = str(key)
     tmp = []
     for k in key:
         if k.isalpha():
