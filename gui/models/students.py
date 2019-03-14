@@ -2,9 +2,11 @@
 A model for handling the list of students.
 """
 
+import wx
 from pubsub import pub
 import pandas as pd
 import os
+import logging
 import gettext
 _ = gettext.gettext
 
@@ -27,6 +29,7 @@ class Students(object):
         else:
             self.filename = None
             self.data = pd.DataFrame()
+        self.logger = wx.GetApp().logger
 
     def load(self, filename):
         pub.sendMessage("file.loading", status="loading", file=os.path.basename(filename))
