@@ -72,6 +72,10 @@ rectangle/.default={0.2cm}}
 % In case there is no solution, the qrcode is used only as a reference marker
 \newcommand\thesolution{None}
 \DeclareRobustCommand{\solution}[1]{\renewcommand\thesolution{#1}}
+% In case there is no header
+\newcommand\theheader{}
+\DeclareRobustCommand{\header}[1]{\renewcommand\theheader{#1}}
+\newcommand\thedate{\@date}
 
 \newlength{\OMR@Size}
 \setlength{\OMR@Size}{14pt}
@@ -120,10 +124,10 @@ rectangle/.default={0.2cm}}
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
     \draw
         (current page header area.north west)
-        node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{{\Large \theexam} \\ \@date \\ \thematriculationno, \thestudent}};  
+        node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\@date,[\thesolution]}};          \draw
+        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
     \draw 

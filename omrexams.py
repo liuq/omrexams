@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 
 import click
-import random
-import time
 from datetime import datetime as dt
 import dateparser as dp
+import yaml
+from cli import Generate
+import pandas as pd
+import xlrd
+import re
+import logging
+import click_log
+import sys
+
+logger = logging.getLogger("omrexams")
+click_log.basic_config(logger)
 
 class Datetime(click.ParamType):
     '''
@@ -63,14 +72,18 @@ DATETIME = Datetime()
 def cli(ctx, debug):
     """Manage multiple-choice OMR exams.
     """
+    if not debug:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.INFO)
 
 @cli.command()
 @click.option('--config', type=click.File(), required=False, default=lambda: open('config.yaml', 'r'))
-@click.argument('students', type=click.File(), required=False)
+@click.option('--students', '-s', type=click.File(), required=False)
 @click.argument('questions', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
 @click.option('--serial', type=int, default=100)
-@click.option('--output', '-o', type=click.File(mode='w'))
+@click.option('--output', '-o', type=click.File(mode='w'), default=lambda: open('exam.pdf', 'w'))
 @click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
@@ -79,17 +92,44 @@ def generate(ctx, config, students, questions, count, serial, output, date, seed
     """
     Generates the set of exams for the given amount of students (either personalized or anonymous).
     """
+    config = yaml.load(config)
 
-    def process_slowly(item):
-        time.sleep(0.002 * random.random())
+    if students:
+        try:    
+            click.echo(click.style('Reading excel file', fg='red', underline=True))
+            skip = 0
+            # check whether the file needs to be partially skipped
+            if 'data_marker' in config['excel']:
+                marker = config['excel']['data_marker'].get('skip_until')
+                click.echo(click.style('Searching for data marker "{}"'.format(marker), fg='cyan'))
+                wb = xlrd.open_workbook(students.name)
+                sheet = wb.sheet_by_index(0)
+                for i in range(sheet.nrows):
+                    row = sheet.row(i)
+                    cell = row[config['excel'].get('on_column', 0)]
+                    if re.match(marker, cell.value):
+                        skip = i + 1
+                        break
+            if skip > 0:
+                click.echo(click.style('Skipping {} rows'.format(skip), fg='cyan'))
+            student_list = pd.read_excel(students.name, skiprows=skip)
+            fields = config['excel']['fields']
+            student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
+            student_list.reset_index(inplace=True)
+            student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
+            click.echo(click.style('Processing done, {} students found'.format(len(student_list)), fg='cyan'))
+        except Exception as e:
+            logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students.name))
+            sys.exit(-1)
+        students.close()
+    else:
+        click.echo(click.style('Creating anonymous exams for {} students'.format(count), fg='red', underline=True))
+        click.echo(click.style('Starting serials from {}'.format(serial), fg='cyan'))
+        student_list = list(map(lambda s: (s, ""), range(serial, serial + count)))
+    click.echo(click.style('Seed used for the random generator {}'.format(seed), fg='magenta'))
 
-    click.echo(click.style('Generating', fg='red', underline=True))
-    with click.progressbar(length=1000, label='Counting {}'.format(seed),
-                           bar_template='%(label)s  %(bar)s | %(info)s',
-                           fill_char=click.style(u'█', fg='cyan'),
-                           empty_char=' ') as bar:
-        for item in bar:
-            process_slowly(item)
+    generator = Generate(config, student_list, questions, output, date, seed)
+    generator.process()
 
 if __name__ == '__main__':
     cli(obj={})
