@@ -83,7 +83,7 @@ def cli(ctx, debug):
 @click.argument('questions', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
 @click.option('--serial', type=int, default=100)
-@click.option('--output', '-o', type=click.File(mode='w'), default=lambda: open('exam.pdf', 'w'))
+@click.option('--output', '-o', type=click.File(mode='w'), default=lambda: open('exam.pdf', 'wb'))
 @click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
@@ -96,12 +96,12 @@ def generate(ctx, config, students, questions, count, serial, output, date, seed
 
     if students:
         try:    
-            click.echo(click.style('Reading excel file', fg='red', underline=True))
+            click.secho('Reading excel file', fg='red', underline=True)
             skip = 0
             # check whether the file needs to be partially skipped
             if 'data_marker' in config['excel']:
                 marker = config['excel']['data_marker'].get('skip_until')
-                click.echo(click.style('Searching for data marker "{}"'.format(marker), fg='cyan'))
+                click.secho('Searching for data marker "{}"'.format(marker), fg='cyan')
                 wb = xlrd.open_workbook(students.name)
                 sheet = wb.sheet_by_index(0)
                 for i in range(sheet.nrows):
@@ -111,22 +111,22 @@ def generate(ctx, config, students, questions, count, serial, output, date, seed
                         skip = i + 1
                         break
             if skip > 0:
-                click.echo(click.style('Skipping {} rows'.format(skip), fg='cyan'))
+                click.secho('Skipping {} rows'.format(skip), fg='cyan')
             student_list = pd.read_excel(students.name, skiprows=skip)
             fields = config['excel']['fields']
             student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
             student_list.reset_index(inplace=True)
             student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
-            click.echo(click.style('Processing done, {} students found'.format(len(student_list)), fg='cyan'))
+            click.secho('Processing done, {} students found'.format(len(student_list)), fg='cyan')
         except Exception as e:
             logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students.name))
             sys.exit(-1)
         students.close()
     else:
-        click.echo(click.style('Creating anonymous exams for {} students'.format(count), fg='red', underline=True))
-        click.echo(click.style('Starting serials from {}'.format(serial), fg='cyan'))
+        click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
+        click.secho('Starting serials from {}'.format(serial), fg='cyan')
         student_list = list(map(lambda s: (s, ""), range(serial, serial + count)))
-    click.echo(click.style('Seed used for the random generator {}'.format(seed), fg='magenta'))
+    click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
     generator = Generate(config, student_list, questions, output, date, seed)
     generator.process()

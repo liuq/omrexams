@@ -23,7 +23,7 @@
 
 \ProcessOptions\relax % Process class options
 
-\LoadClass[a4paper,10pt]{exam} % Load the primary class with set options
+\LoadClass[a4paper,10pt,oneside]{exam} % Load the primary class with set options
 
 %\@ifundefined{classtoggle} % Check that the \classtoggle has been defined, i.e. one of the two required class options above has been specified
 %{\ClassError{example}{You have not used one of the required options}{You must specify one of the class options defined in the template file.}} % If one of the options has not been specified, quit with an error to that effect

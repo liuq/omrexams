@@ -1,0 +1,38 @@
+excel: # metadata description of the excel file for mapping to the expected format
+  fields:
+    name: 'Nome'
+    surname: 'Cognome'
+    id: 'Matricola' 
+  data_marker: # needed to skip header rows in ugly formatted excel lists (e.g., those resulting from the infamous esse3)
+    skip_until: Elenco Studenti Iscritti all'Appello
+    on_column: 0
+  encoding: latin-1 # also this might infamously be needed by the silly esse3 output
+exam: # exam details
+  name: Fondamenti di Informatica – Relazioni Pubbliche # exam name
+  language: Italian # localization to be used
+  shuffle_questions: yes # whether the questions are proposed in a random order or in the original one
+  shuffle_answers: yes # whether the answers to each question are randomly rearranged
+  grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
+  page_limit: 2 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
+  max_questions: null 
+questions: 
+  - from: "*.md"
+    draw: 1
+  - from: base.md # a more specific rule overrides the general one
+    draw: 2
+header: |
+  \Large \theexam \newline
+  \normalsize \thedate \newline
+  \thematriculationno, \thestudent \newline
+  Durata 45 minuti + 2 minuti per la lettura delle avvertenze
+preamble: |
+  **Avvertenze**: *leggete le avvertenze con attenzione.* 
+  Il compito va svolto su questo foglio.
+  **Non è consentito** comunicare con altre persone utilizzando qualunque mezzo, né condividere alcun materiale;
+  ciò darà luogo **immediatamente** e **incontestabilmente** all'annullamento della prova d'esame.
+  **NON SCRIVERE SULLA PARTE DESTRA DEL COMPITO** (quella con i pallini, a lettura ottica).
+  **Non è consentita la correzione** delle risposte date sulla parte destra del foglio (quelle definitive).
+  Pertanto si consiglia di scrivere le risposte nel testo e di ricopiarle sulla parte a lettura ottica *SOLAMENTE*
+  quando si è certi della risposta stessa. 
+  **Riempire per bene i pallini della parte a lettura ottica con le risposte date.**
+footer: # currently no footer
