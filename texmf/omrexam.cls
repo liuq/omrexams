@@ -40,7 +40,7 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{decorations.markings}
 \usepackage{amsmath, amssymb}
-\usepackage[a4paper, %textwidth=12.5cm, 
+\usepackage[a4paper, 
   top=4cm, 
   headheight=2.5cm, 
   bottom=3.5cm, 

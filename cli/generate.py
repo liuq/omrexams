@@ -7,12 +7,14 @@ import glob
 import os
 import re
 import io
+import pandas as pd
 from shutil import copy2
 import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 import math
+from datetime import datetime as dt
 
 logger = logging.getLogger("omrexams")
 
@@ -20,14 +22,18 @@ class Generate:
     question_re = re.compile(r"\n-{3,}\n")
     title_re = re.compile(r"#\s+.*")
 
-    def __init__(self, config, students, questions, output, date, seed):
+    def __init__(self, config, questions, output, **kwargs):
         self.config = config
-        self.students = students
         self.questions_path = questions
         self.output_pdf = output
-        self.exam_date = date
-        self.seed = seed 
-        self.topics = {}     
+        self.test = kwargs.get('test', False)
+        # TODO: emit logging if these parameters are not set
+        if not self.test:
+            self.output_list_filename = kwargs.get('output_list')
+            self.students = kwargs.get('students', [])
+            self.exam_date = kwargs.get('date', dt.now())
+            self.seed = kwargs.get('seed', 0) 
+            self.topics = {}   
 
     def load_rules(self):
         rules = self.config.get('questions', [{ "from": "*.md", "use": 1 }])
@@ -45,10 +51,16 @@ class Generate:
             return list(filter(lambda q: not Generate.title_re.match(q), Generate.question_re.split(f.read())))
     
     def process(self):
+        if not self.test:
+            self.generate_exams()
+        else:
+            self.generate_test()
+
+    def generate_exams(self):
         rules = self.load_rules()
         self.questions = {}
-        for r in rules.keys():
-            self.questions[r] = { 'content': self.load_questions(r), 'draw': rules[r] }    
+        for r in sorted(rules.keys()):
+            self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }    
         logger.info('Creating and preparing tmp directory')
         if not os.path.exists('tmp'):
            os.mkdir('tmp')
@@ -58,7 +70,7 @@ class Generate:
         with click.progressbar(length=len(self.students), label='Generating exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
-                               empty_char=' ', show_pos=True) as bar:   
+                               empty_char=' ', show_pos=True) as bar:
             self.tasks_queue = mp.JoinableQueue()
             self.results_mutex = mp.RLock()
             self.task_done = mp.Condition(self.results_mutex)
@@ -79,7 +91,7 @@ class Generate:
         click.secho('Collating PDF', fg='red', underline=True)
         merger = PdfFileMerger()
         _blank = PdfFileWriter()
-        # A4
+        # A4 size il 595pt x 842pt
         _blank.addBlankPage(width=595, height=842)    
         blank = io.BytesIO()
         _blank.write(blank)   
@@ -99,7 +111,7 @@ class Generate:
             logger.info("Started processing student {} {}".format(*student))
             done = False
             for _ in range(5):
-                document = self.create_exam(student)
+                document, questions, answers = self.create_exam(student)
                 digits = math.ceil(math.log10(len(self.students)))
                 f = '{{:0{}d}}-{{}}-{{}}'.format(digits)
                 filename = os.path.join('tmp', f.format(task, student[0], student[1].replace(" ", "_")))
@@ -117,18 +129,32 @@ class Generate:
                         break 
             if not done:
                 logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
-            self.results_mutex.acquire()
-            self.results.value += 1
-            self.task_done.notify()
-            self.results_mutex.release()
-            self.tasks_queue.task_done()
+            try:
+                self.results_mutex.acquire()
+                self.results.value += 1
+                # append to list of exams
+                self.append_exam(student, questions, answers)
+            except Exception as e:
+                raise e
+            finally:
+                self.task_done.notify()
+                self.results_mutex.release()
+                self.tasks_queue.task_done()
 
-    def create_exam(self, student):       
+    def create_exam(self, student):     
+        def code_answer(answers):
+                current = ""
+                for i in range(len(answers)):
+                    if answers[i]:
+                        current += chr(ord('A') + i)
+                return ",".join(current)  
         logger.info("Creating exam".format(*student)) 
         # randomly select a given number of questions from each file
         questions = []
-        for topic in self.questions.values():
-            questions += random.sample(topic['content'], topic['draw'])
+        for filename, topic in self.questions.items():
+            sample = random.sample(list(range(len(topic['content']))), topic['draw'])
+            questions += list(map(lambda index: (filename, index, topic['content'][index]), 
+                sample))
         if self.config['exam'].get('shuffle_questions', False):
             random.shuffle(questions)
         if self.config['exam'].get('max_questions', False):
@@ -147,7 +173,71 @@ class Generate:
                               date=self.exam_date, exam=self.config['exam'].get('name'), 
                               student_no=student[0],
                               student_name=student[1], header=header, 
-                              preamble=preamble) as renderer:
-            content = '\n'.join(questions)
-            document = renderer.render(Document(content))
-            return document
+                              preamble=preamble,
+                              shuffle=self.config['exam'].get('shuffle_answers', False)) as renderer:
+            content = '\n'.join(map(lambda q: q[2], questions))
+            document = renderer.render(Document(content))   
+            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.answers[i])), range(len(questions)))                        
+            overall_answers = ''.join(code_answer(a) for a in renderer.answers)
+            return document, list(tmp), overall_answers
+
+    
+    def append_exam(self, student, questions, answers):     
+        content = pd.DataFrame({ "id": [student[0]], "fullname": [student[1]], "questions": [questions], "answers": [answers] }).set_index('id')
+        if not os.path.exists(self.output_list_filename):
+            old_content = pd.DataFrame()
+        else:
+            old_content = pd.read_excel(self.output_list_filename).set_index('id')
+        pd.concat([old_content, content]).to_excel(self.output_list_filename)
+
+    def generate_test(self):
+        rules = self.load_rules()
+        if self.config.get('header'):
+            with DocumentStripRenderer() as renderer:
+                header = renderer.render(Document(self.config.get('header')))
+        else:
+            header = ''
+        if self.config.get('preamble'):
+            with DocumentStripRenderer() as renderer:
+                preamble = renderer.render(Document(self.config.get('preamble')))
+        else:
+            preamble = ''
+
+        questions = ""
+        for r in sorted(rules.keys()):
+            click.secho('Testing {}'.format(os.path.basename(r)), fg='cyan')
+            with open(r, 'r') as f:
+                current_questions = f.read()
+            with QuestionRenderer(language=self.config['exam'].get('language'), 
+                              date=dt.now(), 
+                              exam=self.config['exam'].get('name'), 
+                              student_no=0,
+                              student_name="", 
+                              header=header, 
+                              preamble=preamble,
+                              test=True) as renderer:
+                renderer.render(Document(current_questions))
+            questions += current_questions + "\n\n"
+
+        logger.info('Creating and preparing tmp directory')
+        if not os.path.exists('tmp'):
+           os.mkdir('tmp')
+        click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
+        copy2(os.path.join('texmf', 'omrexam.cls'), 'tmp')
+        with QuestionRenderer(language=self.config['exam'].get('language'), 
+                              date=dt.now(), 
+                              exam=self.config['exam'].get('name'), 
+                              student_no=0,
+                              student_name="", 
+                              header=header, 
+                              preamble=preamble,
+                              test=True) as renderer:
+            document = renderer.render(Document(questions)) 
+        filename = "".join(os.path.basename(self.output_pdf.name).split(".")[:-1])
+        click.secho('Generating PDF with all corrected questions', fg='red', underline=True)
+        document.generate_pdf(filepath=os.path.join("tmp", filename), 
+                              compiler='latexmk', 
+                              compiler_args=['-xelatex'])
+        copy2(os.path.join('tmp', filename + '.pdf'), '.')
+        
+        

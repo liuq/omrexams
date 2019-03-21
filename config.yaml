@@ -10,15 +10,13 @@ excel: # metadata description of the excel file for mapping to the expected form
 exam: # exam details
   name: Fondamenti di Informatica – Relazioni Pubbliche # exam name
   language: Italian # localization to be used
-  shuffle_questions: yes # whether the questions are proposed in a random order or in the original one
+  shuffle_questions: no # whether the questions are proposed in a random order or in the original one
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
   page_limit: 2 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
   max_questions: null 
 questions: 
   - from: "*.md"
-    draw: 1
-  - from: base.md # a more specific rule overrides the general one
     draw: 2
 header: |
   \Large \theexam \newline
