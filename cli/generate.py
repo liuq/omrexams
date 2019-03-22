@@ -175,10 +175,10 @@ class Generate:
                               student_name=student[1], header=header, 
                               preamble=preamble,
                               shuffle=self.config['exam'].get('shuffle_answers', False)) as renderer:
-            content = '\n'.join(map(lambda q: q[2], questions))
+            content = '---\n'.join(map(lambda q: q[2], questions))
             document = renderer.render(Document(content))   
-            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.answers[i])), range(len(questions)))                        
-            overall_answers = ''.join(code_answer(a) for a in renderer.answers)
+            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers'])), range(len(questions)))                        
+            overall_answers = ''.join(code_answer(q['answers']) for q in renderer.questions)
             return document, list(tmp), overall_answers
 
     
