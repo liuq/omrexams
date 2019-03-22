@@ -19,8 +19,9 @@ from datetime import datetime as dt
 logger = logging.getLogger("omrexams")
 
 class Generate:
-    question_re = re.compile(r"\n-{3,}\n")
-    title_re = re.compile(r"#\s+.*")
+    QUESTION_MARKER_RE = re.compile(r"\n-{3,}\n")
+    TITLE_RE = re.compile(r"#\s+.*")
+    QUESTION_RE = re.compile(r"##\s*(.*)")
 
     def __init__(self, config, questions, output, **kwargs):
         self.config = config
@@ -48,7 +49,7 @@ class Generate:
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
-            return list(filter(lambda q: not Generate.title_re.match(q), Generate.question_re.split(f.read())))
+            return list(filter(lambda q: not Generate.TITLE_RE.match(q), Generate.QUESTION_MARKER_RE.split(f.read())))
     
     def process(self):
         if not self.test:
@@ -150,10 +151,30 @@ class Generate:
                 return ",".join(current)  
         logger.info("Creating exam".format(*student)) 
         # randomly select a given number of questions from each file
+        # however, avoid to select more than once the questions with the same text
         questions = []
         for filename, topic in self.questions.items():
-            sample = random.sample(list(range(len(topic['content']))), topic['draw'])
-            questions += list(map(lambda index: (filename, index, topic['content'][index]), 
+            candidate_questions = topic['content'][:]
+            current_questions = []
+            while candidate_questions:
+                t = candidate_questions.pop()
+                current_topic_replicates = [t]
+                q = re.search(Generate.QUESTION_RE, t)
+                if not q:
+                    raise ValueError("Apparently, question \"{}\" has no text".format(t))
+                q = q.group(1).strip().lower()
+                j = 0
+                while j < len(candidate_questions):
+                    cq = re.search(Generate.QUESTION_RE, candidate_questions[j])
+                    if not cq:
+                        raise ValueError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
+                    if q == cq.group(1).strip().lower():
+                        current_topic_replicates.append(candidate_questions.pop(j))                        
+                    else:
+                        j = j + 1
+                current_questions += random.sample(current_topic_replicates, 1)
+            sample = random.sample(list(range(len(current_questions))), topic['draw'])
+            questions += list(map(lambda index: (filename, index, current_questions[index]), 
                 sample))
         if self.config['exam'].get('shuffle_questions', False):
             random.shuffle(questions)
@@ -175,7 +196,7 @@ class Generate:
                               student_name=student[1], header=header, 
                               preamble=preamble,
                               shuffle=self.config['exam'].get('shuffle_answers', False)) as renderer:
-            content = '---\n'.join(map(lambda q: q[2], questions))
+            content = '---\n\n' + '---\n'.join(map(lambda q: q[2], questions))
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers'])), range(len(questions)))                        
             overall_answers = ''.join(code_answer(q['answers']) for q in renderer.questions)
