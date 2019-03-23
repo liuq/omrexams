@@ -33,8 +33,8 @@ class Generate:
             self.output_list_filename = kwargs.get('output_list')
             self.students = kwargs.get('students', [])
             self.exam_date = kwargs.get('date', dt.now())
-            self.seed = kwargs.get('seed', 0) 
             self.topics = {}   
+            self.seed = kwargs.get('seed', 0)
 
     def load_rules(self):
         rules = self.config.get('questions', [{ "from": "*.md", "use": 1 }])
@@ -111,6 +111,7 @@ class Generate:
             if task is None:
                 break
             logger.info("Started processing student {} {}".format(*student))
+            random.seed(self.seed + student[0])
             done = False
             for _ in range(5):
                 document, questions, answers = self.create_exam(student)

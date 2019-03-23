@@ -162,7 +162,7 @@ rectangle/.default={0.2cm}}
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
             \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
 \renewcommand{\choicelabel}{\circled{\thechoice}}
-\renewcommand{\questionlabel}{\bfseries\thequestion}
+\renewcommand{\questionlabel}{\bfseries\thequestion)}
 }
 \AtBeginPage{
 \omr@markers
