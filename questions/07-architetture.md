@@ -2,7 +2,7 @@
 
 ---
 
-## All'accensione del computer (boot), dove risiedono le prime istruzioni che vengono eseguite?
+## All'*accensione del computer* (*boot*), dove risiedono le prime istruzioni che vengono eseguite?
 
 - [x] nella ROM
 - [ ] nella RAM
@@ -10,7 +10,7 @@
 
 ---
 
-## All'accensione del computer, il Program Counter contiene:
+## All'*accensione del computer*, il *Program Counter* contiene:
 
 - [x] un indirizzo prefissato e noto
 - [ ] un valore casuale
@@ -18,7 +18,7 @@
 
 ---
 
-## All'accensione del computer, il Program Counter contiene:
+## All'*accensione del computer*, il *Program Counter* contiene:
 
 - [x] un indirizzo prefissato e noto
 - [ ] un valore casuale
@@ -26,7 +26,7 @@
 
 ---
 
-## Un hard disk è:
+## Un *hard disk* è
 
 - [x] una memoria non volatile
 - [ ] una memoria a sola lettura
@@ -34,7 +34,7 @@
 
 ---
 
-## Un hard disk è:
+## Un *hard disk* è
 
 - [ ] una memoria volatile
 - [ ] una memoria di sola scrittura
@@ -42,7 +42,7 @@
 
 ---
 
-## Le periferiche di output:
+## Le *periferiche di output*
 
 - [x] sono quelle che permettono al computer di comunicare dati all'utente
 - [ ] includono Mouse e Tastiere
@@ -51,7 +51,7 @@
 ---
 
 
-## Le periferiche di output:
+## Le *periferiche di output*
 
 - [x] includono Video e Stampanti
 - [ ] sono quelle che si trovano all'esterno del case del computer
@@ -59,7 +59,7 @@
 
 ---
 
-## Quali dei seguenti software fanno parte del software di sistema?
+## Quali dei seguenti software fanno parte del *software di sistema*?
 
 - [x] GUI del sistema operativo
 - [ ] browser Web
@@ -68,7 +68,7 @@
 ---
 
 
-## Quali dei seguenti software fanno parte del software di sistema?
+## Quali dei seguenti software fanno parte del *software di sistema*?
 
 - [x] shell del sistema operativo
 - [ ] editor di testo
@@ -76,56 +76,64 @@
 
 ---
 
-## La conversione in codice assembly del codice scritto da un programmatore è detta
+## La *conversione* in codice *assembly* del codice scritto da un programmatore è detta
 
-- [ ] compilazione	
-- [x] assemblaggio	
-- [ ] integrazione	
+- [x] compilazione
+- [ ] assemblaggio
+- [ ] integrazione
 
 ---
 
-## Quale dei seguenti dispositivi è utilizzato sia per input che per output?
+## La *traduzione* del codice *assembly* in linguaggio macchina è detta
+
+- [ ] compilazione
+- [x] assemblaggio
+- [ ] integrazione
+
+---
+
+## Quale dei seguenti dispositivi è utilizzato *sia per input che per output*?
 
 - [ ] tastiera
-- [x] disco fisso	
-- [ ] stampante	
+- [x] disco fisso
+- [ ] stampante
 
 ---
 
-## Quante parti mobili ha il processore?
+## Quante *parti mobili* ha il processore?
 
-- [ ] troppe per contarle	
-- [ ] due	
-- [x] nessuna	
-
----
-
-## L’ordine crescente corretto dei prefissi è
-
-- [ ] giga, kilo, mega, tera	
-- [x] kilo, mega, giga, tera	
-- [ ] kilo, mega, tera, giga	
-
+- [ ] troppe per contarle
+- [ ] due
+- [x] nessuna
 
 ---
 
-## La riesecuzione di un programma con gli stessi dati produce
+## L’*ordine crescente corretto* dei prefissi è
 
-- [ ] risultati diversi a seconda dell’ora del giorno	
-- [x] esattamente lo stesso risultato ogni volta	
-- [ ] risultati diversi a seconda del computer sul quale viene eseguito	
+- [ ] giga, kilo, mega, tera
+- [x] kilo, mega, giga, tera
+- [ ] kilo, mega, tera, giga
 
----
-
-## La riesecuzione di un programma con gli stessi dati produce
-
-- [ ] risultati diversi a seconda dell’ora del giorno	
-- [x] esattamente lo stesso risultato ogni volta	
-- [ ] quasi sempre lo stesso risultato, ma a volte diverso	
 
 ---
 
-## La velocità del clock del computer è misurata in 
+## La *riesecuzione* di un programma con gli *stessi dati* produce
+
+- [ ] risultati diversi a seconda dell’ora del giorno
+- [x] esattamente lo stesso risultato ogni volta
+- [ ] risultati diversi a seconda del computer sul quale viene eseguito
+
+---
+
+## La *riesecuzione* di un programma con gli *stessi dati* produce
+
+- [ ] risultati diversi a seconda dell’ora del giorno
+- [x] esattamente lo stesso risultato ogni volta
+- [ ] quasi sempre lo stesso risultato, ma a volte diverso
+
+---
+
+## La *velocità* del *clock* del computer è misurata in
 
 - [ ] Kilobytes (KB)
 - [x] Hertz (Hz)
@@ -133,7 +141,7 @@
 
 ---
 
-## Il Program Counter
+## Il *Program Counter*
 
 - [x] tiene traccia della successiva istruzione da eseguire
 - [ ] accede alla memoria per recuperare i dati su cui operare
@@ -141,7 +149,7 @@
 
 ---
 
-## Il ciclo macchina (Fetch/Decode/Execute)
+## Il *ciclo macchina* (*Fetch/Decode/Execute*)
 
 - [x] viene sempre ripetuto finché il computer rimane acceso
 - [x] viene ripetuto miliardi di volte al secondo
@@ -149,7 +157,7 @@
 
 ---
 
-## Il ciclo macchina (Fetch/Decode/Execute)
+## Il *ciclo macchina* (*Fetch/Decode/Execute*)
 
 - [x] legge e scrive dati in memoria, se necessario
 - [ ] esegue immediatamente le istruzioni senza necessità di decodificarle
@@ -157,7 +165,7 @@
 
 ---
 
-## Il ciclo macchina (Fetch/Decode/Execute)
+## Il *ciclo macchina* (*Fetch/Decode/Execute*)
 
 - [x] coinvolge sia la Control Unit (CU) che la Arithmetic Logic Unit (ALU)
 - [ ] non legge né scrive scrive dati in memoria, anche se necessario
@@ -165,7 +173,7 @@
 
 ---
 
-## L'ALU (Arithmetic Logic Unit)
+## L'*ALU* (*Arithmetic Logic Unit*)
 
 - [x] esegue i calcoli matematici richiesti dall'istruzione attualmente in esecuzione
 - [ ] scrive i risultati in memoria
@@ -173,7 +181,7 @@
 
 ---
 
-## Un'istruzione in linguaggio macchina
+## Un'istruzione in *linguaggio macchina*
 
 - [ ] è un'istruzione complessa che prevede diversi casi
 - [x] è un'istruzione semplice e solo attraverso la combinazione di istruzioni semplici si possono realizzare schemi più complessi
@@ -181,23 +189,23 @@
 
 ---
 
-## I computer moderni conoscono
+## I *computer moderni* conoscono
 
 - [ ] solo pochissime istruzioni
-- [x] circa un centinaio di istruzioni 
-- [ ] migliaia di istruzioni	
+- [x] circa un centinaio di istruzioni
+- [ ] migliaia di istruzioni
 
 ---
 
-## Il linguaggio assembly
+## Il *linguaggio assembly*
 
-- [x] è una forma intermedia tra il codice sorgente e il linguaggio macchina, compreso dal processore
+- [x] è una forma intermedia tra il codice sorgente e il linguaggio macchina
 - [x] è un linguaggio mnemonico
 - [ ] è espresso come sequenza di bit
 
 ---
 
-## I sistemi operativi
+## I *sistemi operativi*
 
 - [x] sono software che forniscono delle funzionalità chiave per l'utilizzo del computer
 - [x] vengono eseguiti all'avvio del computer e continuano a funzionare fino al suo spegnimento
@@ -205,7 +213,7 @@
 
 ---
 
-## I computer moderni
+## I *computer moderni*
 
 - [x] possono eseguire più compiti “contemporaneamente” gestendo in modo sofisticato il tempo assegnato a ciascun programma
 - [x] possiedono più di una singola CPU (distinta o su un singolo chip)
@@ -213,7 +221,7 @@
 
 ---
 
-## La memoria RAM del calcolatore
+## La *memoria RAM* del calcolatore
 
 - [x] contiene sia i dati che i programmi necessari per la loro elaborazione
 - [x] è organizzata in locazioni di 1 byte, indirizzate con una sequenza di valori numerici che inizia da 0
@@ -221,7 +229,7 @@
 
 ---
 
-## La memoria RAM del calcolatore
+## La *memoria RAM* del calcolatore
 
 - [ ] per accedere ad un dato richiede l'elaborazione di tutti i dati che lo precedono
 - [x] è organizzata in locazioni di 1 byte, indirizzate con una sequenza di valori numerici che inizia da 0
@@ -229,7 +237,7 @@
 
 ---
 
-## La memoria RAM del calcolatore
+## La *memoria RAM* del calcolatore
 
 - [x] è organizzata in locazioni di 1 byte, indirizzate con una sequenza di valori numerici che inizia da 0
 - [ ] contiene solamente i dati ma non i programmi che sono memorizzati nella ROM
@@ -237,7 +245,7 @@
 
 ---
 
-## La memoria RAM del calcolatore
+## La *memoria RAM* del calcolatore
 
 - [ ] è organizzata in singoli bit
 - [ ] la sua dimensione, attualmente, è dell'ordine dei 64 Kilobyte
@@ -245,8 +253,16 @@
 
 ---
 
-## Le periferiche
+## Le *periferiche*
 
 - [x] si connettono alle porte di input/output del calcolatore per fornirgli dati o per consentire di comunicare con l'esterno
 - [x] sono dispositivi generalmente “stupidi” e necessitano di un driver per un'elaborazione più avanzata
 - [ ] leggono e scrivono i programmi direttamente sulla CPU per poterli eseguire
+
+---
+
+## Lo *schermo* visualizza immagini digitalizzate, che sono *composte da*
+
+- [ ] bitmap
+- [x] pixel
+- [ ] locazioni di memoria

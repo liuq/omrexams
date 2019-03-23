@@ -2,23 +2,23 @@
 
 ---
 
-## Cos'è un byte ?
+## Un *byte* è
 
-- [x] Un gruppo di 8 bit
-- [ ] Un carattere che può assumere solo i valori 0 e 1
-- [ ] Un gruppo di 4 bit
-
----
-
-## Cos'è un byte ?
-
-- [x] Un gruppo di 8 bit
-- [ ] Un gruppo di 4 bit
-- [ ] Un gruppo di 256 bit
+- [x] un gruppo di 8 bit
+- [ ] un carattere che può assumere solo i valori 0 e 1
+- [ ] un gruppo di 4 bit
 
 ---
 
-## La digitalizzazione
+## Un *byte* è
+
+- [x] un gruppo di 8 bit
+- [ ] un gruppo di 4 bit
+- [ ] un gruppo di 256 bit
+
+---
+
+## La *digitalizzazione*
 
 - [x] rappresenta l'informazione per mezzo di simboli
 - [ ] verifica le cifre presenti in un numero
@@ -26,7 +26,7 @@
 
 ---
 
-## I dati su di un CD o un DVD
+## I *dati* su di un *CD* o un *DVD*
 
 - [x] sono codificati nelle sporgenze sul fondo del disco
 - [ ] vengono letti da una testina magnetica
@@ -34,8 +34,7 @@
 
 ---
 
-
-## I dati su di un CD o un DVD
+## I *dati* su di un *CD* o un *DVD*
 
 - [x] sono codificati nelle sporgenze sul fondo del disco
 - [ ] vengono codificati in base 10
@@ -43,7 +42,7 @@
 
 ---
 
-## Quale dei seguenti aspetti è un vantaggio di Unicode rispetto ad ASCII?
+## Quale dei seguenti aspetti è un *vantaggio* di *Unicode* rispetto ad *ASCII*?
 
 - [x] Unicode consente la rappresentazione di molti più simboli
 - [ ] Unicode è stato definito prima
@@ -51,7 +50,7 @@
 
 ---
 
-## Quale dei seguenti aspetti è un vantaggio di Unicode rispetto ad ASCII?
+## Quale dei seguenti aspetti è un *vantaggio* di *Unicode* rispetto ad *ASCII*?
 
 - [x] Unicode consente la rappresentazione di molti più simboli
 - [ ] Unicode è stato definito prima
@@ -59,7 +58,7 @@
 
 ---
 
-## Da quanti *bit* è costituto un Kbyte ?
+## Da quanti *bit* è costituto un *Kbyte*?
 
 - [x] 8192
 - [ ] 1024
@@ -67,7 +66,7 @@
 
 ---
 
-## A quale sistema appartiene la rappresentazione PandA?
+## A quale sistema appartiene la rappresentazione *PandA*?
 
 - [x] binario
 - [ ] decimale
@@ -75,23 +74,23 @@
 
 ---
 
-## Un sistema binario
+## Un *sistema binario*
 
-- [x] consente di assegnare due soli possibili valori	
-- [ ] usa dati continui	
-- [x] può essere rappresentato da PandA	
-
----
-
-## Un sistema binario
-
-- [ ] consente di assegnare valori multipli	
-- [x] usa dati discreti	
-- [x] può essere rappresentato da PandA	
+- [x] consente di assegnare due soli possibili valori
+- [ ] usa dati continui
+- [x] può essere rappresentato da PandA
 
 ---
 
-## Quando si usano fenomeni naturali per codificare l’informazione PandA, indicate una potenziale soluzione se esistono più di due alternative
+## Un *sistema binario*
+
+- [ ] consente di assegnare valori multipli
+- [x] usa dati discreti
+- [x] può essere rappresentato da PandA
+
+---
+
+## Quando si usano fenomeni naturali per codificare l’*informazione PandA*, indicate una potenziale soluzione se esistono più di due alternative
 
 - [ ] adottarle tutte come “presente”
 - [x] adottarne una come “presente” e tutte le altre alternative come “assente”	
@@ -99,9 +98,9 @@
 
 ---
 
-## Quando si usano fenomeni naturali per codificare l’informazione PandA, indicate una potenziale soluzione se esistono più di due alternative
+## Quando si usano fenomeni naturali per codificare l’*informazione PandA*, indicate una potenziale soluzione se esistono più di due alternative
 
-- [ ] adottarle tutte come “presente”	
+- [ ] adottarle tutte come “presente”
 - [x] adottarne una come “assente” e tutte le altre alternative come “presente”	
 - [ ] adottarle tutte come “assente”
 
@@ -124,7 +123,7 @@
 ---
 
 
-## Quale/i dei seguenti non è/sono un sistema binario?
+## Quale/i dei seguenti **non** è/sono un *sistema binario*?
 
 - [ ] una lampadina
 - [x] un semaforo
@@ -132,7 +131,7 @@
 
 ---
 
-## La notazione in base 16 è detta
+## La *notazione in base 16* è detta
 
 - [x] esadecimale
 - [ ] binaria
@@ -140,15 +139,15 @@
 
 ---
 
-## La notazione in base 16 è detta
+## La *notazione in base 16* è detta
 
 - [x] esadecimale
 - [ ] binaria
-- [ ] esedra
+- [ ] esagono
 
 ---
 
-## Il numero di cifre utilizzato in un sistema di numerazione
+## Il numero di cifre utilizzato in un *sistema di numerazione*
 
 - [x] è detto base
 - [x] può essere un numero dispari
@@ -156,7 +155,7 @@
 
 ---
 
-## Il numero di cifre utilizzato in un sistema di numerazione
+## Il numero di cifre utilizzato in un *sistema di numerazione*
 
 - [ ] è detto altezza
 - [x] può essere indifferentemente un numero pari o un numero dispari
@@ -164,7 +163,7 @@
 
 ---
 
-## Quanti simboli possono essere rappresentati da quattro bit?
+## Quanti simboli possono essere rappresentati da *quattro bit*?
 
 - [ ] 12
 - [x] 16
@@ -172,7 +171,7 @@
 
 ---
 
-## Quanti simboli possono essere rappresentati da otto bit?
+## Quanti simboli possono essere rappresentati da *otto bit*?
 
 - [ ] 16
 - [ ] 36
@@ -180,7 +179,7 @@
 
 ---
 
-## Quanti caratteri possono essere rappresentati dalla codifica ASCII originale (7 bit per carattere)?
+## Quanti caratteri possono essere rappresentati dalla *codifica ASCII originale* (7 bit per carattere)?
 
 - [x] 128
 - [ ] 52
@@ -188,7 +187,7 @@
 
 ---
 
-## Quanti caratteri possono essere rappresentati dalla codifica ASCII originale (7 bit per carattere)?
+## Quanti caratteri possono essere rappresentati dalla *codifica ASCII originale* (7 bit per carattere)?
 
 - [x] 128
 - [ ] 26
@@ -196,7 +195,7 @@
 
 ---
 
-## Come posso trasformare cifre esadecimali in bit?
+## Come posso *trasformare* cifre esadecimali in bit?
 
 - [x] uso una tabella di conversione che a ciascuna cifra esadecimale fa corrispondere una sequenza di 4 bit 
 - [ ] attraverso delle formule matematiche abbastanza complesse posso calcolarne la rappresentazione
@@ -204,7 +203,7 @@
 
 ---
 
-## Come posso trasformare cifre binarie in esadecimale?
+## Come posso *trasformare* cifre binarie in esadecimale?
 
 - [x] divido il numero binario in gruppi di 4 bit e uso una tabella di conversione 
 - [ ] attraverso delle formule matematiche abbastanza complesse posso calcolarne la rappresentazione
@@ -212,7 +211,7 @@
 
 ---
 
-## Le cifre esadecimali?
+## Le *cifre esadecimali*
 
 - [x] includono i simboli `A`, `B`, `C`, `D`, `E`, `F`
 - [ ] rappresentano un intero byte
@@ -220,7 +219,7 @@
 
 ---
 
-## Il codice extended ASCII
+## Il codice *extended ASCII*
 
 - [x] utilizza 8 bit per la rappresentazione dei simboli
 - [ ] non è in grado di rappresentare tutte le lettere degli alfabeti europei
@@ -228,7 +227,7 @@
 
 ---
 
-## Il codice extended ASCII
+## Il codice *extended ASCII*
 
 - [x] utilizza 8 bit per la rappresentazione dei simboli
 - [x] è in grado di rappresentare tutte le lettere degli alfabeti europei
@@ -236,7 +235,7 @@
 
 ---
 
-## L'alfabeto NATO per le telecomunicazioni
+## L'*alfabeto NATO* per le telecomunicazioni
 
 - [x] associa a ciascuna lettera dell'alfabeto un'intera parola 
 - [x] facilita la distinzione di lettere che, pronunciate, sarebbero difficili da distinguere (es. `m` e `n`)
@@ -244,7 +243,7 @@
 
 ---
 
-## L'alfabeto NATO per le telecomunicazioni
+## L'*alfabeto NATO* per le telecomunicazioni
 
 - [x] associa a ciascuna lettera dell'alfabeto un'intera parola
 - [ ] minimizza la lunghezza della sequenza di simboli trasmessa
@@ -252,16 +251,8 @@
 
 ---
 
-## Il formato UTF-8
+## Il formato *UTF-8*
 
 - [x] consente la rappresentazione dei caratteri di lingue non latine
 - [x] utilizza una rappresentazione di dimensione variabile per il singolo carattere
 - [ ] la codifica di tutti i suoi caratteri termina con uno zero
-
-
-
-
-
-
-
-

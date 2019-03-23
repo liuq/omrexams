@@ -2,7 +2,7 @@
 
 ---
 
-## Il campionamento di un segnale consiste nel:
+## Il *campionamento* di un segnale consiste nel
 
 - [x] prenderne misure ad intervalli regolari 
 - [ ] rappresentarne l'intensità con un insieme finito di valori
@@ -10,7 +10,7 @@
 
 ---
 
-## La quantizzazione di un segnale consiste nel:
+## La *quantizzazione* di un segnale consiste nel
 
 - [x] rappresentarne l'intensità con un insieme finito di valori
 - [ ] prenderne misure ad intervalli regolari 
@@ -18,7 +18,7 @@
 
 ---
 
-## Quanti colori si possono rappresentare con 8 bit?
+## Quanti *colori* si possono rappresentare con *8 bit*?
 
 - [x] 256
 - [ ] 8
@@ -26,15 +26,15 @@
 
 ---
 
-## Quanti colori si possono rappresentare con 8 bit?
+## Quanti *colori* si possono rappresentare con *tre canali colore ciascuno ad 8 bit*?
 
 - [ ] 3
-- [x] 256
-- [ ] circa 16 milioni
+- [ ] 256
+- [x] circa 16 milioni
 
 ---
 
-## Il modello CMY è un modello di colore:
+## Il *modello di colore CMY* è un modello
 
 - [x] sottrattivo, usato nella stampa
 - [ ] additivo, usato nei display
@@ -42,7 +42,7 @@
 
 ---
 
-##  Il modello RGB è un modello di colore:
+## Il *modello di colore RGB* è un modello
 
 - [x] additivo, usato nei display
 - [ ] sottrattivo, usato nella stampa
@@ -50,15 +50,15 @@
 
 ---
 
-## Un'immagine bitmap è descritta:
+## Un'*immagine bitmap* è descritta da
 
-- [x] da una matrice di pixel
-- [ ] da primitive grafiche
-- [ ] da vettori di moto
+- [x] una matrice di pixel
+- [ ] primitive grafiche
+- [ ] vettori di moto
 
 ---
 
-## Il bianco, nel modello di colori RGB
+## Il *bianco*, nel modello di colori RGB
 
 - [x] si ottiene come somma dei tre canali rosso, verde e blu alla massima intensità
 - [ ] è dato dall'assenza degli altri tre colori
@@ -66,7 +66,7 @@
 
 ---
 
-## Il nero, nel modello di colori RGB
+## Il *nero*, nel modello di colori RGB
 
 - [ ] si ottiene come somma dei tre canali rosso, verde e blu alla massima intensità
 - [x] è dato dall'assenza di intensità di tutti e tre i canali
@@ -74,7 +74,7 @@
 
 ---
 
-## Per schiarire un'immagine
+## Per *schiarire* un'immagine
 
 - [x] viene aggiunta intensità ai tre canali RGB attraverso una somma di un valore costante
 - [x] è possibile che una o tutte le componenti RGB giungano al valore massimo possibile (saturazione)
@@ -82,7 +82,7 @@
 
 ---
 
-## Per scurire un'immagine
+## Per *scurire* un'immagine
 
 - [x] viene tolta intensità ai tre canali RGB attraverso una differenza con un valore costante
 - [x] è possibile che una o tutte le componenti RGB giungano al valore minimo possibile 
@@ -98,7 +98,7 @@
 
 ---
 
-## Il campionamento di un suono in qualità CD avviene a 44.100Hz
+## Il *campionamento* di un suono in *qualità CD* avviene a *44.100Hz*
 
 - [x] perché per il teorema di Nyquist, ciò consente di rappresentare esattamente tutti i suoni percepibili dall'orecchio umano
 - [ ] il numero è stato scelto arbitrariamente, in modo da poter contenere esattamente un'ora di registrazione su un CD
@@ -106,7 +106,7 @@
 
 ---
 
-## Nel processo di digitalizzazione Analogico/Digitale per il suono
+## Nel processo di *conversione Analogico/Digitale* per il suono
 
 - [x] si trasforma l'onda sonora in onda elettrica e successivamente si converte il suono in digitale campionando l'onda continua ad intervalli regolari
 - [ ] i dati vengono convertiti in valori decimali direttamente dal trasduttore
@@ -114,7 +114,7 @@
 
 ---
 
-## La conversione Digitale/Analogica per il suono
+## La *conversione Digitale/Analogica* per il suono
 
 - [x] trasforma i valori digitali in un'onda elettrica che poi viene convertita in un'onda sonora dall'altoparlante
 - [ ] converte i dati in valori binari in modo da poterli emettere attraverso l'altoparlante
@@ -122,7 +122,7 @@
 
 ---
 
-## La compressione senza perdita di informazione (lossless)
+## La *compressione* **senza perdita** di informazione (*lossless*)
 
 - [x] consente di ricostruire interamente il contenuto originario del dato di partenza
 - [x] la codifica run-length del formato immagine GIF ne è un esempio
@@ -130,7 +130,7 @@
 
 ---
 
-## La compressione con perdita di informazione (lossy)
+## La *compressione* **con perdita** di informazione (*lossy*)
 
 - [ ] consente di ricostruire interamente il contenuto originario del dato di partenza
 - [x] può basarsi sull'osservazione che alcune caratteristiche dell'informazione sono poco sensibili ai sensi (ad es. la crominanza per la vista, alcune frequenze per l'udito)
@@ -138,7 +138,7 @@
 
 ---
 
-## Il formato GIF
+## Il *formato GIF*
 
 - [x] è un formato immagine che usa la codifica run-length per la compressione
 - [x] consente un numero limitato di colori, rappresentati in una tabella
@@ -146,7 +146,7 @@
 
 ---
 
-## Lo schema di compressione del formato MPEG
+## Lo schema di compressione del *formato MPEG*
 
 - [x] si basa sull'osservazione che due  immagini consecutive in un video differiscano di poco
 - [x] registra solamente le differenze fra fotogrammi
