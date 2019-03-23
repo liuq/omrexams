@@ -202,12 +202,16 @@ class Generate:
                               shuffle=self.config['exam'].get('shuffle_answers', True)) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
             document = renderer.render(Document(content))   
-            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers'])), range(len(questions)))                        
+            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        
             overall_answers = ''.join(code_answer(q['answers']) for q in renderer.questions)
             return document, list(tmp), overall_answers
     
     def append_exam(self, student, questions, answers):     
-        content = pd.DataFrame({ "id": [student[0]], "fullname": [student[1]], "questions": [questions], "answers": [answers] }).set_index('id')
+        content = pd.DataFrame({ "id": [student[0]], 
+                "fullname": [student[1]], 
+                "questions": [questions], 
+                "answer_list": [answers]
+            }).set_index('id')
         if not os.path.exists(self.output_list_filename):
             old_content = pd.DataFrame()
         else:
