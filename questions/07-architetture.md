@@ -102,7 +102,7 @@
 
 ## Quante *parti mobili* ha il processore?
 
-- [ ] troppe per contarle
+- [ ] un numero variabile
 - [ ] due
 - [x] nessuna
 
@@ -233,14 +233,14 @@
 
 - [ ] per accedere ad un dato richiede l'elaborazione di tutti i dati che lo precedono
 - [x] è organizzata in locazioni di 1 byte, indirizzate con una sequenza di valori numerici che inizia da 0
-- [ ] contiene solamente i dati ma non i programmi che sono memorizzati nella ROM
+- [ ] contiene solamente i dati, ma non i programmi che sono memorizzati nella ROM
 
 ---
 
 ## La *memoria RAM* del calcolatore
 
 - [x] è organizzata in locazioni di 1 byte, indirizzate con una sequenza di valori numerici che inizia da 0
-- [ ] contiene solamente i dati ma non i programmi che sono memorizzati nella ROM
+- [ ] contiene solamente i dati, ma non i programmi che sono memorizzati nella ROM
 - [x] consente di accedere direttamente a ciscun dato memorizzato
 
 ---

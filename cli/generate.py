@@ -239,8 +239,6 @@ class Generate:
             with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=dt.now(), 
                               exam=self.config['exam'].get('name'), 
-                              student_no=0,
-                              student_name="", 
                               header=header, 
                               preamble=preamble,
                               test=True) as renderer:

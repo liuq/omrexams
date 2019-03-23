@@ -74,19 +74,19 @@
 
 ---
 
-## Per *schiarire* un'immagine
+## Durante il processo di *schiarimento* di un'immagine
 
 - [x] viene aggiunta intensità ai tre canali RGB attraverso una somma di un valore costante
-- [x] è possibile che una o tutte le componenti RGB giungano al valore massimo possibile (saturazione)
-- [ ] trasformiamo in bianco alcuni pixel a caso dell'immagine
+- [x] è possibile che una o tutte le componenti RGB giungano al valore massimo possibile (*saturazione*)
+- [ ] vengono impostati al colore bianco alcuni pixel a caso dell'immagine
 
 ---
 
-## Per *scurire* un'immagine
+## Durante il processo di *scurimento* di un'immagine
 
 - [x] viene tolta intensità ai tre canali RGB attraverso una differenza con un valore costante
 - [x] è possibile che una o tutte le componenti RGB giungano al valore minimo possibile 
-- [ ] trasformiamo in nero alcuni pixel a caso dell'immagine
+- [ ] vengono impostati al colore nero alcuni pixel a caso dell'immagine
 
 ---
 
@@ -110,7 +110,7 @@
 
 - [x] si trasforma l'onda sonora in onda elettrica e successivamente si converte il suono in digitale campionando l'onda continua ad intervalli regolari
 - [ ] i dati vengono convertiti in valori decimali direttamente dal trasduttore
-- [x] si perde l'informazione sonora relativa alle frequenze che sono la metà della frequenza di campionamento
+- [x] si perde l'informazione sonora relativa alle frequenze che sono oltre la metà della frequenza di campionamento
 
 ---
 
@@ -126,7 +126,7 @@
 
 - [x] consente di ricostruire interamente il contenuto originario del dato di partenza
 - [x] la codifica run-length del formato immagine GIF ne è un esempio
-- [ ] aumenta la dimensione del file
+- [ ] in generale aumenta la dimensione del file risultato
 
 ---
 

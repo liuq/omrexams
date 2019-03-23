@@ -19,10 +19,12 @@ questions:
   - from: "*.md"
     draw: 3
 header: |
+  \sf
   \Large \theexam \newline
   \normalsize \thedate \newline
   \thematriculationno, \thestudent \newline
   Durata 30 minuti + 2 minuti per la lettura delle avvertenze
+  \normalfont
 preamble: |
   \small
   **Avvertenze**: *leggere con attenzione.* 
