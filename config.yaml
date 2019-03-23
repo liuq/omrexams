@@ -23,21 +23,25 @@ header: |
   \Large \theexam \newline
   \normalsize \thedate \newline
   \thematriculationno, \thestudent \newline
-  Durata 30 minuti + 2 minuti per la lettura delle avvertenze
+  Durata 30 minuti + 2 minuti per la lettura delle avvertenze  
   \normalfont
 preamble: |
   \small
-  **Avvertenze**: *leggere con attenzione.* 
-  Il compito va svolto su questo foglio che dovrà essere consegnato al termine della prova. 
-  Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti sulla parte destra del foglio come indicato nelle figure
-  seguenti. 
+  **Leggere con attenzione.**
+  Il compito va **svolto su questo foglio** che dovrà essere consegnato al termine della prova. 
+  Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti 
+  sulla parte destra del foglio come indicato nella prima figura. Tutte le altre indicazioni
+  sono considerate scorrette.
 
   ![](../images/omr_instructions.pdf)
 
-  **Non è consentita la correzione** delle risposte definitive: si consiglia di ricopiare le risposte sulla parte a lettura ottica  
-  *solamente* quando si è certi delle risposte stesse. Inoltre, **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
-  ciò darà luogo **immediatamente** e **incontestabilmente** all'annullamento della prova d'esame.
-  Ogni domanda può avere una o più risposte corrette: l'individuazione di tutte le risposte corrette 
-  attribuirà 2 punti, ogni risposta sbagliata -1 punto, 0 punti alla mancata risposta.
+  **Non è consentita la correzione** delle risposte definitive: si consiglia di ricopiare 
+  le risposte sulla parte a lettura ottica *solamente* quando si è certi delle risposte stesse. 
+  Inoltre, **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
+  ciò darà luogo **immediatamente** e **incontestabilmente** all'**annullamento** della prova d'esame.
+  Ogni domanda può avere **una o più risposte corrette**: l'individuazione di tutte le risposte corrette 
+  attribuirà **1 punto**, **0 punti** saranno attribuiti alla **mancata risposta** 
+  oppure alla **mancata individuazione di *tutte* le risposte corrette**.
+  Tenere a portata di mano un **documento di identità** per la convalida del compito da parte del docente.
   \normalsize  
 footer: # currently no footer
