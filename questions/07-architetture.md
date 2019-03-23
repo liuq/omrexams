@@ -139,7 +139,7 @@
 - [ ] accede alla memoria per recuperare i dati su cui operare
 - [ ] viene sempre incrementato ad ogni ciclo di clock
 
---- 
+---
 
 ## Il ciclo macchina (Fetch/Decode/Execute)
 
@@ -171,7 +171,7 @@
 - [ ] scrive i risultati in memoria
 - [ ] opera su valori decimali
 
---- 
+---
 
 ## Un'istruzione in linguaggio macchina
 

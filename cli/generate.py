@@ -19,7 +19,7 @@ from datetime import datetime as dt
 logger = logging.getLogger("omrexams")
 
 class Generate:
-    QUESTION_MARKER_RE = re.compile(r"\n-{3,}\n")
+    QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
     TITLE_RE = re.compile(r"#\s+.*")
     QUESTION_RE = re.compile(r"##\s*(.*)")
 
@@ -49,7 +49,8 @@ class Generate:
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
-            return list(filter(lambda q: not Generate.TITLE_RE.match(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: not Generate.TITLE_RE.match(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            return questions
     
     def process(self):
         if not self.test:
@@ -129,6 +130,7 @@ class Generate:
                         done = True
                         break 
             if not done:
+                click.secho("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student), fg='red', blink=True)
                 logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
             try:
                 self.results_mutex.acquire()
@@ -153,6 +155,7 @@ class Generate:
         # randomly select a given number of questions from each file
         # however, avoid to select more than once the questions with the same text
         questions = []
+
         for filename, topic in self.questions.items():
             candidate_questions = topic['content'][:]
             current_questions = []
@@ -195,13 +198,12 @@ class Generate:
                               student_no=student[0],
                               student_name=student[1], header=header, 
                               preamble=preamble,
-                              shuffle=self.config['exam'].get('shuffle_answers', False)) as renderer:
-            content = '---\n\n' + '---\n'.join(map(lambda q: q[2], questions))
+                              shuffle=self.config['exam'].get('shuffle_answers', True)) as renderer:
+            content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers'])), range(len(questions)))                        
             overall_answers = ''.join(code_answer(q['answers']) for q in renderer.questions)
             return document, list(tmp), overall_answers
-
     
     def append_exam(self, student, questions, answers):     
         content = pd.DataFrame({ "id": [student[0]], "fullname": [student[1]], "questions": [questions], "answers": [answers] }).set_index('id')

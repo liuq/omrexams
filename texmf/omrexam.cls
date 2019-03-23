@@ -53,7 +53,9 @@
 \usepackage{xifthen}
 \usepackage{calc}
 \usepackage[ocr-b]{ocr}
+\usepackage{lmodern}
 \usepackage[T1]{fontenc}
+\usepackage[export]{adjustbox}
 
 \pagestyle{empty}
 
@@ -148,6 +150,19 @@ rectangle/.default={0.2cm}}
 \AtBeginDocument{
 \phantom{\thestudent, \theexam}
 \setcounter{current@question@start}{1}
+\renewcommand{\questionshook}{%
+  \setlength{\leftmargin}{0pt}%
+  \setlength{\labelwidth}{-\labelsep}%
+  \setlength{\itemsep}{5pt}
+}
+\renewcommand{\choiceshook}{%
+%  \setlength{\leftmargin}{0pt}%
+  \setlength{\itemsep}{0pt}
+}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
+            \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
+\renewcommand{\choicelabel}{\circled{\thechoice}}
+\renewcommand{\questionlabel}{\bfseries\thequestion}
 }
 \AtBeginPage{
 \omr@markers
@@ -168,12 +183,20 @@ rectangle/.default={0.2cm}}
   \stepcounter{total@questions}
 }
 
+\newcommand\OMR@markbox[1]{%
+\begin{tikzpicture}[remember picture, overlay]
+  \coordinate (here) at (0, 0);
+  \draw (current page marginpar area.west |- here) + ($(0.0, {-0.5 * \OMR@Size})$) node [anchor=south west, align=left] {#1};
+\end{tikzpicture}%
+\ignorespaces%
+}
+
 \newcounter{omranswers}
 \newcommand{\omrchoices}[1]{%
-\marginpar{
+\OMR@markbox{
 \begin{checkomrchoiceswidth}{\marginparwidth}
 \raisebox{-0.5\baselineskip}{
-\begin{tikzpicture}[x=\OMR@Size, y=1\OMR@Size]
+\begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size]
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
 \node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
