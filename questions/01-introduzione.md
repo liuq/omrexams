@@ -144,3 +144,11 @@
 - [ ] consente duplicati perfetti dell'informazione rappresentata
 - [x] rappresenta l'informazione attraverso dei fenomeni fisici (ad es., meccanici, ottici, magnetici)
 - [x] non è direttamente elaborabile dai computer
+
+---
+
+## Quando è iniziata l'era dell'informatica?
+
+- [x] 1936, anno dei primi studi sulla computabilità di Turing
+- [ ] 1947, invenzione del transistor a semiconduttore  di Bardeen, Bartain e Shockley
+- [ ] 1890, invenzione della macchina tabulatrice

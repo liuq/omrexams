@@ -266,3 +266,27 @@
 - [ ] bitmap
 - [x] pixel
 - [ ] locazioni di memoria
+
+---
+
+## La *CPU* (*Central Processing Unit*)
+
+- [x] è costituita dalla *Control Unit* e dalla *ALU*
+- [ ] è connessa direttamente con le unità di Input/Ouput
+- [x] è connessa alla memoria attraverso un Bus
+
+---
+
+## Un'istruzione in *linguaggio macchina*
+
+- [x] è costituita da un codice dell'istruzione e dai suoi operandi
+- [x] può richiedere l'accesso a dati presenti in memoria
+- [ ] viene eseguita in più cicli macchina
+
+---
+
+## Le istruzioni in *linguaggio macchina* di *diramazione* e *salto*
+
+- [x] modificano esplicitamente il contenuto del *Program Counter*
+- [x] consentono di tornare indietro e di ripetere istruzioni già eseguite
+- [ ] leggono i dati dalla memoria saltando da un indirizzo all'altro

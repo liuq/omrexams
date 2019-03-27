@@ -8,7 +8,7 @@ import os
 import re
 import io
 import pandas as pd
-from shutil import copy2
+from shutil import copy2, rmtree
 import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
@@ -64,8 +64,9 @@ class Generate:
         for r in sorted(rules.keys()):
             self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }    
         logger.info('Creating and preparing tmp directory')
-        if not os.path.exists('tmp'):
-           os.mkdir('tmp')
+        if os.path.exists('tmp'):
+            rmtree('tmp')
+        os.mkdir('tmp')        
         click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
         copy2(os.path.join('texmf', 'omrexam.cls'), 'tmp')
         click.secho('Generating {} exams (this may take a while)'.format(len(self.students)), fg='red', underline=True)
@@ -103,6 +104,8 @@ class Generate:
             if pdf.getNumPages() % 2 == 1:
                 merger.append(blank)
         merger.write(self.output_pdf)
+        click.secho('Removing tmp', fg='yellow')
+        rmtree('tmp')
         click.secho('Finished', fg='red', underline=True)
 
     def worker_main(self):
@@ -152,7 +155,7 @@ class Generate:
                     if answers[i]:
                         current += chr(ord('A') + i)
                 return ",".join(current)  
-        logger.info("Creating exam".format(*student)) 
+        logger.info("Creating exam {} {}".format(*student)) 
         # randomly select a given number of questions from each file
         # however, avoid to select more than once the questions with the same text
         questions = []
@@ -197,7 +200,7 @@ class Generate:
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=self.exam_date, exam=self.config['exam'].get('name'), 
                               student_no=student[0],
-                              student_name=student[1], header=header, 
+                              student_name=student[1] if student[1] != 'Additional student' else '_' * 20, header=header, 
                               preamble=preamble,
                               shuffle=self.config['exam'].get('shuffle_answers', True)) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
