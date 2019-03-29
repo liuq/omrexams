@@ -20,7 +20,7 @@ class Sort:
     def __init__(self, scanned, sorted, doublecheck):
         self.scanned = scanned
         self.sorted = sorted
-        self.doublecheck = doublecheck.name
+        self.doublecheck = doublecheck.name if doublecheck is not None else None
 
     def sort(self, resolution):
         if not os.path.exists(self.sorted):
@@ -56,13 +56,7 @@ class Sort:
         click.secho('Finished', fg='red', underline=True)
 
     def worker_main(self):    
-        # TODO: outsource in a utils file (also in generate is used)
-        def code_answer(answers):
-                current = ""
-                for i in range(len(answers)):
-                    if answers[i]:
-                        current += chr(ord('A') + i)
-                return ",".join(current)      
+        # TODO: outsource in a utils file (also in generate is used)        
         doublecheck = None
         if self.doublecheck:
             doublecheck = pd.read_excel(self.doublecheck)
@@ -73,11 +67,14 @@ class Sort:
                 break
             try:
                 metadata = self.process(filename, page)
-                if doublecheck is not None:
-                    answers = ''.join(code_answer(a) for a in metadata['correct'])
-                    assert doublecheck.loc[int(metadata['student_id']), 'answer_list'] == answers
+                if doublecheck is not None:                    
+                    answers = ''.join(map(lambda a: ','.join(list(a)), metadata['correct']))
+                    if int(metadata['student_id']) not in doublecheck.index:
+                        raise RuntimeError("Student {} is not present in the excel file".format(metadata['student_id']))
+                    if doublecheck.loc[int(metadata['student_id']), 'answer_list'] != answers:
+                        raise RuntimeError("Expected correct answers for student {} do not match\ncoded: {}/{}\nexpected: {}".format(metadata['student_id'], answers, metadata['correct'], doublecheck.loc[int(metadata['student_id']), 'answer_list']))
             except Exception as e:
-                print(str(e))
+                print("\n", str(e))
             finally:
                 self.results_mutex.acquire()
                 self.results.value += 1

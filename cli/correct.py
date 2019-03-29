@@ -6,8 +6,6 @@ import re
 from wand.image import Image
 from wand.color import Color
 import io
-import warnings
-from tqdm import tqdm
 import math
 from skimage.feature import peak_local_max
 from . utils.crypt import vigenere_decrypt
