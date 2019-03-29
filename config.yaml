@@ -25,8 +25,8 @@ header: |
   \thematriculationno, \thestudent \newline
   Durata 30 minuti + 2 minuti per la lettura delle avvertenze  
   \normalfont
-preamble: |
-  \small
+preamble: | 
+  \small \sf
   **Leggere con attenzione.**
   Il compito va **svolto su questo foglio** che dovrà essere consegnato al termine della prova. 
   Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti 
@@ -43,5 +43,8 @@ preamble: |
   attribuirà **1 punto**, **0 punti** saranno attribuiti alla **mancata risposta** 
   oppure alla **mancata individuazione di *tutte* le risposte corrette**.
   Tenere a portata di mano un **documento di identità** per la convalida del compito da parte del docente.
-  \normalsize  
+  \normalsize 
 footer: # currently no footer
+choices:
+  circled: True
+  oneparchoice: False

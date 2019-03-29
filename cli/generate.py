@@ -19,6 +19,10 @@ from datetime import datetime as dt
 logger = logging.getLogger("omrexams")
 
 class Generate:
+    """
+    This class is responsible of creating the individual exams for a number of students 
+    or an overall testing document for checking the questions and their answers.
+    """
     QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
     TITLE_RE = re.compile(r"#\s+.*")
     QUESTION_RE = re.compile(r"##\s*(.*)")
@@ -28,6 +32,7 @@ class Generate:
         self.questions_path = questions
         self.output_pdf = output
         self.test = kwargs.get('test', False)
+        self.oneparchoices = kwargs.get('oneparchoices', False)
         # TODO: emit logging if these parameters are not set
         if not self.test:
             self.output_list_filename = kwargs.get('output_list')
@@ -78,6 +83,7 @@ class Generate:
             self.results_mutex = mp.RLock()
             self.task_done = mp.Condition(self.results_mutex)
             self.results = mp.Value('i', 0, lock=self.results_mutex)
+            self.error = mp.Value('b', False, lock=self.results_mutex)
             for i, student in enumerate(self.students):
                 self.tasks_queue.put((i, student))
             for _ in range(mp.cpu_count()):
@@ -104,8 +110,9 @@ class Generate:
             if pdf.getNumPages() % 2 == 1:
                 merger.append(blank)
         merger.write(self.output_pdf)
-        click.secho('Removing tmp', fg='yellow')
-        rmtree('tmp')
+        if not self.error.value:
+            click.secho('Removing tmp', fg='yellow')
+            rmtree('tmp')
         click.secho('Finished', fg='red', underline=True)
 
     def worker_main(self):
@@ -116,34 +123,39 @@ class Generate:
             logger.info("Started processing student {} {}".format(*student))
             random.seed(self.seed + student[0])
             done = False
-            for _ in range(5):
-                document, questions, answers = self.create_exam(student)
-                digits = math.ceil(math.log10(len(self.students)))
-                f = '{{:0{}d}}-{{}}-{{}}'.format(digits)
-                filename = os.path.join('tmp', f.format(task, student[0], student[1].replace(" ", "_")))
-                document.generate_pdf(filepath=filename, 
-                                      compiler='latexmk', 
-                                      compiler_args=['-xelatex'])
-                # get rid of the xdv file
-                os.remove("{}.xdv".format(filename))
-                # check the generated output in terms of pages 
-                # TODO: it should be done also in terms of the qrcode, number of questions, coherence of answers
-                with open("{}.pdf".format(filename), 'rb') as f:
-                    pdf_file = PdfFileReader(f)
-                    if pdf_file.getNumPages() <= self.config['exam'].get('page_limits', 2):
-                        done = True
-                        break 
-            if not done:
-                click.secho("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student), fg='red', blink=True)
-                logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
             try:
+                for _ in range(5):
+                    document, questions, answers = self.create_exam(student)
+                    digits = math.ceil(math.log10(len(self.students)))
+                    f = '{{:0{}d}}-{{}}-{{}}'.format(digits)
+                    filename = os.path.join('tmp', f.format(task, student[0], student[1].replace(" ", "_")))
+                    document.generate_pdf(filepath=filename, 
+                                        compiler='latexmk', 
+                                        compiler_args=['-xelatex'])
+                    # get rid of the xdv file, if any
+                    if os.path.exists("{}.xdv".format(filename)):
+                        os.remove("{}.xdv".format(filename))
+                    # check the generated output in terms of pages 
+                    # TODO: it should be done also in terms of the qrcode, number of questions, coherence of answers
+                    with open("{}.pdf".format(filename), 'rb') as f:
+                        pdf_file = PdfFileReader(f)
+                        if pdf_file.getNumPages() <= self.config['exam'].get('page_limits', 2):
+                            done = True
+                            break 
+                if not done:
+                    click.secho("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student), fg='red', blink=True)
+                    logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
+            except Exception as e:
+                print(e)
+                self.results_mutex.acquire()
+                self.error.value = True
+                self.results_mutex.release()
+            finally:
                 self.results_mutex.acquire()
                 self.results.value += 1
                 # append to list of exams
-                self.append_exam(student, questions, answers)
-            except Exception as e:
-                raise e
-            finally:
+                if done:
+                    self.append_exam(student, questions, answers)
                 self.task_done.notify()
                 self.results_mutex.release()
                 self.tasks_queue.task_done()
@@ -202,7 +214,10 @@ class Generate:
                               student_no=student[0],
                               student_name=student[1] if student[1] != 'Additional student' else '_' * 20, header=header, 
                               preamble=preamble,
-                              shuffle=self.config['exam'].get('shuffle_answers', True)) as renderer:
+                              shuffle=self.config['exam'].get('shuffle_answers', True),
+                              oneparchoices=self.oneparchoices,
+                              circled=self.config.get('choices', {}).get('circled', False),
+                              usesf=self.config.get('choices', {}).get('usesf', False)) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        

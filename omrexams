@@ -1,0 +1,189 @@
+#!/usr/bin/env python3
+
+import click
+from datetime import datetime as dt
+import dateparser as dp
+import yaml
+from cli import Generate, Sort, Correct
+import pandas as pd
+import xlrd
+import re
+import logging
+import click_log
+import sys
+import os
+
+logger = logging.getLogger("omrexams")
+click_log.basic_config(logger)
+
+class Datetime(click.ParamType):
+    '''
+    A datetime object parsed via dateparser.parse.
+    '''
+
+    name = 'date'
+
+    def convert(self, value, param, ctx):
+        if value is None:
+            return value
+
+        if isinstance(value, dt):
+            return value
+
+        if not isinstance(value, str):
+            self.fail('The provided date is not a string "{datetime_str}'.format(
+                datetime_str=value), param, ctx)
+
+        result = dp.parse(value)
+        if result is None:
+            self.fail('Could not parse datetime string "{datetime_str}"'.format(
+                datetime_str=value), param, ctx)
+        return result
+
+class OptionRequiredIf(click.Option):
+    """
+    Option is required if the context has `option` set to `value`
+    """
+
+    def __init__(self, *a, **k):
+        try:
+            option = k.pop('option')            
+            value  = k.pop('value')
+        except KeyError:
+            raise(KeyError("OptionRequiredIf needs the option and value "
+                           "keywords arguments"))
+
+        click.Option.__init__(self, *a, **k)
+        self._option = option
+        self._value = value
+
+    def full_process_value(self, ctx, value):
+        value = super(OptionRequiredIf, self).full_process_value(ctx, value)
+        if value is None and ctx.params[self._option] == self._value:
+            msg = 'Required if --{}={}'.format(self._option, self._value)
+            raise click.MissingParameter(ctx=ctx, param=self, message=msg)
+        return value
+
+DATETIME = Datetime()
+
+@click.group()
+@click.version_option(version='0.1')
+@click.option('--debug/--no-debug', default=False)
+@click.pass_context
+def cli(ctx, debug):
+    """Manage multiple-choice OMR exams.
+    """
+    if not debug:
+        logger.setLevel(logging.ERROR)
+    else:
+        logger.setLevel(logging.WARN)
+
+@cli.command()
+@click.option('--config', type=click.File(), required=False, default=lambda: open('config.yaml', 'r'))
+@click.option('--students', '-s', type=click.File(), required=False)
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
+@click.option('--serial', type=int, default=100)
+@click.option('--output', '-o', type=click.File(mode='wb'), required=False, 
+    help='The output pdf file. [default: \'exam-{date}.pdf\'')
+@click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
+    default=lambda: dt.now().strftime("%Y-%m-%d"))
+@click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
+@click.option('--additional', '-a', type=int, prompt="Generate a number of additional exams?", default=5)
+@click.option('--oneparchoices', '-opc', type=bool, required=False)
+@click.pass_context
+def generate(ctx, config, students, questions_dir, count, serial, output, date, seed, additional, oneparchoices):
+    """
+    Generates the set of exams for the given amount of students (either personalized or anonymous).
+    """
+    config = yaml.load(config, Loader=yaml.Loader)
+    if not output:
+        output = open('exam-{}.pdf'.format(date.strftime("%Y-%m-%d")), 'wb')
+
+    if oneparchoices is None:
+        oneparchoices = config.get('choices', {}).get('oneparchoices', False)
+
+    output_list = os.path.join(os.path.dirname(output.name), 
+        "".join(os.path.basename(output.name).split('.')[:-1]) + '.xlsx')
+    
+    if os.path.exists(output_list):
+        os.remove(output_list)
+
+    if students:
+        try:    
+            click.secho('Reading excel file', fg='red', underline=True)
+            skip = 0
+            # check whether the file needs to be partially skipped
+            if 'data_marker' in config['excel']:
+                marker = config['excel']['data_marker'].get('skip_until')
+                column = config['excel'].get('on_column', 0)
+                click.secho('Searching for data marker "{} in column {}"'.format(marker, column), fg='cyan')
+                wb = xlrd.open_workbook(students.name)
+                sheet = wb.sheet_by_index(0)
+                for i in range(sheet.nrows):
+                    row = sheet.row(i)
+                    cell = row[column]
+                    if re.match(marker, cell.value):
+                        skip = i + 1
+                        break
+            if skip > 0:
+                click.secho('Skipping {} rows'.format(skip), fg='cyan')
+            student_list = pd.read_excel(students.name, skiprows=skip)
+            fields = config['excel']['fields']
+            student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
+            student_list.reset_index(inplace=True)
+            student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
+            click.secho('Processing done, {} students found'.format(len(student_list)), fg='cyan')
+            if additional > 0:                
+                student_list += [(i + 100, "Additional student") for i in range(additional)]
+                click.secho('Added further {} students'.format(additional), fg='cyan')
+        except Exception as e:
+            logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students.name))
+            sys.exit(-1)
+        students.close()
+    else:
+        click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
+        click.secho('Starting serials from {}'.format(serial), fg='cyan')
+        student_list = list(map(lambda s: (s, ""), range(serial, serial + count)))
+    click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
+
+    generator = Generate(config, questions_dir, output, students=student_list, 
+                         output_list=output_list, date=date, seed=seed, oneparchoices=oneparchoices)
+    generator.process()
+
+@cli.command()
+@click.option('--config', type=click.File(), required=False, default=lambda: open('config.yaml', 'r'))
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('--output', '-o', type=click.File(mode='wb'), default=open('exam-test.pdf', 'wb'))
+@click.pass_context
+def test(ctx, config, questions_dir, output):
+    """
+    Generates a comprehensive pdf file with all the questions.
+    """
+    config = yaml.load(config, Loader=yaml.Loader)
+
+    generator = Generate(config, questions_dir, output, test=True)
+    generator.process()
+
+
+@cli.command()
+@click.argument('scanned_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('-sorted_dir', '-s', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the sorted exams')
+@click.option('doublecheck', '-d', type=click.File(mode='r'), required=False)
+@click.option('resolution', '-r', default=200)
+@click.pass_context
+def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
+    sorter = Sort(scanned_dir, sorted_dir, doublecheck)
+    sorter.sort(resolution)
+
+
+@cli.command()
+@click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.option('corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
+@click.pass_context
+def correct(ctx, sorted_dir, corrected_dir):
+    corrector = Correct(sorted_dir, corrected_dir)
+    corrector.correct(resolution)
+
+if __name__ == '__main__':
+    cli(obj={})

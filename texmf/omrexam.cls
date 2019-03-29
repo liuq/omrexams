@@ -19,7 +19,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 
-\ProvidesClass{example}[2019/02/07 OMR Exam Class v1.0] % Class information printed in the log during every compilation
+\ProvidesClass{omrexams}[2019/02/07 OMR Exam Class v1.0] % Class information printed in the log during every compilation
 
 \ProcessOptions\relax % Process class options
 
@@ -41,12 +41,13 @@
 \usetikzlibrary{decorations.markings}
 \usepackage{amsmath, amssymb}
 \usepackage[a4paper, 
-  top=4cm, 
-  headheight=2.5cm, 
+  top=3.75cm, 
+  headheight=2.25cm, 
   bottom=3.5cm, 
   left=1.5cm, 
   right=6.5cm,
-  marginparsep=0.5cm, marginparwidth=4.5cm]{geometry}
+  marginparsep=0.5cm, 
+  marginparwidth=4.5cm]{geometry}
 \usepackage{bophook}
 \usepackage[nolinks]{qrcode}
 \usepackage{environ}
@@ -146,6 +147,15 @@ rectangle/.default={0.2cm}}
   }{}
 } 
 
+\DeclareOption{circled}{
+  \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
+            \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
+  \renewcommand{\choicelabel}{\circled{\thechoice}}
+}
+\ProcessOptions\relax
+
+\renewcommand{\questionlabel}{\bfseries\thequestion)}
+
 % Check that \student and \exam have been set
 \AtBeginDocument{
 \phantom{\thestudent, \theexam}
@@ -159,10 +169,6 @@ rectangle/.default={0.2cm}}
 %  \setlength{\leftmargin}{0pt}%
   \setlength{\itemsep}{0pt}
 }
-\newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
-            \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
-\renewcommand{\choicelabel}{\circled{\thechoice}}
-\renewcommand{\questionlabel}{\sf\bfseries\thequestion)}
 \setlength{\parindent}{0pt}
 }
 \AtBeginPage{
