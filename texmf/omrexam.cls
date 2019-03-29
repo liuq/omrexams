@@ -150,7 +150,7 @@ rectangle/.default={0.2cm}}
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
 \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
 \renewcommand{\questionlabel}{\bfseries\thequestion)}
-\renewcommand{\choicelabel}{\bfseries\thechoice}
+\renewcommand{\choicelabel}{\textbf{\thechoice}}
 
 \DeclareOption{circled}{
   \renewcommand{\choicelabel}{\circled{\thechoice}}
