@@ -147,14 +147,15 @@ rectangle/.default={0.2cm}}
   }{}
 } 
 
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
+\node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
+\renewcommand{\questionlabel}{\bfseries\thequestion)}
+\renewcommand{\choicelabel}{\bfseries\thechoice}
+
 \DeclareOption{circled}{
-  \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
-            \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
   \renewcommand{\choicelabel}{\circled{\thechoice}}
 }
 \ProcessOptions\relax
-
-\renewcommand{\questionlabel}{\bfseries\thequestion)}
 
 % Check that \student and \exam have been set
 \AtBeginDocument{
