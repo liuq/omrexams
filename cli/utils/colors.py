@@ -1,11 +1,15 @@
 def alpha(color, alpha):
     return (*color[:3], 255 * alpha)
 
-RED = (255, 0, 0, 255)
+# Colors are usually coded in BGR within openCV
+
+RED = (0, 0, 255, 255)
 GREEN = (0, 255, 0, 255)
-BLUE = (0, 0, 255, 255)
+BLUE = (255, 0, 0, 255)
 MAGENTA = (255, 0, 255, 255)
-CYAN = (0, 255, 255, 255)
-YELLOW = (255, 255, 0, 255)
-ORANGE = (255, 102, 0, 255)
+CYAN = (255, 255, 0, 255)
+YELLOW = (0, 255, 255, 255)
+ORANGE = (0, 102, 255, 255)
 GRAY = (127, 127, 127, 255)
+WHITE = (255, 255, 255, 255)
+BLACK = (0, 0, 0, 255)

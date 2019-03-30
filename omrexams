@@ -179,11 +179,12 @@ def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
 
 @cli.command()
 @click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
+@click.option('-corrected_dir', '-s', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
+@click.option('doublecheck', '-d', type=click.File(mode='r'), required=False)
 @click.pass_context
-def correct(ctx, sorted_dir, corrected_dir):
-    corrector = Correct(sorted_dir, corrected_dir)
-    corrector.correct(resolution)
+def correct(ctx, sorted_dir, corrected_dir, doublecheck):
+    corrector = Correct(sorted_dir, corrected_dir, doublecheck)
+    corrector.correct()
 
 if __name__ == '__main__':
     cli(obj={})

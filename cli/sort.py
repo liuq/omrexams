@@ -56,7 +56,6 @@ class Sort:
         click.secho('Finished', fg='red', underline=True)
 
     def worker_main(self):    
-        # TODO: outsource in a utils file (also in generate is used)        
         doublecheck = None
         if self.doublecheck:
             doublecheck = pd.read_excel(self.doublecheck)

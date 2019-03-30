@@ -23,12 +23,25 @@ def decode(image, highlight=False, offset=5):
     tl = np.array(qrcodes[0].rect[:2])
     br = np.array(qrcodes[1].rect[:2]) + np.array(qrcodes[1].rect[2:])
     # extract information from the qrcodes
-    return { 
+    metadata = { 
         **decode_top_left(str(qrcodes[0].data)),
-        **decode_bottom_right(str(qrcodes[1].data), np.linalg.norm((tl - br)**2))
+        **decode_bottom_right(str(qrcodes[1].data)),
+        'top_left': tl,
+        'bottom_right': br
     }
+    s = image[tl[1]:br[1], tl[0]:br[0]].shape
+    scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
+    metadata['scaling'] = scaling
+    if metadata['range'][0] is not None and metadata['range'][1] is not None:
+        # FIXME: currently fixing a bug in generation, it has to be reset after        
+        # metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
+        if metadata['page'] == 1:
+            metadata['page_correction'] = metadata['correct'][:metadata['range'][1] - 1]
+        else:
+            metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 2:]
+    return metadata
 
-def decode_bottom_right(data, image_diag):
+def decode_bottom_right(data):
         m = re.search(r'\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?', data)
         if not m:
             raise RuntimeError("Bottom-right qrcode encoded information do not comply with the expected format:\nfound {}".format(data))
@@ -36,8 +49,7 @@ def decode_bottom_right(data, image_diag):
         p0, p1 = np.array([m.group('x0'), m.group('y0')], dtype=int), np.array([m.group('x1'), m.group('y1')], dtype=int)
         width = int(m.group('width'))
         height = int(m.group('height'))
-        diag = math.sqrt(width * width + height * height)
-        size = float(m.group('size')) * image_diag / diag
+        size = float(m.group('size'))
         
         return { 'p0': p0, 
                  'p1': p1, 
