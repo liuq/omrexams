@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import re
 import pandas as pd
+import math
 
 class Sort:
     """
@@ -20,6 +21,7 @@ class Sort:
     def __init__(self, scanned, sorted, doublecheck):
         self.scanned = scanned
         self.sorted = sorted
+        self.offset = 10 # cropping offset, TODO: become a parameter
         self.doublecheck = doublecheck.name if doublecheck is not None else None
 
     def sort(self, resolution):
@@ -96,9 +98,27 @@ class Sort:
             #_retval, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)            
             try:
                 metadata = qrdecoder.decode(image)
-                with img.convert('png') as converted:
-                    with open(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), 'wb') as f:                
-                        converted.save(f)
+                # perform a rotation and image cropping to the qrcodes
+                width, height = metadata['bottom_right'] - metadata['top_left']
+                detected_diag_angle = math.atan(height / width) * 360 / (2 * math.pi) 
+                expected_diag_angle = math.atan(metadata['height'] / metadata['width']) * 360 / (2 * math.pi)
+                rows, cols = image.shape[:2]
+                rotation = cv2.getRotationMatrix2D(tuple(metadata['top_left']), 
+                    detected_diag_angle - expected_diag_angle, 1.0)
+                image = cv2.warpAffine(image, rotation, (cols, rows))
+                metadata = qrdecoder.decode(image) 
+                # correct both the perspective and the rotation of the image before saving it
+                # search for the squared markers, restricting the area where they might be found
+                x0 = metadata['top_left'][0] - self.offset
+                x1 = metadata['bottom_right'][0] + self.offset
+                y0 = metadata['top_left'][1] - self.offset
+                y1 = metadata['bottom_right'][1] + self.offset
+                image = image[y0:y1, x0:x1]
+                # also correct the perspective/rotation of the image before saving it
+                #with img.convert('png') as converted:
+                #    with open(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), 'wb') as f:                
+                #        converted.save(f)
+                cv2.imwrite(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), image)
                 return metadata
             except Exception as e:
                 raise RuntimeError("Error processing file {}, page {} \n{}".format(filename, page, str(e)))        

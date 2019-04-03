@@ -24,9 +24,10 @@ class Correct:
     This class will operate on a directory with a set of pages and perform the correction 
     according to the information stored in the qrcodes
     """
-    def __init__(self, sorted, corrected, doublecheck):
+    def __init__(self, sorted, corrected, output_filename, doublecheck):
         self.sorted = sorted
         self.corrected = corrected
+        self.output_filename = output_filename
         self.doublecheck = doublecheck.name if doublecheck is not None else None
 
     def correct(self):
@@ -75,14 +76,11 @@ class Correct:
             if filename is None:
                 break
             try:
-                self.process(filename)
-                # metadata = self.process(filename)
-                # if doublecheck is not None:                    
-                #     answers = ''.join(map(lambda a: ','.join(list(a)), metadata['page_correction']))
-                #     if int(metadata['student_id']) not in doublecheck.index:
-                #         raise RuntimeError("Student {} is not present in the excel file".format(metadata['student_id']))
-                #     if doublecheck.loc[int(metadata['student_id']), 'answer_list'] != answers:
-                #         raise RuntimeError("Expected correct answers for student {} do not match\ncoded: {}/{}\nexpected: {}".format(metadata['student_id'], answers, metadata['page_correction'], doublecheck.loc[int(metadata['student_id']), 'answer_list']))
+                detected_answers, correct_answers = self.process(filename)
+                student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
+                self.results_mutex.acquire()
+                self.append_correction(student, page, detected_answers, correct_answers)
+                self.results_mutex.release()
             except Exception as e:
                 click.secho("\nIn file {}\n".format(filename) + str(e), fg="yellow")
             finally:
@@ -125,9 +123,10 @@ class Correct:
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Laplacian')
         except Exception as e:
             click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
-        majority, correct = self.majority_correction(filename, correction)
+        majority, correct = self.majority_correction(filename, correction)        
         self.write(filename, image)
-
+        return majority, correct
+        
     def majority_correction(self, filename, correction):
         correction = list(filter(lambda c: c is not None, correction))
         correct_answers = list(map(lambda c: c[1], correction[0]))
@@ -150,8 +149,6 @@ class Correct:
             majority.append(set(tmp))
         return majority, correct_answers
 
-
-
     @staticmethod
     def add_superimposed(image, mask, roi, p0, p1, method):
         superimposed = cv2.bitwise_and(mask, roi)
@@ -164,6 +161,18 @@ class Correct:
     def write(self, filename, image):
         filename = os.path.join(self.corrected, os.path.basename(filename))
         cv2.imwrite(filename, image)
+
+    def append_correction(self, student, page, detected_answers, correct_answers):     
+        content = pd.DataFrame({ "id": [student], 
+                "page": [page], 
+                "detected_answers": [detected_answers],
+                "correct_answers": [correct_answers]
+            }).set_index('id')
+        if not os.path.exists(self.output_filename):
+            old_content = pd.DataFrame()
+        else:
+            old_content = pd.read_excel(self.output_filename).set_index('id')
+        pd.concat([old_content, content]).to_excel(self.output_filename)
 
     @staticmethod
     def circle_filled_area(binary, c):

@@ -27,7 +27,9 @@ def decode(image, highlight=False, offset=5):
         **decode_top_left(str(qrcodes[0].data)),
         **decode_bottom_right(str(qrcodes[1].data)),
         'top_left': tl,
-        'bottom_right': br
+        'bottom_right': br,
+        'top_left_rect': qrcodes[0].polygon,
+        'bottom_right_rect': qrcodes[1].polygon
     }
     s = image[tl[1]:br[1], tl[0]:br[0]].shape
     scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
