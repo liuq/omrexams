@@ -181,9 +181,10 @@ def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
 @click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('-output', '-o', type=click.File(mode='wb'), required=True)
 @click.option('-corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
-@click.option('doublecheck', '-d', type=click.File(mode='r'), required=False)
+@click.option('-doublecheck', '-d', type=click.File(mode='r'), required=False)
+@click.option('-compression', '-z', type=int, default=50)
 @click.pass_context
-def correct(ctx, sorted_dir, output, corrected_dir, doublecheck):  
+def correct(ctx, sorted_dir, output, corrected_dir, doublecheck, compression):  
     output_filename = output.name  
     output.close()
     if os.path.exists(output_filename):
@@ -192,7 +193,7 @@ def correct(ctx, sorted_dir, output, corrected_dir, doublecheck):
         else:
             click.secho("Nothing done", fg='red')
             return
-    corrector = Correct(sorted_dir, corrected_dir, output_filename, doublecheck)
+    corrector = Correct(sorted_dir, corrected_dir, output_filename, doublecheck, compression)
     corrector.correct()
 
 if __name__ == '__main__':

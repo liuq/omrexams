@@ -25,11 +25,12 @@ class Correct:
     This class will operate on a directory with a set of pages and perform the correction 
     according to the information stored in the qrcodes
     """
-    def __init__(self, sorted, corrected, output_filename, doublecheck):
+    def __init__(self, sorted, corrected, output_filename, doublecheck, compression):
         self.sorted = sorted
         self.corrected = corrected
         self.output_filename = output_filename
         self.doublecheck = doublecheck.name if doublecheck is not None else None
+        self.compression = compression
         self.resolution = 150
 
     def correct(self):
@@ -70,13 +71,13 @@ class Correct:
                 watch.add(os.path.basename(self.watch_queue.get()))
             delete_default = False
             for filename in watch:
-                filename = os.path.join(self.corrected, ".".join(filename.split(".")[:-1]) + ".jpeg")
+                filename = os.path.join(self.corrected, ".".join(filename.split(".")[:-1]) + ".jpg")
                 click.secho('\t{}'.format(filename), fg='yellow')   
         collected = ".".join(self.output_filename.split(".")[:-1]) + ".pdf"
         with open(collected, "wb") as f:
-            f.write(img2pdf.convert(sorted(glob.glob(os.path.join(self.corrected, "*.jpeg")))))
+            f.write(img2pdf.convert(sorted(glob.glob(os.path.join(self.corrected, "*.jpg")))))
         if (click.prompt("Remove temporary image files?", type=bool, default='y' if delete_default else 'n')):
-            for filename in sorted(glob.glob(os.path.join(self.corrected, "*.jpeg"))):
+            for filename in sorted(glob.glob(os.path.join(self.corrected, "*.jpg"))):
                 os.remove(filename)
             os.rmdir(self.corrected)
         
@@ -110,7 +111,7 @@ class Correct:
         metadata = qrdecoder.decode(image, True)
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
-        p0 = np.dot(metadata['p0'] - np.array([0, metadata['size']]), metadata['scaling']).astype(int) + tl
+        p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl
         p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(p0 - offset), tuple(p1 + offset), BLUE, 3)        
@@ -179,10 +180,10 @@ class Correct:
     
     def write(self, filename, image):
         filename = os.path.join(self.corrected, os.path.basename(filename))
-        filename = ".".join(filename.split(".")[:-1]) + ".jpeg"
+        filename = ".".join(filename.split(".")[:-1]) + ".jpg"
         # rescale to 72 dpi to save space
         image = cv2.resize(image, None, fx=72.0 / self.resolution, fy=72.0 / self.resolution, interpolation=cv2.INTER_AREA)
-        cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, 30])
+        cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, self.compression])
 
 
     def append_correction(self, student, page, detected_answers, correct_answers):     
