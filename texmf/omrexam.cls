@@ -86,8 +86,6 @@ rectangle/.default={0.2cm}}
 \newlength{\OMR@BorderWidth}
 \setlength{\OMR@BorderWidth}{1pt}
 
-\newcounter{total@questions}
-\newcounter{current@question@start}
 \newcommand*{\ExtractCoordinates}[3]{\path (#1); \pgfgetlastxy{#2}{#3}}%
 \newcommand*{\XDistance}[2]{\path (#1); \pgfgetlastxy{\XCoordA}{\YCoord}; \path (#2); \pgfgetlastxy{\XCoordB}{\YCoord}; \pgfmathsetmacro{\DistanceX}{\XCoordB - \XCoordA}}%
 \newcommand*{\YDistance}[2]{\path (#1); \pgfgetlastxy{\XCoord}{\YCoordA}; \path (#2); \pgfgetlastxy{\XCoord}{\YCoordB}; \pgfmathsetmacro{\DistanceY}{\XCoordB - \XCoordA}}%
@@ -168,8 +166,6 @@ rectangle/.default={0.2cm}}
 % Check that \student and \exam have been set
 \AtBeginDocument{
 \phantom{\thestudent, \theexam}
-\setcounter{current@question@start}{1}
-\setcounter{total@questions}{1}
 \renewcommand{\questionshook}{%
   \setlength{\leftmargin}{0pt}%
   \setlength{\labelwidth}{-\labelsep}%
@@ -181,10 +177,7 @@ rectangle/.default={0.2cm}}
 }
 \setlength{\parindent}{0pt}
 }
-\AtBeginPage{
-\omr@markers
-\setcounter{current@question@start}{\numexpr\thetotal@questions\relax}
-}
+\AtBeginPage{\omr@markers}
 %
 \newlength\measure@omrtikzw
 \newlength\measure@ormtikzwdifference
@@ -197,7 +190,6 @@ rectangle/.default={0.2cm}}
     \setlength{\measure@ormtikzwdifference}{\measure@omrtikzw - #1}
     \errmessage{The set of OMR choices is larger than the allowed space by \the\measure@ormtikzwdifference, you should enlarge the margin par width to fit it}
   }{\BODY}  
-  \stepcounter{total@questions}
 }
 
 \newcommand\OMR@markbox[1]{%
