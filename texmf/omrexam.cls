@@ -133,24 +133,32 @@ rectangle/.default={0.2cm}}
         node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
+
+    % In order to determine which are the questions in the current page
+    \def\OMR@questions@pagelist{}
+    \foreach \question in {1, ..., \exam@numquestions} {%
+      \ifthenelse{\cnttest{\PgInfo@get{question@\question}}{=}{\thepage}}{
+        \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
+      }{}
+    };
+    \pgfmathsetmacro\OMR@questions@currentpage@start{int(min(\OMR@questions@pagelist))}
+    \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(\OMR@questions@pagelist))}
     \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
-        \ifthenelse{\cnttest{\thecurrent@question@start}{<=}{\thetotal@questions}}{%
-          \qrcode[height=2cm]{\OMR@Sizes,\thepage,\thecurrent@question@start-\thetotal@questions}
-        }{\qrcode[height=2cm]{\OMR@Sizes,\thepage}}
+        \qrcode[height=2cm]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
         };
     \draw
         (current page.south west)
-        node[above right, rectangle, draw, fill=black, xshift=1cm, yshift=1cm, minimum size=0.5*\OMR@Size] {~};    
+        node[above right, rectangle, draw, fill=black, xshift=1cm, yshift=1cm, minimum size=0.5*\OMR@Size] {~};
   \end{tikzpicture}  
   }{}
 } 
 
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
 \node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
-\renewcommand{\questionlabel}{\bfseries\thequestion)}
-\renewcommand{\choicelabel}{\textbf{\thechoice}}
+\renewcommand{\questionlabel}{\textbf{{\thequestion}.}}
+\renewcommand{\choicelabel}{\textbf{\sffamily\thechoice})}
 
 \DeclareOption{circled}{
   \renewcommand{\choicelabel}{\circled{\thechoice}}
@@ -161,6 +169,7 @@ rectangle/.default={0.2cm}}
 \AtBeginDocument{
 \phantom{\thestudent, \theexam}
 \setcounter{current@question@start}{1}
+\setcounter{total@questions}{1}
 \renewcommand{\questionshook}{%
   \setlength{\leftmargin}{0pt}%
   \setlength{\labelwidth}{-\labelsep}%
@@ -174,7 +183,7 @@ rectangle/.default={0.2cm}}
 }
 \AtBeginPage{
 \omr@markers
-\setcounter{current@question@start}{\numexpr\thetotal@questions + 1\relax}
+\setcounter{current@question@start}{\numexpr\thetotal@questions\relax}
 }
 %
 \newlength\measure@omrtikzw
@@ -207,11 +216,11 @@ rectangle/.default={0.2cm}}
 \begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size]
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
-\node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
-%\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
-%\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
-\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
-\node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
+  \node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
+  %\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
+  %\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
+  \node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
+  \node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
 };
 \end{tikzpicture}
 }

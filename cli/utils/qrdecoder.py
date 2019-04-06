@@ -5,6 +5,8 @@ from . crypt import vigenere_decrypt
 import math
 from . colors import *
 from pyzbar import pyzbar
+from . image_utils import order_points
+
 
 def decode(image, highlight=False, offset=5):
     qrcodes = pyzbar.decode(image)
@@ -28,8 +30,8 @@ def decode(image, highlight=False, offset=5):
         **decode_bottom_right(str(qrcodes[1].data)),
         'top_left': tl,
         'bottom_right': br,
-        'top_left_rect': qrcodes[0].polygon,
-        'bottom_right_rect': qrcodes[1].polygon
+        'top_left_rect': order_points(np.array(list(map(lambda p: np.array([p.x, p.y]), qrcodes[0].polygon)))),
+        'bottom_right_rect': order_points(np.array(list(map(lambda p: np.array([p.x, p.y]), qrcodes[1].polygon))))
     }
     s = image[tl[1]:br[1], tl[0]:br[0]].shape
     scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])

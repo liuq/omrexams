@@ -218,7 +218,7 @@ class QuestionRenderer(LaTeXRenderer):
                     current += chr(ord('A') + i)
             solutions.append(current)
         # encryption of the solution is the default option
-        if self.parameters.get('encrypt', False):
+        if self.parameters.get('encrypt', True):
             solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
         else:
             solutions = ','.join(solutions)        

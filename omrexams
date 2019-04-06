@@ -111,13 +111,13 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
 
     if students:
         try:    
-            click.secho('🗒 Reading excel file', fg='red', underline=True)
+            click.secho('Reading excel file', fg='red', underline=True)
             skip = 0
             # check whether the file needs to be partially skipped
             if 'data_marker' in config['excel']:
                 marker = config['excel']['data_marker'].get('skip_until')
                 column = config['excel'].get('on_column', 0)
-                click.secho('📑 Searching for data marker "{} in column {}"'.format(marker, column), fg='cyan')
+                click.secho('Searching for data marker "{} in column {}"'.format(marker, column), fg='cyan')
                 wb = xlrd.open_workbook(students.name)
                 sheet = wb.sheet_by_index(0)
                 for i in range(sheet.nrows):
@@ -127,23 +127,23 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
                         skip = i + 1
                         break
             if skip > 0:
-                click.secho('📑 Skipping {} rows'.format(skip), fg='cyan')
+                click.secho('Skipping {} rows'.format(skip), fg='cyan')
             student_list = pd.read_excel(students.name, skiprows=skip)
             fields = config['excel']['fields']
             student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
             student_list.reset_index(inplace=True)
             student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
-            click.secho('👩‍🎓 Processing done, {} students found'.format(len(student_list)), fg='cyan')
+            click.secho('Processing done, {} students found'.format(len(student_list)), fg='cyan')
             if additional > 0:                
                 student_list += [(i + 100, "Additional student") for i in range(additional)]
-                click.secho('👨‍🎓 Added further {} students'.format(additional), fg='cyan')
+                click.secho('Added further {} students'.format(additional), fg='cyan')
         except Exception as e:
             logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students.name))
             sys.exit(-1)
         students.close()
     else:
-        click.secho('🤖 Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
-        click.secho('🕑 Starting serials from {}'.format(serial), fg='cyan')
+        click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
+        click.secho('Starting serials from {}'.format(serial), fg='cyan')
         student_list = list(map(lambda s: (s, ""), range(serial, serial + count)))
     click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
@@ -179,11 +179,11 @@ def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
 
 @cli.command()
 @click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('-corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
 @click.option('-output', '-o', type=click.File(mode='wb'), required=True)
+@click.option('-corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
 @click.option('doublecheck', '-d', type=click.File(mode='r'), required=False)
 @click.pass_context
-def correct(ctx, sorted_dir, corrected_dir, output, doublecheck):  
+def correct(ctx, sorted_dir, output, corrected_dir, doublecheck):  
     output_filename = output.name  
     output.close()
     corrector = Correct(sorted_dir, corrected_dir, output_filename, doublecheck)
