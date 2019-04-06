@@ -16,6 +16,7 @@ from . utils.colors import *
 import logging
 from collections import Counter
 from itertools import combinations
+import img2pdf
 
 logger = logging.getLogger("omrexams")
 
@@ -29,6 +30,7 @@ class Correct:
         self.corrected = corrected
         self.output_filename = output_filename
         self.doublecheck = doublecheck.name if doublecheck is not None else None
+        self.resolution = 150
 
     def correct(self):
         if not os.path.exists(self.corrected):
@@ -44,7 +46,7 @@ class Correct:
             self.tasks_queue.put(f)
             files += 1
         click.secho("Correcting {} pages".format(files), fg='red', underline=True)
-        with click.progressbar(length=files, label='Correcting scanned exams',
+        with click.progressbar(length=files, label='Correcting',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
@@ -59,13 +61,25 @@ class Correct:
                 bar.update(self.results.value - prev)
                 prev = self.results.value
                 self.results_mutex.release()
-        click.secho('Finished', fg='red', underline=True)
+        click.secho('Correction finished', fg='red', underline=True)
+        delete_default = True
+        watch = set()
         if not self.watch_queue.empty():
-            click.secho('Some file deserve attention', fg='red', blink=True)
+            click.secho('Some exams deserve attention because of highly incoherent detection:', fg='red', blink=True)
             while not self.watch_queue.empty():
-                f = self.watch_queue.get()
-                click.secho('{}'.format(os.path.basename(f)), fg='yellow')
-
+                watch.add(os.path.basename(self.watch_queue.get()))
+            delete_default = False
+            for filename in watch:
+                filename = os.path.join(self.corrected, ".".join(filename.split(".")[:-1]) + ".jpeg")
+                click.secho('\t{}'.format(filename), fg='yellow')   
+        collected = ".".join(self.output_filename.split(".")[:-1]) + ".pdf"
+        with open(collected, "wb") as f:
+            f.write(img2pdf.convert(sorted(glob.glob(os.path.join(self.corrected, "*.jpeg")))))
+        if (click.prompt("Remove temporary image files?", type=bool, default='y' if delete_default else 'n')):
+            for filename in sorted(glob.glob(os.path.join(self.corrected, "*.jpeg"))):
+                os.remove(filename)
+            os.rmdir(self.corrected)
+        
     def worker_main(self):    
         doublecheck = None
         if self.doublecheck:
@@ -123,7 +137,12 @@ class Correct:
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Laplacian')
         except Exception as e:
             click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
-        majority, correct = self.majority_correction(filename, correction)        
+        majority, correct = self.majority_correction(filename, correction)  
+        given_text = "Given answers: " + " ".join(",".join(a) for a in majority)
+        correct_text = "Correct answers: " + " ".join(",".join(a) for a in correct)
+        (width, height), _ =  cv2.getTextSize(given_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 3)
+        cv2.putText(image, given_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - 4 * height), cv2.FONT_HERSHEY_SIMPLEX, 1, MAGENTA, 3)
+        cv2.putText(image, correct_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - height), cv2.FONT_HERSHEY_SIMPLEX, 1, BLUE, 3)
         self.write(filename, image)
         return majority, correct
         
@@ -145,8 +164,8 @@ class Correct:
                 if counter[a] > len(correction) / 2:
                     tmp.append(a)
             if all(c1[i] != c2[i] for c1, c2 in combinations(correction, 2)):
-                self.watch_queue.put(filename)        
-            majority.append(set(tmp))
+                self.watch_queue.put(filename)
+            majority.append(set(tmp))                        
         return majority, correct_answers
 
     @staticmethod
@@ -160,7 +179,11 @@ class Correct:
     
     def write(self, filename, image):
         filename = os.path.join(self.corrected, os.path.basename(filename))
-        cv2.imwrite(filename, image)
+        filename = ".".join(filename.split(".")[:-1]) + ".jpeg"
+        # rescale to 72 dpi to save space
+        image = cv2.resize(image, None, fx=72.0 / self.resolution, fy=72.0 / self.resolution, interpolation=cv2.INTER_AREA)
+        cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, 30])
+
 
     def append_correction(self, student, page, detected_answers, correct_answers):     
         content = pd.DataFrame({ "id": [student], 

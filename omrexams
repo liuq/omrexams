@@ -186,6 +186,12 @@ def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
 def correct(ctx, sorted_dir, output, corrected_dir, doublecheck):  
     output_filename = output.name  
     output.close()
+    if os.path.exists(output_filename):
+        if click.prompt("Output {} exists, overwrite it?".format(output_filename), type=bool, default='y'):
+            os.remove(output_filename)
+        else:
+            click.secho("Nothing done", fg='red')
+            return
     corrector = Correct(sorted_dir, corrected_dir, output_filename, doublecheck)
     corrector.correct()
 

@@ -112,14 +112,15 @@ rectangle/.default={0.2cm}}
     % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in pt
     \pgfmathtruncatemacro{\QR@Width}{\CroppedPage@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord};
     \pgfmathtruncatemacro{\QR@Height}{\CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord};
+
+    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size}; 
      
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
     \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord)};
-    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord)};
+    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord + \OMR@Diameter)};
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
-    \pgfmathsetmacro{\OMR@Diameter}{\OMR@Size}; 
 
     % All distances/sizes are expressed in points
     \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
@@ -133,19 +134,21 @@ rectangle/.default={0.2cm}}
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
 
     % In order to determine which are the questions in the current page
-    \def\OMR@questions@pagelist{}
-    \foreach \question in {1, ..., \exam@numquestions} {%
-      \ifthenelse{\cnttest{\PgInfo@get{question@\question}}{=}{\thepage}}{
-        \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
-      }{}
-    };
-    \pgfmathsetmacro\OMR@questions@currentpage@start{int(min(\OMR@questions@pagelist))}
-    \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(\OMR@questions@pagelist))}
-    \draw 
+    \ifthenelse{\isundefined{\exam@numquestions}}{}{%
+      \def\OMR@questions@pagelist{}
+      \foreach \question in {1, ..., \exam@numquestions} {%
+        \ifthenelse{\cnttest{\PgInfo@get{question@\question}}{=}{\thepage}}{
+          \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
+        }{}
+      };
+      \pgfmathsetmacro\OMR@questions@currentpage@start{int(min(\OMR@questions@pagelist))}
+      \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(\OMR@questions@pagelist))}
+      \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
         \qrcode[height=2cm]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
         };
+    }
     \draw
         (current page.south west)
         node[above right, rectangle, draw, fill=black, xshift=1cm, yshift=1cm, minimum size=0.5*\OMR@Size] {~};
