@@ -37,12 +37,12 @@ def decode(image, highlight=False, offset=5):
     scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
     metadata['scaling'] = scaling
     if metadata['range'][0] is not None and metadata['range'][1] is not None:
-        # FIXME: currently fixing a bug in generation, it has to be reset after        
-        # metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
-        if metadata['page'] == 1:
-            metadata['page_correction'] = metadata['correct'][:metadata['range'][1] - 1]
-        else:
-            metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 2:]
+        metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
+        # TODO: remove, it was fixing a bug in omr generation
+        # if metadata['page'] == 1:
+        #     metadata['page_correction'] = metadata['correct'][:metadata['range'][1] - 1]
+        # else:
+        #     metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 2:]
     return metadata
 
 def decode_bottom_right(data):

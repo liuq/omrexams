@@ -124,6 +124,7 @@ class Correct:
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Contour')
         except Exception as e:
             click.secho("\nFailed Contour Detection for {}".format(filename), fg="yellow")
+            click.echo(str(e))
         # blob detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)
@@ -131,6 +132,7 @@ class Correct:
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
         except Exception as e:
             click.secho("\nFailed Blob for {}".format(filename), fg="yellow")
+            click.echo(str(e))
         # laplacian detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_laplacian(roi, metadata)
@@ -138,6 +140,7 @@ class Correct:
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Laplacian')
         except Exception as e:
             click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
+            click.echo(str(e))
         majority, correct = self.majority_correction(filename, correction)  
         given_text = "Given answers: " + " ".join(",".join(a) for a in majority)
         correct_text = "Correct answers: " + " ".join(",".join(a) for a in correct)
