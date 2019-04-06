@@ -117,7 +117,7 @@ rectangle/.default={0.2cm}}
      
     \ExtractCoordinates{current page marginpar area.north west}{\OMR@TopLeft@XCoord}{\OMR@TopLeft@YCoord};
     \pgfmathtruncatemacro{\OMR@TopLeft@XCoord}{(\OMR@TopLeft@XCoord - \CroppedPage@TopLeft@XCoord)};
-    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord + \OMR@Diameter)};
+    \pgfmathtruncatemacro{\OMR@TopLeft@YCoord}{-(\OMR@TopLeft@YCoord - \CroppedPage@TopLeft@YCoord + 1.5 * \OMR@Diameter)};
     \ExtractCoordinates{current page marginpar area.south east}{\OMR@BottomRight@XCoord}{\OMR@BottomRight@YCoord};
     \pgfmathtruncatemacro{\OMR@BottomRight@XCoord}{(\OMR@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord)};
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
