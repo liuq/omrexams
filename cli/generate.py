@@ -25,7 +25,7 @@ class Generate:
     """
     QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
     TITLE_RE = re.compile(r"#\s+.*")
-    QUESTION_RE = re.compile(r"##\s*(.*)")
+    QUESTION_RE = re.compile(r"##\s*(.+?)(?={#|\n)({#[\w-]+})?")
 
     def __init__(self, config, questions, output, **kwargs):
         self.config = config
@@ -177,21 +177,23 @@ class Generate:
             current_questions = []
             while candidate_questions:
                 t = candidate_questions.pop()
-                current_topic_replicates = [t]
+                topic_mutually_exclusive = [t]
                 q = re.search(Generate.QUESTION_RE, t)
                 if not q:
-                    raise ValueError("Apparently, question \"{}\" has no text".format(t))
+                    raise RuntimeError("Apparently, question \"{}\" has no text".format(t))                
+                q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0
                 while j < len(candidate_questions):
                     cq = re.search(Generate.QUESTION_RE, candidate_questions[j])
                     if not cq:
-                        raise ValueError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
-                    if q == cq.group(1).strip().lower():
-                        current_topic_replicates.append(candidate_questions.pop(j))                        
+                        raise RuntimeError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
+                    cq_id = cq.group(2).strip() if cq.group(2) else None
+                    if q == cq.group(1).strip().lower() or (q_id is not None and  q_id == cq_id):
+                        topic_mutually_exclusive.append(candidate_questions.pop(j))                        
                     else:
                         j = j + 1
-                current_questions += random.sample(current_topic_replicates, 1)
+                current_questions += random.sample(topic_mutually_exclusive, 1)
             sample = random.sample(list(range(len(current_questions))), topic['draw'])
             questions += list(map(lambda index: (filename, index, current_questions[index]), 
                 sample))

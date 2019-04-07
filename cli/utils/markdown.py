@@ -44,6 +44,12 @@ class QuestionMarker(span_token.SpanToken):
 
     def __init__(self, match):
         self.marker = match.group(1)
+
+class QuestionId(span_token.SpanToken):
+    pattern = re.compile(r"({#[\w-]+})")
+
+    def __init__(self, match):
+        self.id = match.group(1)
         
 class QuestionList(block_token.List):
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
@@ -96,6 +102,9 @@ class QuestionRenderer(LaTeXRenderer):
             self.questions[-1]['answers'].append(True)
         else:
             self.questions[-1]['answers'].append(False)            
+        return ''
+
+    def render_question_id(self, token):
         return ''
 
     # def render_image(self, token):

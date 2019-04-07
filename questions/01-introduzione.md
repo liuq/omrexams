@@ -10,7 +10,7 @@
 
 ---
 
-## La *digitalizzazione*
+## La *digitalizzazione* 
 
 - [x] indica la rappresentazione dell'informazione in forma numerica
 - [x] è un'attività preliminare all'elaborazione dell'informazione da parte dei computer
@@ -18,7 +18,7 @@
 
 ---
 
-## La *digitalizzazione*
+## La *digitalizzazione* 
 
 - [x] non necessita di un computer ma può essere eseguita anche da altri dispositivi
 - [ ] è un sistema di numerazione basato sull'uso delle dita (*digitus*)
@@ -26,7 +26,7 @@
 
 ---
 
-## La *digitalizzazione*
+## La *digitalizzazione* 
 
 - [ ] non consente di riprodurre esattamente l'informazione rappresentata in duplicati perfetti
 - [ ] è un sistema di numerazione basato sull'uso delle dita (*digitus*)
@@ -99,7 +99,7 @@
 
 ---
 
-## Per *astrazione* si intende
+## Per *astrazione* si intende {#astrazione-generalizzazione}
 
 - [x] estrapolare un'idea di applicazione generale da una situazione specifica
 - [ ] concretizzare in un processo l'esperienza di un concetto
@@ -107,7 +107,7 @@
 
 ---
 
-## Quali dei seguenti sono esempi di *astrazione*
+## Quali dei seguenti sono esempi di *astrazione* {#astrazione-generalizzazione}
 
 - [x] l'estrazione dei punti chiave di un racconto
 - [x] la rappresentazione di un oggetto fisico con le sue misure (altezza, larghezza, profondità)
@@ -115,7 +115,7 @@
 
 ---
 
-## Per *generalizzazione* si intende
+## Per *generalizzazione* si intende {#astrazione-generalizzazione}
 
 - [x] riconoscere un concetto comune a più situazioni
 - [ ] concretizzare in un processo l'esperienza di un concetto
@@ -123,7 +123,7 @@
 
 ---
 
-## Quali dei seguenti sono esempi di *generalizzazione*
+## Quali dei seguenti sono esempi di *generalizzazione* {#astrazione-generalizzazione}
 
 - [x] individuare le caratteristiche comuni fra più oggetti
 - [x] applicare dei processi conosciuti ad attività simili (ad esempio rotazione antioraria per “aprire”)
