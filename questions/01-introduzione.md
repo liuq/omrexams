@@ -99,7 +99,7 @@
 
 ---
 
-## Per *astrazione* si intende {#astrazione-generalizzazione}
+## Per *astrazione* si intende {topic:#astrazione-generalizzazione}
 
 - [x] estrapolare un'idea di applicazione generale da una situazione specifica
 - [ ] concretizzare in un processo l'esperienza di un concetto
@@ -107,7 +107,7 @@
 
 ---
 
-## Quali dei seguenti sono esempi di *astrazione* {#astrazione-generalizzazione}
+## Quali dei seguenti sono esempi di *astrazione* {topic:#astrazione-generalizzazione}
 
 - [x] l'estrazione dei punti chiave di un racconto
 - [x] la rappresentazione di un oggetto fisico con le sue misure (altezza, larghezza, profondità)
@@ -115,7 +115,7 @@
 
 ---
 
-## Per *generalizzazione* si intende {#astrazione-generalizzazione}
+## Per *generalizzazione* si intende {topic:#astrazione-generalizzazione}
 
 - [x] riconoscere un concetto comune a più situazioni
 - [ ] concretizzare in un processo l'esperienza di un concetto
@@ -123,7 +123,7 @@
 
 ---
 
-## Quali dei seguenti sono esempi di *generalizzazione* {#astrazione-generalizzazione}
+## Quali dei seguenti sono esempi di *generalizzazione* {topic:#astrazione-generalizzazione}
 
 - [x] individuare le caratteristiche comuni fra più oggetti
 - [x] applicare dei processi conosciuti ad attività simili (ad esempio rotazione antioraria per “aprire”)

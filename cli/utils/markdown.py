@@ -45,8 +45,8 @@ class QuestionMarker(span_token.SpanToken):
     def __init__(self, match):
         self.marker = match.group(1)
 
-class QuestionId(span_token.SpanToken):
-    pattern = re.compile(r"({#[\w-]+})")
+class QuestionTopic(span_token.SpanToken):
+    pattern = re.compile(r"({topic:#[\w-]+})")
 
     def __init__(self, match):
         self.id = match.group(1)
@@ -104,7 +104,7 @@ class QuestionRenderer(LaTeXRenderer):
             self.questions[-1]['answers'].append(False)            
         return ''
 
-    def render_question_id(self, token):
+    def render_question_topic(self, token):
         return ''
 
     # def render_image(self, token):

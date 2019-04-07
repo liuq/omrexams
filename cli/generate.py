@@ -25,7 +25,7 @@ class Generate:
     """
     QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
     TITLE_RE = re.compile(r"#\s+.*")
-    QUESTION_RE = re.compile(r"##\s*(.+?)(?={#|\n)({#[\w-]+})?")
+    QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
 
     def __init__(self, config, questions, output, **kwargs):
         self.config = config
