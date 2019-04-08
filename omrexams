@@ -81,7 +81,7 @@ def cli(ctx, debug):
 @cli.command()
 @click.option('--config', type=click.File(), required=False, default=lambda: open('config.yaml', 'r'))
 @click.option('--students', '-s', type=click.File(), required=False)
-@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), required=True)
 @click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
 @click.option('--serial', type=int, default=100)
 @click.option('--output', '-o', type=click.File(mode='wb'), required=False, 
@@ -89,7 +89,7 @@ def cli(ctx, debug):
 @click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
-@click.option('--additional', '-a', type=int, prompt="Generate a number of additional exams?", default=5)
+@click.option('--additional', '-a', type=int, required=False)
 @click.option('--oneparchoices', '-opc', type=bool, required=False)
 @click.pass_context
 def generate(ctx, config, students, questions_dir, count, serial, output, date, seed, additional, oneparchoices):
@@ -102,6 +102,9 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
 
     if oneparchoices is None:
         oneparchoices = config.get('choices', {}).get('oneparchoices', False)
+
+    if additional is None and students is not None:
+        additional = click.prompt("Generate a number of additional exams?", default=5)
 
     output_list = os.path.join(os.path.dirname(output.name), 
         "".join(os.path.basename(output.name).split('.')[:-1]) + '.xlsx')

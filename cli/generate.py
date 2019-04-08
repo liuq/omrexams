@@ -93,7 +93,7 @@ class Generate:
             prev = 0
             while not self.tasks_queue.empty():
                 self.results_mutex.acquire()
-                self.task_done.wait_for(lambda: prev < self.results.value)
+                self.task_done.wait_for(lambda: prev <= self.results.value)
                 bar.update(self.results.value - prev)
                 prev = self.results.value
                 self.results_mutex.release()

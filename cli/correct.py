@@ -17,6 +17,7 @@ import logging
 from collections import Counter
 from itertools import combinations
 import img2pdf
+from PyPDF2 import PdfFileReader, PdfFileWriter
 
 logger = logging.getLogger("omrexams")
 
@@ -58,7 +59,7 @@ class Correct:
             prev = 0
             while not self.tasks_queue.empty():
                 self.results_mutex.acquire()
-                self.task_done.wait_for(lambda: prev < self.results.value)
+                self.task_done.wait_for(lambda: prev <= self.results.value)
                 bar.update(self.results.value - prev)
                 prev = self.results.value
                 self.results_mutex.release()
@@ -73,11 +74,26 @@ class Correct:
             for filename in watch:
                 filename = os.path.join(self.corrected, ".".join(filename.split(".")[:-1]) + ".jpg")
                 click.secho('\t{}'.format(filename), fg='yellow')   
+        # Collecting all corrected exams into a single pdf file
         collected = ".".join(self.output_filename.split(".")[:-1]) + ".pdf"
+        files = sorted(glob.glob(os.path.join(self.corrected, "*.jpg")))
         with open(collected, "wb") as f:
-            f.write(img2pdf.convert(sorted(glob.glob(os.path.join(self.corrected, "*.jpg")))))
+            f.write(img2pdf.convert(files))
+        # TODO: seems not to work, to be tested (the pages with images are rendered as blank files)
+        # Marking collected pdf with the student_id
+        # output_pdf = PdfFileWriter()
+        # with open(collected, 'rb') as f:
+        #     input_pdf = PdfFileReader(f)
+        #     if len(files) != input_pdf.numPages:
+        #         raise RuntimeError("The collected pdf file seems not to contain all the pages")
+        #     for i, filename in enumerate(files):
+        #         student_id = os.path.basename(filename).split("-")[0]
+        #         output_pdf.addPage(input_pdf.getPage(i))
+        #         output_pdf.addBookmark(student_id, i)
+        # with open(collected, 'wb') as f:
+        #     output_pdf.write(f)
         if (click.prompt("Remove temporary image files?", type=bool, default='y' if delete_default else 'n')):
-            for filename in sorted(glob.glob(os.path.join(self.corrected, "*.jpg"))):
+            for filename in files:
                 os.remove(filename)
             os.rmdir(self.corrected)
         
