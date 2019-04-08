@@ -93,7 +93,7 @@ class QuestionRenderer(LaTeXRenderer):
         self.questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionList, QuestionBlock], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -105,7 +105,10 @@ class QuestionRenderer(LaTeXRenderer):
         return ''
 
     def render_question_topic(self, token):
-        return ''
+        if not self.parameters.get('test', False):
+            return ''
+        else:
+            return '\#' + token.id
 
     # def render_image(self, token):
     #     self.packages['graphicx'] = []
