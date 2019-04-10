@@ -9,6 +9,7 @@ from . crypt import vigenere_encrypt
 import re
 import logging
 import click
+import os
  
 logger = logging.getLogger("omrexams")
 
@@ -110,10 +111,13 @@ class QuestionRenderer(LaTeXRenderer):
         else:
             return '\\fbox{' + token.id + '}'
 
-    # def render_image(self, token):
-    #     self.packages['graphicx'] = []
-    #     self.packages['adjustbox'] = ['export']
-    #     return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(token.src)
+    def render_image(self, token):
+        self.packages['graphicx'] = []
+        self.packages['adjustbox'] = ['export']
+        path = os.path.realpath(token.src)
+        if not os.path.isabs(path):
+            path = os.path.join(self.parameters.get('basedir'), path)
+        return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
 
     def render_question_block(self, token):
         # possibly, the first question could start without a marker 
@@ -292,6 +296,19 @@ class QuestionRenderer(LaTeXRenderer):
         return doc
             
 class DocumentStripRenderer(LaTeXRenderer):
+    def __init__(self, *extras, **kwargs):
+        """
+        Args:
+            extras (list): allows subclasses to add even more custom tokens.
+        KeywordArgs:
+            basedir: the base directory for relative paths
+        """
+        self.record_answers = False
+        self.questions = []
+        # TODO: check parameter coherence
+        self.parameters = kwargs
+        super().__init__(*chain([], extras))
+
     def render_table_row(self, token):
         cells = [self.render(child) for child in token.children]
         return ' & '.join(cells) + ' \\\\\n'
@@ -302,7 +319,10 @@ class DocumentStripRenderer(LaTeXRenderer):
     def render_image(self, token):
         self.packages['graphicx'] = []
         self.packages['adjustbox'] = ['export']
-        return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(token.src)
+        path = os.path.realpath(token.src)
+        if not os.path.isabs(path):
+            path = os.path.join(self.parameters.get('basedir'), path)
+        return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
 
 """
 Provides MathJax support for rendering Markdown with LaTeX to html.

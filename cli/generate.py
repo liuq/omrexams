@@ -15,6 +15,7 @@ from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 import math
 from datetime import datetime as dt
 from tinydb import TinyDB
+from . utils.directories import BASEDIR
 
 logger = logging.getLogger("omrexams")
 
@@ -73,7 +74,7 @@ class Generate:
             rmtree('tmp')
         os.mkdir('tmp')        
         click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
-        copy2(os.path.join('texmf', 'omrexam.cls'), 'tmp')
+        copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
         click.secho('Generating {} exams (this may take a while)'.format(len(self.students)), fg='red', underline=True)
         with click.progressbar(length=len(self.students), label='Generating exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
@@ -202,12 +203,12 @@ class Generate:
         if self.config['exam'].get('max_questions', False):
             questions = questions[:self.config['exam'].get('max_questions')]
         if self.config.get('header'):
-            with DocumentStripRenderer() as renderer:
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 header = renderer.render(Document(self.config.get('header')))
         else:
             header = ''
         if self.config.get('preamble'):
-            with DocumentStripRenderer() as renderer:
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 preamble = renderer.render(Document(self.config.get('preamble')))
         else:
             preamble = ''
@@ -219,7 +220,8 @@ class Generate:
                               shuffle=self.config['exam'].get('shuffle_answers', True),
                               oneparchoices=self.oneparchoices,
                               circled=self.config.get('choices', {}).get('circled', False),
-                              usesf=self.config.get('choices', {}).get('usesf', False)) as renderer:
+                              usesf=self.config.get('choices', {}).get('usesf', False),
+                              basedir=os.path.realpath(self.questions_path)) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        
@@ -241,12 +243,12 @@ class Generate:
     def generate_test(self):
         rules = self.load_rules()
         if self.config.get('header'):
-            with DocumentStripRenderer() as renderer:
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 header = renderer.render(Document(self.config.get('header')))
         else:
             header = ''
         if self.config.get('preamble'):
-            with DocumentStripRenderer() as renderer:
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 preamble = renderer.render(Document(self.config.get('preamble')))
         else:
             preamble = ''
@@ -261,7 +263,9 @@ class Generate:
                               exam=self.config['exam'].get('name'), 
                               header=header, 
                               preamble=preamble,
-                              test=True) as renderer:
+                              test=True,
+                              oneparchoices=self.oneparchoices,
+                              basedir=os.path.realpath(self.questions_path)) as renderer:
                 renderer.render(Document(current_questions))
             questions += current_questions + "\n\n"
 
@@ -269,7 +273,7 @@ class Generate:
         if not os.path.exists('tmp'):
            os.mkdir('tmp')
         click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
-        copy2(os.path.join('texmf', 'omrexam.cls'), 'tmp')
+        copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=dt.now(), 
                               exam=self.config['exam'].get('name'), 
@@ -277,7 +281,9 @@ class Generate:
                               student_name="", 
                               header=header, 
                               preamble=preamble,
-                              test=True) as renderer:
+                              test=True,
+                              oneparchoices=self.oneparchoices,
+                              basedir=os.path.realpath(self.questions_path)) as renderer:
             document = renderer.render(Document(questions)) 
         filename = "".join(os.path.basename(self.output_pdf.name).split(".")[:-1])
         click.secho('Generating PDF with all corrected questions', fg='red', underline=True)

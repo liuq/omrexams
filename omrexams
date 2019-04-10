@@ -96,7 +96,9 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
     """
     Generates the set of exams for the given amount of students (either personalized or anonymous).
     """
+    config_basedir = os.path.dirname(os.path.realpath(config.name))
     config = yaml.load(config, Loader=yaml.Loader)
+    config['basedir'] = config_basedir
     if not output:
         output = open('exam-{}.pdf'.format(date.strftime("%Y-%m-%d")), 'wb')
 
@@ -161,13 +163,15 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
 @cli.command()
 @click.option('--config', type=click.File(), required=False, default=lambda: open('config.yaml', 'r'))
 @click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('--output', '-o', type=click.File(mode='wb'), default=open('exam-test.pdf', 'wb'))
+@click.option('--output', '-o', type=click.File(mode='wb'), default=lambda: open('exam-test.pdf', 'wb'))
 @click.pass_context
 def test(ctx, config, questions_dir, output):
     """
     Generates a comprehensive pdf file with all the questions.
     """
+    config_basedir = os.path.dirname(os.path.realpath(config.name))
     config = yaml.load(config, Loader=yaml.Loader)
+    config['basedir'] = config_basedir
 
     generator = Generate(config, questions_dir, output, test=True)
     generator.process()
