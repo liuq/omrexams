@@ -18,19 +18,27 @@ from collections import Counter
 from itertools import combinations
 import img2pdf
 from PyPDF2 import PdfFileReader, PdfFileWriter
+from tinydb import TinyDB, Query
+import shutil as sh
 
 logger = logging.getLogger("omrexams")
+
+def decode_answers(answers, permutation):
+    res = []
+    for i in range(len(permutation)):
+        c = chr(ord('A') + i)
+        res.append(c in answers)
+    return list(bool(a) for a in np.array(res)[permutation])
 
 class Correct:
     """
     This class will operate on a directory with a set of pages and perform the correction 
     according to the information stored in the qrcodes
     """
-    def __init__(self, sorted, corrected, output_filename, doublecheck, compression):
+    def __init__(self, sorted, corrected, output_filename, compression):
         self.sorted = sorted
         self.corrected = corrected
         self.output_filename = output_filename
-        self.doublecheck = doublecheck.name if doublecheck is not None else None
         self.compression = compression
         self.resolution = 150
 
@@ -38,6 +46,9 @@ class Correct:
         if not os.path.exists(self.corrected):
             click.secho('Creating directory {}'.format(self.corrected), )
             os.mkdir(self.corrected)
+        with TinyDB("{}.tmp".format(self.output_filename)) as db:
+            if 'correction' in db.tables():
+                db.purge_table('correction')
         self.tasks_queue = mp.JoinableQueue()
         self.watch_queue = mp.Queue()
         self.results_mutex = mp.RLock()
@@ -96,12 +107,69 @@ class Correct:
             for filename in files:
                 os.remove(filename)
             os.rmdir(self.corrected)
+        # Update the data file and output the corrected excel file
+        data = {}
+        with TinyDB("{}.tmp".format(self.output_filename)) as db1, TinyDB(self.output_filename) as db2:
+            table = db1.table('correction')
+            students = set()
+            for item in table.all():
+                students.add(item['student_id'])
+            Correction = Query()
+            for student in students:
+                data[student] = { 'correct_answers': [], 'given_answers': [] }
+                results = table.search(Correction.student_id == student)
+                results = sorted(results, key=lambda r: int(r['page']))
+                for page in results:
+                    data[student]['correct_answers'] += list(map(set, page['correct_answers']))
+                    data[student]['given_answers'] += list(map(set, page['detected_answers']))
+            if 'correction' in db2.tables():
+                db2.purge_table('correction')
+            table = db2.table('correction')
+            for student in data:
+                table.insert({ 'student_id': int(student), **data[student] })   
+            db2.purge_table('statistics')
+            statistics = db2.table('statistics')    
+            Statistics = Query()                       
+            # check consistency of correct answers (apriori/encoded)
+            for exam in db2.table('exams').all():
+                data = table.get(Correction.student_id == exam['student_id'])
+                if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):
+                    raise RuntimeWarning("Correct answers in {} for student {} do not match with those encoded in the exam sheets".format(self.output_filename, exam['student_id']))
+                elif data is None:
+                    raise RuntimeWarning("Could not find student {} in the exams table".format(exam['student_id']))                
+                for i, q in enumerate(exam['questions']):
+                    question = statistics.get((Statistics.question_file == q[0]) & (Statistics.index == q[1]))
+                    given_answer = decode_answers(data['given_answers'][i], q[3])
+                    correct_answer = decode_answers(data['correct_answers'][i], q[3])
+
+                    if question is None:
+                        question = { 
+                            'question_file': q[0], 
+                            'index': q[1], 
+                            'answers': [0] * len(q[3]), 
+                            'correct_answers': correct_answer,
+                            'total': 0,
+                            'incorrect': 0, 
+                            'correct': 0, 
+                            'partially_correct': 0,
+                            'unanswered': 0
+                        }
+                    question['total'] += 1
+                    if all(g == c for g, c in zip(given_answer, correct_answer)):
+                        question['correct'] += 1
+                    elif any(c and g == c for g, c in zip(given_answer, correct_answer)):
+                        question['partially_correct'] += 1
+                    if any(not c and g != c for g, c in zip(given_answer, correct_answer)): 
+                        question['incorrect'] += 1                     
+                    if not any(g for g in given_answer):
+                        question['unanswered'] += 1
+                    for i in range(len(given_answer)):
+                        if given_answer[i]:
+                            question['answers'][i] += 1 
+                    statistics.upsert(question, (Statistics.question_file == q[0]) & (Statistics.index == q[1]))
+                        
         
     def worker_main(self):    
-        doublecheck = None
-        if self.doublecheck:
-            doublecheck = pd.read_excel(self.doublecheck)
-            doublecheck.set_index('id', inplace=True)
         while True:
             filename = self.tasks_queue.get()
             if filename is None:
@@ -205,17 +273,16 @@ class Correct:
         cv2.imwrite(filename, image, [cv2.IMWRITE_JPEG_QUALITY, self.compression])
 
 
-    def append_correction(self, student, page, detected_answers, correct_answers):     
-        content = pd.DataFrame({ "id": [student], 
-                "page": [page], 
-                "detected_answers": [detected_answers],
-                "correct_answers": [correct_answers]
-            }).set_index('id')
-        if not os.path.exists(self.output_filename):
-            old_content = pd.DataFrame()
-        else:
-            old_content = pd.read_excel(self.output_filename).set_index('id')
-        pd.concat([old_content, content]).to_excel(self.output_filename)
+    def append_correction(self, student, page, detected_answers, correct_answers):
+        with TinyDB("{}.tmp".format(self.output_filename)) as db:
+            table = db.table('correction')
+            data = { 
+                "student_id": student, 
+                "page": page, 
+                "detected_answers": detected_answers, 
+                "correct_answers": correct_answers 
+            }
+            table.insert(data)
 
     @staticmethod
     def circle_filled_area(binary, c):

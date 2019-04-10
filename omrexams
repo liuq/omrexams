@@ -107,10 +107,14 @@ def generate(ctx, config, students, questions_dir, count, serial, output, date, 
         additional = click.prompt("Generate a number of additional exams?", default=5)
 
     output_list = os.path.join(os.path.dirname(output.name), 
-        "".join(os.path.basename(output.name).split('.')[:-1]) + '.xlsx')
+        "".join(os.path.basename(output.name).split('.')[:-1]) + '.json')
     
     if os.path.exists(output_list):
-        os.remove(output_list)
+        if click.prompt("Data output {} exists, overwrite it?".format(output_list), type=bool, default='y'):
+            os.remove(output_list)
+        else:
+            click.secho("Nothing done", fg='red')
+            return
 
     if students:
         try:    
@@ -182,21 +186,14 @@ def sort(ctx, scanned_dir, sorted_dir, doublecheck, resolution):
 
 @cli.command()
 @click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('-output', '-o', type=click.File(mode='wb'), required=True)
+@click.option('-data', '-d', type=click.File(mode='rb'), required=True)
 @click.option('-corrected_dir', '-c', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the corrected exams')
-@click.option('-doublecheck', '-d', type=click.File(mode='r'), required=False)
 @click.option('-compression', '-z', type=int, default=50)
 @click.pass_context
-def correct(ctx, sorted_dir, output, corrected_dir, doublecheck, compression):  
-    output_filename = output.name  
-    output.close()
-    if os.path.exists(output_filename):
-        if click.prompt("Output {} exists, overwrite it?".format(output_filename), type=bool, default='y'):
-            os.remove(output_filename)
-        else:
-            click.secho("Nothing done", fg='red')
-            return
-    corrector = Correct(sorted_dir, corrected_dir, output_filename, doublecheck, compression)
+def correct(ctx, sorted_dir, data, corrected_dir, compression):  
+    data_filename = data.name
+    data.close()
+    corrector = Correct(sorted_dir, corrected_dir, data_filename, compression)
     corrector.correct()
 
 if __name__ == '__main__':

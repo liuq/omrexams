@@ -14,6 +14,7 @@ import pandas as pd
 import math
 from . utils import image_utils as iu
 from . utils.colors import *
+from tinydb import TinyDB, Query
 class Sort:
     """
     This class is responsible of dispatching the scanned exams from a PDF into
@@ -59,23 +60,23 @@ class Sort:
                 self.results_mutex.release()
         click.secho('Finished', fg='red', underline=True)
 
-    def worker_main(self):    
-        doublecheck = None
-        if self.doublecheck:
-            doublecheck = pd.read_excel(self.doublecheck)
-            doublecheck.set_index('id', inplace=True)
+    def worker_main(self):                        
         while True:
             filename, page = self.tasks_queue.get()
             if filename is None:
                 break
             try:
                 metadata = self.process(filename, page)
-                if doublecheck is not None:                    
-                    answers = ''.join(map(lambda a: ','.join(list(a)), metadata['correct']))
-                    if int(metadata['student_id']) not in doublecheck.index:
-                        raise RuntimeError("Student {} is not present in the excel file".format(metadata['student_id']))
-                    if doublecheck.loc[int(metadata['student_id']), 'answer_list'] != answers:
-                        raise RuntimeError("Expected correct answers for student {} do not match\ncoded: {}/{}\nexpected: {}".format(metadata['student_id'], answers, metadata['correct'], doublecheck.loc[int(metadata['student_id']), 'answer_list']))
+                if self.doublecheck is not None:                    
+                    with TinyDB(self.doublecheck) as db:
+                        Exam = Query()
+                        table = db.table('exams')
+                        result = table.get(Exam.student_id == metadata['student_id'])
+                        if not result: 
+                            raise RuntimeError("Error double checking: student {} is not present in the data file".format(metadata['student_id']))
+                        answers = metadata['correct']
+                        if result['answers'] != answers:                    
+                            raise RuntimeError("Expected correct answers for student {} do not match\ncoded: {}/{}\nexpected: {}".format(metadata['student_id'], answers, metadata['correct'], result[0]['answers']))
             except Exception as e:
                 print("\n", str(e))
             finally:

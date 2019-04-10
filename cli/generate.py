@@ -7,7 +7,6 @@ import glob
 import os
 import re
 import io
-import pandas as pd
 from shutil import copy2, rmtree
 import multiprocessing as mp
 from functools import partial
@@ -15,6 +14,7 @@ from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
 import math
 from datetime import datetime as dt
+from tinydb import TinyDB
 
 logger = logging.getLogger("omrexams")
 
@@ -166,26 +166,26 @@ class Generate:
                 for i in range(len(answers)):
                     if answers[i]:
                         current += chr(ord('A') + i)
-                return ",".join(current)  
+                return current
         logger.info("Creating exam {} {}".format(*student)) 
         # randomly select a given number of questions from each file
         # however, avoid to select more than once the questions with the same text
         questions = []
 
         for filename, topic in self.questions.items():
-            candidate_questions = topic['content'][:]
+            candidate_questions = list((q, i) for i, q in enumerate(topic['content']))
             current_questions = []
             while candidate_questions:
                 t = candidate_questions.pop()
                 topic_mutually_exclusive = [t]
-                q = re.search(Generate.QUESTION_RE, t)
+                q = re.search(Generate.QUESTION_RE, t[0])
                 if not q:
                     raise RuntimeError("Apparently, question \"{}\" has no text".format(t))                
                 q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0
                 while j < len(candidate_questions):
-                    cq = re.search(Generate.QUESTION_RE, candidate_questions[j])
+                    cq = re.search(Generate.QUESTION_RE, candidate_questions[j][0])
                     if not cq:
                         raise RuntimeError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
                     cq_id = cq.group(2).strip() if cq.group(2) else None
@@ -195,7 +195,7 @@ class Generate:
                         j = j + 1
                 current_questions += random.sample(topic_mutually_exclusive, 1)
             sample = random.sample(list(range(len(current_questions))), topic['draw'])
-            questions += list(map(lambda index: (filename, index, current_questions[index]), 
+            questions += list(map(lambda index: (filename, current_questions[index][1], current_questions[index][0]), 
                 sample))
         if self.config['exam'].get('shuffle_questions', False):
             random.shuffle(questions)
@@ -223,20 +223,20 @@ class Generate:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        
-            overall_answers = ''.join(code_answer(q['answers']) for q in renderer.questions)
+            overall_answers = list(code_answer(q['answers']) for q in renderer.questions)
             return document, list(tmp), overall_answers
     
-    def append_exam(self, student, questions, answers):     
-        content = pd.DataFrame({ "id": [student[0]], 
-                "fullname": [student[1]], 
-                "questions": [questions], 
-                "answer_list": [answers]
-            }).set_index('id')
-        if not os.path.exists(self.output_list_filename):
-            old_content = pd.DataFrame()
-        else:
-            old_content = pd.read_excel(self.output_list_filename).set_index('id')
-        pd.concat([old_content, content]).to_excel(self.output_list_filename)
+    def append_exam(self, student, questions, answers):  
+        data = { 
+            "student_id": int(student[0]),
+            "fullname": student[1],                        
+            "questions": []
+        }
+        for q in questions:
+            data['questions'].append(q)
+        data['answers'] = answers
+        with TinyDB(self.output_list_filename) as db:
+            db.table('exams').insert(data)
 
     def generate_test(self):
         rules = self.load_rules()
