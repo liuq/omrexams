@@ -43,7 +43,7 @@ class Generate:
             self.seed = kwargs.get('seed', 0)
             with TinyDB(self.output_list_filename) as db:
                 db.purge_table('metadata')
-                db.table('metadata').insert({ 'seed': self.seed, 'generation_date': dt.now() })
+                db.table('metadata').insert({ 'seed': self.seed, 'generation_date': dt.now().strftime("%F") })
 
     def load_rules(self):
         rules = self.config.get('questions', [{ "from": "*.md", "use": 1 }])
