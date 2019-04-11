@@ -19,7 +19,7 @@ from itertools import combinations
 import img2pdf
 from PyPDF2 import PdfFileReader, PdfFileWriter
 from tinydb import TinyDB, Query
-import shutil as sh
+from shutil import copy2, rmtree
 
 logger = logging.getLogger("omrexams")
 
@@ -35,18 +35,19 @@ class Correct:
     This class will operate on a directory with a set of pages and perform the correction 
     according to the information stored in the qrcodes
     """
-    def __init__(self, sorted, corrected, output_filename, compression):
+    def __init__(self, sorted, corrected, data_filename, resolution, compression):
         self.sorted = sorted
         self.corrected = corrected
-        self.output_filename = output_filename
+        self.data_filename = data_filename
         self.compression = compression
-        self.resolution = 150
+        self.resolution = resolution
 
     def correct(self):
-        if not os.path.exists(self.corrected):
-            click.secho('Creating directory {}'.format(self.corrected), )
-            os.mkdir(self.corrected)
-        with TinyDB("{}.tmp".format(self.output_filename)) as db:
+        logger.info('Creating and preparing tmp directory')
+        if os.path.exists('tmp'):
+            rmtree('tmp')
+        os.mkdir('tmp')
+        with TinyDB("{}.tmp".format(self.data_filename)) as db:
             if 'correction' in db.tables():
                 db.purge_table('correction')
         self.tasks_queue = mp.JoinableQueue()
@@ -83,12 +84,11 @@ class Correct:
                 watch.add(os.path.basename(self.watch_queue.get()))
             delete_default = False
             for filename in watch:
-                filename = os.path.join(self.corrected, ".".join(filename.split(".")[:-1]) + ".jpg")
+                filename = os.path.join('tmp', ".".join(filename.split(".")[:-1]) + ".jpg")
                 click.secho('\t{}'.format(filename), fg='yellow')   
         # Collecting all corrected exams into a single pdf file
-        collected = ".".join(self.output_filename.split(".")[:-1]) + ".pdf"
-        files = sorted(glob.glob(os.path.join(self.corrected, "*.jpg")))
-        with open(collected, "wb") as f:
+        files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
+        with open(self.corrected, "wb") as f:
             f.write(img2pdf.convert(files))
         # TODO: seems not to work, to be tested (the pages with images are rendered as blank files)
         # Marking collected pdf with the student_id
@@ -103,13 +103,13 @@ class Correct:
         #         output_pdf.addBookmark(student_id, i)
         # with open(collected, 'wb') as f:
         #     output_pdf.write(f)
-        if (click.prompt("Remove temporary image files?", type=bool, default='y' if delete_default else 'n')):
+        if (click.prompt("Remove temporary image files and directory tmp?", type=bool, default='y' if delete_default else 'n')):
             for filename in files:
                 os.remove(filename)
-            os.rmdir(self.corrected)
+            os.rmdir('tmp')
         # Update the data file and output the corrected excel file
         data = {}
-        with TinyDB("{}.tmp".format(self.output_filename)) as db1, TinyDB(self.output_filename) as db2:
+        with TinyDB("{}.tmp".format(self.data_filename)) as db1, TinyDB(self.data_filename) as db2:
             table = db1.table('correction')
             students = set()
             for item in table.all():
@@ -134,7 +134,7 @@ class Correct:
             for exam in db2.table('exams').all():
                 data = table.get(Correction.student_id == exam['student_id'])
                 if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):
-                    raise RuntimeWarning("Correct answers in {} for student {} do not match with those encoded in the exam sheets".format(self.output_filename, exam['student_id']))
+                    raise RuntimeWarning("Correct answers in {} for student {} do not match with those encoded in the exam sheets".format(self.data_filename, exam['student_id']))
                 elif data is None:
                     raise RuntimeWarning("Could not find student {} in the exams table".format(exam['student_id']))                
                 for i, q in enumerate(exam['questions']):
@@ -167,6 +167,7 @@ class Correct:
                         if given_answer[i]:
                             question['answers'][i] += 1 
                     statistics.upsert(question, (Statistics.question_file == q[0]) & (Statistics.index == q[1]))
+        os.remove("{}.tmp".format(self.data_filename))
                         
         
     def worker_main(self):    
@@ -266,7 +267,7 @@ class Correct:
         return image
     
     def write(self, filename, image):
-        filename = os.path.join(self.corrected, os.path.basename(filename))
+        filename = os.path.join('tmp', os.path.basename(filename))
         filename = ".".join(filename.split(".")[:-1]) + ".jpg"
         # rescale to 72 dpi to save space
         image = cv2.resize(image, None, fx=72.0 / self.resolution, fy=72.0 / self.resolution, interpolation=cv2.INTER_AREA)
@@ -274,7 +275,7 @@ class Correct:
 
 
     def append_correction(self, student, page, detected_answers, correct_answers):
-        with TinyDB("{}.tmp".format(self.output_filename)) as db:
+        with TinyDB("{}.tmp".format(self.data_filename)) as db:
             table = db.table('correction')
             data = { 
                 "student_id": student, 

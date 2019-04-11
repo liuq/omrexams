@@ -28,19 +28,22 @@ class Generate:
     TITLE_RE = re.compile(r"#\s+.*")
     QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
 
-    def __init__(self, config, questions, output, **kwargs):
+    def __init__(self, config, questions, output_prefix, **kwargs):
         self.config = config
         self.questions_path = questions
-        self.output_pdf = output
+        self.output_pdf_filename = "{}.pdf".format(output_prefix)
         self.test = kwargs.get('test', False)
         self.oneparchoices = kwargs.get('oneparchoices', False)
         # TODO: emit logging if these parameters are not set
         if not self.test:
-            self.output_list_filename = kwargs.get('output_list')
+            self.output_list_filename = "{}.json".format(output_prefix)
             self.students = kwargs.get('students', [])
             self.exam_date = kwargs.get('date', dt.now())
             self.topics = {}   
             self.seed = kwargs.get('seed', 0)
+            with TinyDB(self.output_list_filename) as db:
+                db.purge_table('metadata')
+                db.table('metadata').insert({ 'seed': self.seed, 'generation_date': dt.now() })
 
     def load_rules(self):
         rules = self.config.get('questions', [{ "from": "*.md", "use": 1 }])
@@ -110,7 +113,8 @@ class Generate:
             merger.append(pdf)
             if pdf.getNumPages() % 2 == 1:
                 merger.append(blank)
-        merger.write(self.output_pdf)
+        with open(self.output_pdf_filename, 'wb') as f:
+            merger.write(f)
         if not self.error.value:
             click.secho('Removing tmp', fg='yellow')
             rmtree('tmp')
@@ -285,11 +289,11 @@ class Generate:
                               oneparchoices=self.oneparchoices,
                               basedir=os.path.realpath(self.questions_path)) as renderer:
             document = renderer.render(Document(questions)) 
-        filename = "".join(os.path.basename(self.output_pdf.name).split(".")[:-1])
         click.secho('Generating PDF with all corrected questions', fg='red', underline=True)
+        filename = ".".join(os.path.basename(self.output_pdf_filename).split(".")[:-1])
         document.generate_pdf(filepath=os.path.join("tmp", filename), 
                               compiler='latexmk', 
                               compiler_args=['-xelatex'])
-        copy2(os.path.join('tmp', filename + '.pdf'), '.')
+        copy2(os.path.join('tmp',  "{}.pdf".format(filename)), '.')
         
         

@@ -24,12 +24,16 @@ class Sort:
         self.scanned = scanned
         self.sorted = sorted
         self.offset = 10 # cropping offset, TODO: become a parameter
-        self.doublecheck = doublecheck.name if doublecheck is not None else None
+        self.doublecheck = doublecheck
 
     def sort(self, resolution):
         if not os.path.exists(self.sorted):
-            click.secho('Creating directory {}'.format(self.sorted), )
+            click.secho('Creating directory {}'.format(self.sorted))
             os.mkdir(self.sorted)
+        else: # clean previous content
+            click.secho('Cleaning directory {}'.format(self.sorted))
+            for f in glob.glob(os.path.join(self.sorted, '*')):
+                os.remove(f)
         self.resolution = resolution
         self.offset = int(1.0 / (2.54 / resolution))
         self.tasks_queue = mp.JoinableQueue()
