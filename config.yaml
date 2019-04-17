@@ -14,7 +14,7 @@ exam: # exam details
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
   page_limit: 2 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
-  max_questions: 15 
+  max_questions: 15
 questions: 
   - from: "*.md"
     draw: 3

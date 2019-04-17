@@ -41,12 +41,14 @@ class Sort:
         self.task_done = mp.Condition(self.results_mutex)
         self.results = mp.Value('i', 0, lock=self.results_mutex)
         pages = 0
-        for fn in glob.glob(os.path.join(self.scanned, '*.pdf')):
+
+        for fn in self.scanned:
             with open(fn, 'rb') as f:
                 pdf_file = PdfFileReader(f)
                 for p in range(pdf_file.numPages):
                     self.tasks_queue.put((fn, p))
                 pages += pdf_file.numPages
+
         with click.progressbar(length=pages, label='Dispatching scanned exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
@@ -102,9 +104,9 @@ class Sort:
             img.alpha_channel = 'remove'
             img_buffer = np.asarray(bytearray(img.make_blob('bmp')), dtype=np.uint8)
             image = cv2.imdecode(img_buffer, cv2.IMREAD_UNCHANGED)
-            #_retval, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)            
+            _retval, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)            
             try:
-                metadata = qrdecoder.decode(image)
+                metadata = qrdecoder.decode(binary)
                 # perform a rotation and image cropping to the qrcodes
                 tl = metadata['top_left_rect'][0]
                 br = metadata['bottom_right_rect'][2]
@@ -119,7 +121,7 @@ class Sort:
                 cv2.imwrite(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), image)
                 return metadata
             except Exception as e:
-                raise RuntimeError("Error processing file {}, page {} \n{}".format(filename, page, str(e)))        
+                raise RuntimeError("Error processing file {}, page {} \n{}".format(filename, page + 1, str(e)))        
             
 
             

@@ -141,8 +141,8 @@ rectangle/.default={0.2cm}}
           \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
         }{}
       };
-      \pgfmathsetmacro\OMR@questions@currentpage@start{int(min(\OMR@questions@pagelist))}
-      \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(\OMR@questions@pagelist))}
+      \pgfmathsetmacro\OMR@questions@currentpage@start{int(max(0, min(\OMR@questions@pagelist)))}
+      \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(0, max(\OMR@questions@pagelist)))}
       \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         

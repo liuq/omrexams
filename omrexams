@@ -90,7 +90,7 @@ def cli(ctx, debug):
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
 @click.option('--additional', '-a', type=int, required=False, help='Number of additional exam sheets')
-@click.option('--oneparchoices', '-opc', type=bool, required=False, help='If set, choices are constrained to be in the same paragraph')
+@click.option('--oneparchoices', '-opc', is_flag=True, type=bool, required=False, help='If set, choices are constrained to be in the same paragraph')
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
 def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, oneparchoices, yes):
@@ -134,7 +134,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                 marker = config['excel']['data_marker'].get('skip_until')
                 column = config['excel'].get('on_column', 0)
                 click.secho('Searching for data marker "{} in column {}"'.format(marker, column), fg='cyan')
-                wb = xlrd.open_workbook(students.name)
+                wb = xlrd.open_workbook(students)
                 sheet = wb.sheet_by_index(0)
                 for i in range(sheet.nrows):
                     row = sheet.row(i)
@@ -144,7 +144,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                         break
             if skip > 0:
                 click.secho('Skipping {} rows'.format(skip), fg='cyan')
-            student_list = pd.read_excel(students.name, skiprows=skip)
+            student_list = pd.read_excel(students, skiprows=skip)
             fields = config['excel']['fields']
             student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
             student_list.reset_index(inplace=True)
@@ -154,9 +154,8 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                 student_list += [(i + 100, "Additional student") for i in range(additional)]
                 click.secho('Added further {} students'.format(additional), fg='cyan')
         except Exception as e:
-            logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students.name))
+            logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students))
             sys.exit(-1)
-        students.close()
     else:
         click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
         click.secho('Starting serials from {}'.format(serial), fg='cyan')
@@ -193,13 +192,13 @@ def test(ctx, config, questions_dir, output, yes):
     generator.process()
 
 @cli.command()
-@click.argument('scanned_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('scanned', type=click.Path(exists=True, file_okay=True, dir_okay=True, resolve_path=True),  nargs=-1)
 @click.option('--sorted_dir', '-s', type=click.Path(exists=False, file_okay=False, resolve_path=True), prompt='Enter the directory name where to store the sorted exams')
 @click.option('--datafile', '-d', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True), required=False)
-@click.option('--resolution', '-r', default=200)
+@click.option('--resolution', '-r', default=300)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def sort(ctx, scanned_dir, sorted_dir, datafile, resolution, yes):
+def sort(ctx, scanned, sorted_dir, datafile, resolution, yes):
     """
     Sorts a set of pdf scanned documents into a series of png images, one for each sheet.
     """
@@ -210,7 +209,7 @@ def sort(ctx, scanned_dir, sorted_dir, datafile, resolution, yes):
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
 
-    sorter = Sort(scanned_dir, sorted_dir, datafile)
+    sorter = Sort(scanned, sorted_dir, datafile)
     sorter.sort(resolution)
 
 
@@ -218,7 +217,7 @@ def sort(ctx, scanned_dir, sorted_dir, datafile, resolution, yes):
 @click.argument('sorted_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option('--corrected', '-c', type=click.Path(exists=False, file_okay=True, resolve_path=True), default=os.path.join('.', 'corrected-exam.pdf'))
 @click.option('--datafile', '-d', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
-@click.option('--resolution', '-r', default=200)
+@click.option('--resolution', '-r', default=300)
 @click.option('--compression', '-z', type=int, default=50)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
@@ -239,7 +238,7 @@ def correct(ctx, sorted_dir, corrected, datafile, resolution, compression, yes):
 
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
-@click.option('--output', '-o', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--output', '-o', type=click.Path(exists=False, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
 def mark(ctx, datafile, output, yes):

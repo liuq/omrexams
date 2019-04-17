@@ -151,6 +151,7 @@ class Generate:
                     click.secho("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student), fg='red', blink=True)
                     logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
             except Exception as e:
+                raise e
                 print(e)
                 self.results_mutex.acquire()
                 self.error.value = True

@@ -136,7 +136,7 @@ class Correct:
                 if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):
                     raise RuntimeWarning("Correct answers in {} for student {} do not match with those encoded in the exam sheets".format(self.data_filename, exam['student_id']))
                 elif data is None:
-                    raise RuntimeWarning("Could not find student {} in the exams table".format(exam['student_id']))                
+                    continue               
                 for i, q in enumerate(exam['questions']):
                     question = statistics.get((Statistics.question_file == q[0]) & (Statistics.index == q[1]))
                     given_answer = decode_answers(data['given_answers'][i], q[3])
