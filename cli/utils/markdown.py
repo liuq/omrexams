@@ -266,6 +266,7 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))
         doc.preamble.append(pylatex.Command('solution', solutions))
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
+        doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
         with doc.create(PreambleEnvironment()) as env:
             env.append(self.parameters['preamble'])
         doc.append(pylatex.Command('vspace', '0.75em'))
@@ -287,6 +288,7 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))
         doc.preamble.append(pylatex.Command('solution', ''))
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
+        doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
         doc.preamble.append(pylatex.Command('printanswers'))
         with doc.create(PreambleEnvironment()) as env:
             env.append(self.parameters['preamble'])

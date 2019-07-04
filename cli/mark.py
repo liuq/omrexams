@@ -2,17 +2,29 @@ from tinydb import TinyDB, Query
 import pandas as pd
 
 def uniform(correct, marked, missing, wrong, size):
-    if len(marked) != 1:
+    if len(marked) < 1:
         return 0
     else:
         return -len(wrong) / (size - 1) + len(correct)
+
+def custom(correct, marked, missing, wrong, size):
+    if len(marked) == 0:
+        return 0
+    else:
+        return -0.25 * len(wrong) / (size - 1) + len(correct) / (len(correct) + len(missing))
+
+def correct_only(correct, marked, missing, wrong, size):
+    if len(marked) < 1:
+        return 0
+    else:
+        return len(correct) / (len(correct) + len(missing))
 
 class Mark:
     def __init__(self, datafile, outputfile):
         self.datafile = datafile
         self.outputfile = outputfile
 
-    def mark(self):        
+    def mark(self, marking_function=custom):        
         with TinyDB(self.datafile) as db:
             data = []
             Exam = Query()
@@ -28,7 +40,7 @@ class Mark:
                 for i in range(len(correct_answers)):
                     marked, correct, missing, wrong = given_answers[i], correct_answers[i] & given_answers[i], correct_answers[i] - given_answers[i], given_answers[i] - correct_answers[i]
                     q_size = question_size[i]
-                    points += uniform(correct, marked, missing, wrong, q_size)
+                    points += marking_function(correct, marked, missing, wrong, q_size)
                     current['question_{}_correct'.format(i)] = len(correct)
                     current['question_{}_missing'.format(i)] = len(missing)
                     current['question_{}_wrong'.format(i)] = len(wrong)

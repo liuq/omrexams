@@ -15,6 +15,7 @@ import math
 from . utils import image_utils as iu
 from . utils.colors import *
 from tinydb import TinyDB, Query
+
 class Sort:
     """
     This class is responsible of dispatching the scanned exams from a PDF into
@@ -103,10 +104,9 @@ class Sort:
             img.background_color = Color('white')
             img.alpha_channel = 'remove'
             img_buffer = np.asarray(bytearray(img.make_blob('bmp')), dtype=np.uint8)
-            image = cv2.imdecode(img_buffer, cv2.IMREAD_UNCHANGED)
-            _retval, binary = cv2.threshold(image, 128, 255, cv2.THRESH_BINARY)            
+            image = cv2.imdecode(img_buffer, cv2.IMREAD_GRAYSCALE)                      
             try:
-                metadata = qrdecoder.decode(binary)
+                metadata = qrdecoder.decode(image)
                 # perform a rotation and image cropping to the qrcodes
                 tl = metadata['top_left_rect'][0]
                 br = metadata['bottom_right_rect'][2]
@@ -117,7 +117,7 @@ class Sort:
                 rotation = cv2.getRotationMatrix2D(tuple(tl), 
                     detected_diag_angle - expected_diag_angle, 1.0)
                 image = cv2.warpAffine(image, rotation, (cols, rows), borderValue=WHITE)
-                metadata = qrdecoder.decode(image) 
+                # the image could be flipped, therefore here we restore the right qrcode order
                 cv2.imwrite(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), image)
                 return metadata
             except Exception as e:

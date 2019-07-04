@@ -9,7 +9,10 @@ from . image_utils import order_points
 
 
 def decode(image, highlight=False, offset=5):
-    qrcodes = pyzbar.decode(image)
+    if len(image.shape) > 2:
+        image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    qrcodes = pyzbar.decode(binary)
     if len(qrcodes) != 2:
         raise RuntimeError("Each page should have exactly two qrcodes, found {}".format(len(qrcodes)))
     qrcodes.sort(key=lambda b: b.rect[0])
@@ -22,12 +25,16 @@ def decode(image, highlight=False, offset=5):
             # if this is not the case, the qrcode.polygon can be inspected
             # and possibly used for rotation
             cv2.rectangle(image, (x - offset, y - offset), (x + w + offset, y + h + offset), GREEN, 3)
+    # extract information from the qrcodes
+    top_left_decode = decode_top_left(str(qrcodes[0].data))
+    bottom_right_decode = decode_bottom_right(str(qrcodes[1].data))        
+
     tl = np.array(qrcodes[0].rect[:2])
     br = np.array(qrcodes[1].rect[:2]) + np.array(qrcodes[1].rect[2:])
-    # extract information from the qrcodes
+
     metadata = { 
-        **decode_top_left(str(qrcodes[0].data)),
-        **decode_bottom_right(str(qrcodes[1].data)),
+        **top_left_decode,
+        **bottom_right_decode,
         'top_left': tl,
         'bottom_right': br,
         'top_left_rect': order_points(np.array(list(map(lambda p: np.array([p.x, p.y]), qrcodes[0].polygon)))),
@@ -38,11 +45,7 @@ def decode(image, highlight=False, offset=5):
     metadata['scaling'] = scaling
     if metadata['range'][0] is not None and metadata['range'][1] is not None:
         metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
-        # TODO: remove, it was fixing a bug in omr generation
-        # if metadata['page'] == 1:
-        #     metadata['page_correction'] = metadata['correct'][:metadata['range'][1] - 1]
-        # else:
-        #     metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 2:]
+
     return metadata
 
 def decode_bottom_right(data):
