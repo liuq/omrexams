@@ -12,9 +12,11 @@ def decode(image, highlight=False, offset=5):
     if len(image.shape) > 2:
         image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    qrcodes = pyzbar.decode(binary)
-    if len(qrcodes) != 2:
-        raise RuntimeError("Each page should have exactly two qrcodes, found {}".format(len(qrcodes)))
+    qrcodes = list(filter(lambda q: q.type == 'QRCODE', pyzbar.decode(binary)))
+    if len(qrcodes) < 2:
+        raise RuntimeError("Each page should have at least two qrcodes, found {}".format(len(qrcodes)))
+    if len(qrcodes) > 2:
+        raise RuntimeError("Found more than two qrcodes {}".format(qrcodes))
     qrcodes.sort(key=lambda b: b.rect[0])
     if highlight:
         for qrcode in qrcodes:
