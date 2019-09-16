@@ -5,14 +5,22 @@ from . crypt import vigenere_decrypt
 import math
 from . colors import *
 from pyzbar import pyzbar
+from pyzbar.pyzbar import ZBarSymbol
 from . image_utils import order_points
 
 
 def decode(image, highlight=False, offset=5):
     if len(image.shape) > 2:
         image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    qrcodes = list(filter(lambda q: q.type == 'QRCODE', pyzbar.decode(binary)))
+    qrcodes = pyzbar.decode(image, symbols=[ZBarSymbol.QRCODE])
+    if len(qrcodes) < 2:
+        _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        qrcodes = pyzbar.decode(binary, symbols=[ZBarSymbol.QRCODE])
+    t = 255
+    while t > 0 and len(qrcodes) < 2:
+        t = int(t / 1.61803398875)
+        _retval, binary = cv2.threshold(image, 255 - t, 255, cv2.THRESH_BINARY)
+        qrcodes = pyzbar.decode(binary, symbols=[ZBarSymbol.QRCODE])
     if len(qrcodes) < 2:
         raise RuntimeError("Each page should have at least two qrcodes, found {}".format(len(qrcodes)))
     if len(qrcodes) > 2:

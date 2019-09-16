@@ -81,7 +81,7 @@ def cli(ctx, debug):
 @cli.command()
 @click.option('--config', type=click.Path(exists=True, resolve_path=True), required=True, default=os.path.join('.', 'config.yaml'))
 @click.option('--students', '-s', type=click.Path(exists=True, resolve_path=True), required=False)
-@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), required=True)
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), default=os.path.join('.', 'questions'), required=True)
 @click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
 @click.option('--serial', type=int, default=100)
 @click.option('--output_prefix', '-o', type=click.Path(resolve_path=True), required=False, 
@@ -89,7 +89,7 @@ def cli(ctx, debug):
 @click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
-@click.option('--additional', '-a', type=int, required=False, help='Number of additional exam sheets')
+@click.option('--additional', '-a', type=int, required=False, default=0, help='Number of additional exam sheets')
 @click.option('--oneparchoices', '-opc', is_flag=True, type=bool, required=False, help='If set, choices are constrained to be in the same paragraph')
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context

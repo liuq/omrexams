@@ -126,7 +126,11 @@ class Generate:
             if task is None:
                 break
             logger.info("Started processing student {} {}".format(*student))
-            random.seed(self.seed + student[0])
+            if type(student[0]) == str:
+                s = ord(student[0][-1])
+            else:
+                s = student[0]
+            random.seed(self.seed + s)
             done = False
             try:
                 for _ in range(5):
@@ -235,7 +239,7 @@ class Generate:
     
     def append_exam(self, student, questions, answers):  
         data = { 
-            "student_id": int(student[0]),
+            "student_id": student[0],
             "fullname": student[1],                        
             "questions": []
         }

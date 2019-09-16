@@ -41,10 +41,10 @@ class Mark:
                     marked, correct, missing, wrong = given_answers[i], correct_answers[i] & given_answers[i], correct_answers[i] - given_answers[i], given_answers[i] - correct_answers[i]
                     q_size = question_size[i]
                     points += marking_function(correct, marked, missing, wrong, q_size)
-                    current['question_{}_correct'.format(i)] = len(correct)
-                    current['question_{}_missing'.format(i)] = len(missing)
-                    current['question_{}_wrong'.format(i)] = len(wrong)
-                    current['question_{}_size'.format(i)] = q_size
+                    current['question_{:02d}_correct'.format(i + 1)] = len(correct)
+                    current['question_{:02d}_missing'.format(i + 1)] = len(missing)
+                    current['question_{:02d}_wrong'.format(i + 1)] = len(wrong)
+                    current['question_{:02d}_size'.format(i + 1)] = q_size
                 current['total_points'] = points
                 data.append(current)
             df = pd.DataFrame.from_records(data)
