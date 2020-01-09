@@ -27,6 +27,7 @@ class Generate:
     QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
     TITLE_RE = re.compile(r"#\s+.*")
     QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
+    OPEN_QUESTION_RE = re.compile(r"{open-question:(\d*\.\d+|\d+)([^\d]+)}")
 
     def __init__(self, config, questions, output_prefix, **kwargs):
         self.config = config
@@ -190,7 +191,7 @@ class Generate:
                 topic_mutually_exclusive = [t]
                 q = re.search(Generate.QUESTION_RE, t[0])
                 if not q:
-                    raise RuntimeError("Apparently, question \"{}\" has no text".format(t))                
+                    raise RuntimeError("Apparently, question \"{}\" has no text".format(t[0]))                
                 q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0

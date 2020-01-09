@@ -51,6 +51,12 @@ class QuestionTopic(span_token.SpanToken):
 
     def __init__(self, match):
         self.id = match.group(1)
+
+class OpenQuestion(span_token.SpanToken):
+    pattern = re.compile(r"{open-question:(\d*\.\d+|\d+)([^\d]+)}")
+
+    def __init__(self, match):
+        self.lines = r'\fillwithlines{' + match.group(1) + match.group(2) + '}'
         
 class QuestionList(block_token.List):
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
@@ -94,7 +100,7 @@ class QuestionRenderer(LaTeXRenderer):
         self.questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -110,6 +116,10 @@ class QuestionRenderer(LaTeXRenderer):
             return ''
         else:
             return '\\fbox{' + token.id + '}'
+
+    
+    def render_open_question(self, token):
+        return token.lines
 
     def render_image(self, token):
         self.packages['graphicx'] = []
@@ -137,16 +147,16 @@ class QuestionRenderer(LaTeXRenderer):
             elif token.level == 1:
                 return ''
             template = "\question\n{inner}"
-            inner = self.render_inner(token)
-            self.questions[-1]['question'] = inner.strip()
-            return template.format(inner=inner)
+            inner = self.render_inner(token).strip()
+            self.questions[-1]['question'] = inner  
+            return template.format(inner=inner)  
         else:
             if token.level != 2:
                 return super().render_heading(token)
             else:
                 template = "\question\n{inner}"
-                inner = self.render_inner(token)
-                self.questions[-1]['question'] = inner.strip()
+                inner = self.render_inner(token).strip()
+                self.questions[-1]['question'] = inner                                    
                 return template.format(inner=inner)  
 
     def render_list(self, token):
@@ -267,11 +277,12 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('solution', solutions))
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
         doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
-        with doc.create(PreambleEnvironment()) as env:
-            env.append(self.parameters['preamble'])
+        doc.append("\n")
+        with doc.create(PreambleEnvironment()):
+            doc.append(self.parameters['preamble'])
         doc.append(pylatex.Command('vspace', '0.75em'))
-        with doc.create(QuestionsEnvironment()) as env:
-            env.append(inner)
+        with doc.create(QuestionsEnvironment()):
+            doc.append(inner)
         return doc
 
     def render_test(self, token):
@@ -290,11 +301,12 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
         doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
         doc.preamble.append(pylatex.Command('printanswers'))
-        with doc.create(PreambleEnvironment()) as env:
-            env.append(self.parameters['preamble'])
+        doc.append("\n")
+        with doc.create(PreambleEnvironment()):
+            doc.append(self.parameters['preamble'])
         doc.append(pylatex.Command('vspace', '1em'))
-        with doc.create(QuestionsEnvironment()) as env:
-            env.append(inner)
+        with doc.create(QuestionsEnvironment()):
+            doc.append(inner)
         return doc
             
 class DocumentStripRenderer(LaTeXRenderer):

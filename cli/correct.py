@@ -126,7 +126,7 @@ class Correct:
                 db2.purge_table('correction')
             table = db2.table('correction')
             for student in data:
-                table.insert({ 'student_id': int(student), **data[student] })   
+                table.insert({ 'student_id': student, **data[student] })   
             db2.purge_table('statistics')
             statistics = db2.table('statistics')    
             Statistics = Query()                       

@@ -8,47 +8,38 @@ excel: # metadata description of the excel file for mapping to the expected form
     on_column: 0
   encoding: latin-1 # also this might infamously be needed by the silly esse3 output
 exam: # exam details
-  name: Fondamenti di Informatica – Relazioni Pubbliche # exam name
+  name: Modulo di Informatica - CCLM Medicina e Chirurgia # exam name
   language: Italian # localization to be used
   shuffle_questions: yes # whether the questions are proposed in a random order or in the original one
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
   page_limits: 4 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
-  max_questions: 20
+  max_questions: 10
 questions: 
   - from: "*.md"
     draw: 2
-  - from: "09-sociali.md"
-    draw: 1
-  - from: "11-hci.md"
+  - from: "12-open.md"
     draw: 1
 header: |
   \sf
   \Large \theexam \newline
-  \normalsize \thedate \newline
-  \thematriculationno, \thestudent \newline
-  Durata 40 minuti 
+  \normalsize \thedate \newline 
+  MATRICOLA \fillin[][3cm] \newline
+  NOME \fillin[][4cm] COGNOME \fillin[][4cm] \newline 
+  Durata 1 ora
   \normalfont
 preamble: | 
   \small \sf
-  **Leggere con attenzione.**
   Il compito va **svolto su questo foglio** che dovrà essere consegnato al termine della prova. 
-  Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti 
-  sulla parte destra del foglio come indicato nella prima figura. Tutte le altre indicazioni
-  sono considerate scorrette.
+  Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti  sulla parte destra del foglio come indicato nella figura. 
 
   ![](images/omr_instructions.pdf)
 
   **Non è consentita la correzione** delle risposte definitive: si consiglia di ricopiare 
   le risposte sulla parte a lettura ottica *solamente* quando si è certi delle risposte stesse. 
-  Inoltre, **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
-  ciò darà luogo **immediatamente** e **incontestabilmente** all'**annullamento** della prova d'esame.
-  Ogni domanda può avere **una o più risposte corrette**: l'individuazione di tutte le risposte corrette 
-  attribuirà **1 punto**, **0 punti** saranno attribuiti alla **mancata risposta**, un punteggio negativo 
-  (da determinarsi) alle risposte scorrette.
-  Tenere a portata di mano un **documento di identità** per la convalida del compito da parte del docente.
   \normalsize 
+  
 footer: # currently no footer
 choices:
   circled: True
-  oneparchoices: False
+  oneparchoices: True

@@ -10,8 +10,10 @@ def uniform(correct, marked, missing, wrong, size):
 def custom(correct, marked, missing, wrong, size):
     if len(marked) == 0:
         return 0
+    if len(marked) == size:
+        return 0
     else:
-        return -0.25 * len(wrong) / (size - 1) + len(correct) / (len(correct) + len(missing))
+        return len(correct) / (len(correct) + len(missing))
 
 def correct_only(correct, marked, missing, wrong, size):
     if len(marked) < 1:
