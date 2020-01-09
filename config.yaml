@@ -14,12 +14,12 @@ exam: # exam details
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
   page_limits: 4 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
-  max_questions: 10
+  max_questions: 11
 questions: 
   - from: "*.md"
     draw: 2
   - from: "12-open.md"
-    draw: 1
+    draw: 2
 header: |
   \sf
   \Large \theexam \newline

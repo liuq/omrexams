@@ -56,7 +56,7 @@ class OpenQuestion(span_token.SpanToken):
     pattern = re.compile(r"{open-question:(\d*\.\d+|\d+)([^\d]+)}")
 
     def __init__(self, match):
-        self.lines = r'\fillwithlines{' + match.group(1) + match.group(2) + '}'
+        self.lines = r'\fillwithdottedlines{' + match.group(1) + match.group(2) + '}'
         
 class QuestionList(block_token.List):
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
@@ -143,12 +143,13 @@ class QuestionRenderer(LaTeXRenderer):
     def render_heading(self, token):
         if not self.parameters.get('test', False):
             if token.level > 2:
-                return super().render_heading(token)
+                inner = self.render_inner(token).strip()
+                return '{inner}\n\\newline'.format(inner=inner)
             elif token.level == 1:
                 return ''
             template = "\question\n{inner}"
             inner = self.render_inner(token).strip()
-            self.questions[-1]['question'] = inner  
+            self.questions[-1]['question'] = inner 
             return template.format(inner=inner)  
         else:
             if token.level != 2:
@@ -244,7 +245,7 @@ class QuestionRenderer(LaTeXRenderer):
                     current += chr(ord('A') + i)
             solutions.append(current)
         # encryption of the solution is the default option
-        if self.parameters.get('encrypt', True):
+        if self.parameters.get('encrypt', True): 
             solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
         else:
             solutions = ','.join(solutions)        

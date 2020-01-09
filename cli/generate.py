@@ -80,7 +80,6 @@ class Generate:
         for r in sorted(rules.keys()):
             self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }
             self.open_questions[os.path.basename(r)] = { 'content': self.load_open_questions(r), 'draw': rules[r] }
-        print(self.open_questions)
         logger.info('Creating and preparing tmp directory')
         if os.path.exists('tmp'):
             rmtree('tmp')
