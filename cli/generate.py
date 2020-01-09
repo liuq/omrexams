@@ -59,7 +59,12 @@ class Generate:
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: not Generate.TITLE_RE.match(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: not Generate.TITLE_RE.match(q) and not Generate.OPEN_QUESTION_RE.search(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            return questions
+
+    def load_open_questions(self, filename):
+        with open(filename, 'r') as f:
+            questions = list(filter(lambda q: Generate.OPEN_QUESTION_RE.search(q), Generate.QUESTION_MARKER_RE.split(f.read())))
             return questions
     
     def process(self):
@@ -71,8 +76,11 @@ class Generate:
     def generate_exams(self):
         rules = self.load_rules()
         self.questions = {}
+        self.open_questions = {}
         for r in sorted(rules.keys()):
-            self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }    
+            self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }
+            self.open_questions[os.path.basename(r)] = { 'content': self.load_open_questions(r), 'draw': rules[r] }
+        print(self.open_questions)
         logger.info('Creating and preparing tmp directory')
         if os.path.exists('tmp'):
             rmtree('tmp')
@@ -171,19 +179,10 @@ class Generate:
                 self.results_mutex.release()
                 self.tasks_queue.task_done()
 
-    def create_exam(self, student):     
-        def code_answer(answers):
-                current = ""
-                for i in range(len(answers)):
-                    if answers[i]:
-                        current += chr(ord('A') + i)
-                return current
-        logger.info("Creating exam {} {}".format(*student)) 
-        # randomly select a given number of questions from each file
-        # however, avoid to select more than once the questions with the same text
-        questions = []
 
-        for filename, topic in self.questions.items():
+    def draw_questions(self, Q):
+        questions = []
+        for filename, topic in Q:
             candidate_questions = list((q, i) for i, q in enumerate(topic['content']))
             current_questions = []
             while candidate_questions:
@@ -205,13 +204,33 @@ class Generate:
                     else:
                         j = j + 1
                 current_questions += random.sample(topic_mutually_exclusive, 1)
-            sample = random.sample(list(range(len(current_questions))), topic['draw'])
-            questions += list(map(lambda index: (filename, current_questions[index][1], current_questions[index][0]), 
-                sample))
+            sample = random.sample(list(range(len(current_questions))), min(topic['draw'], len(current_questions)))
+            questions += list(map(lambda index: (filename, current_questions[index][1], current_questions[index][0]), sample))
+        return questions
+
+
+    def create_exam(self, student):     
+        def code_answer(answers):
+                current = ""
+                for i in range(len(answers)):
+                    if answers[i]:
+                        current += chr(ord('A') + i)
+                return current
+        logger.info("Creating exam {} {}".format(*student)) 
+        # randomly select a given number of questions from each file
+        # however, avoid to select more than once the questions with the same text
+        questions = self.draw_questions(self.questions.items())        
         if self.config['exam'].get('shuffle_questions', False):
             random.shuffle(questions)
         if self.config['exam'].get('max_questions', False):
             questions = questions[:self.config['exam'].get('max_questions')]
+
+        open_questions = self.draw_questions(self.open_questions.items())
+        if self.config['exam'].get('shuffle_questions', False):
+            random.shuffle(open_questions)
+        if self.config['exam'].get('max_open_questions', False):
+            open_questions = open_questions[:self.config['exam'].get('max_open_questions')]        
+
         if self.config.get('header'):
             with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 header = renderer.render(Document(self.config.get('header')))
@@ -233,6 +252,8 @@ class Generate:
                               usesf=self.config.get('choices', {}).get('usesf', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q[2], questions)) + '\n---\n'
+            if open_questions:
+                content += '\n---\n'.join(map(lambda q: q[2], open_questions)) + '\n---\n'
             document = renderer.render(Document(content))   
             tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        
             overall_answers = list(code_answer(q['answers']) for q in renderer.questions)
