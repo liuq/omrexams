@@ -262,9 +262,9 @@ class Correct:
     def add_superimposed(image, mask, roi, p0, p1, method):
         superimposed = cv2.bitwise_and(mask, roi)
         prev_x = image.shape[1]
-        image = cv2.copyMakeBorder(image, 0, 0, 0, superimposed.shape[1], cv2.BORDER_CONSTANT,value=WHITE)
+        image = cv2.copyMakeBorder(image, 0, 0, 0, superimposed.shape[1], cv2.BORDER_CONSTANT, value=WHITE)
         image[p0[1]:p1[1], prev_x:prev_x + superimposed.shape[1]] = superimposed
-        cv2.putText(image, method, (prev_x, p1[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, MAGENTA, 3)
+        cv2.putText(image, method, (prev_x, p0[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, BLUE, 3)
         return image
     
     def write(self, filename, image):
@@ -461,9 +461,9 @@ class Correct:
                 p = np.array(reference_circle[:2]) + [-reference_circle[2], -reference_circle[2] - 40]
                 cv2.putText(mask, "Missing answer(s) {}".format(missing_answers), tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, RED, 3)
             # write a text with the given answers and the correct ones close to each reference circle
-            p = np.array(reference_circle[0:2]) + [-reference_circle[2], reference_circle[2] + 40]
+            p = np.array(reference_circle[0:2]) + [-reference_circle[2], reference_circle[2] - 100]
             tmp = ("".join(sorted(a for a in answers_res)) if answers_res else "None")
-            tmp += "/" + "".join(sorted(a for a in correct_res))
+            tmp += "/" + ("".join(sorted(a for a in correct_res)) if correct_res else "None")
             cv2.putText(mask, tmp, tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, MAGENTA, 3)
             correction.append((answers_res, correct_res))
         return correction, mask

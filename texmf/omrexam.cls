@@ -140,14 +140,17 @@ rectangle/.default={0.2cm}}
       \foreach \question in {1, ..., \exam@numquestions} {%
         \ifthenelse{\cnttest{\PgInfo@get{question@\question}}{=}{\thepage}}{
           \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
-          \pgfmathsetmacro\OMR@tmp{(\PosInfo@get{question@\question} - \OMR@CurrentPageCenter@YCoord)}
+          \pgfmathsetmacro\OMR@tmp{(\PosInfo@get{question@\question} - \OMR@CurrentPageCenter@YCoord + \CroppedPage@TopLeft@YCoord)}
           \xdef\OMR@questions@posylist{\OMR@tmp,\OMR@questions@posylist}
         }{}
       };
 
       \pgfmathsetmacro\OMR@questions@currentpage@start{int(max(0, min(\OMR@questions@pagelist)))}
       \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(0, max(\OMR@questions@pagelist)))}
+      \pgfmathtruncatemacro{\OMR@questions@minyposition}{min(\OMR@questions@posylist)}
+      \pgfmathtruncatemacro{\OMR@questions@minyposition}{(\OMR@questions@minyposition - 1.5 * \OMR@Diameter)}
       \pgfmathtruncatemacro{\OMR@questions@maxyposition}{max(\OMR@questions@posylist)}
+      \pgfmathtruncatemacro{\OMR@questions@maxyposition}{(\OMR@questions@maxyposition + 1.5 * \OMR@Diameter)}
 
       % \draw [gray]
       % (current page marginpar area.north west)
@@ -155,7 +158,7 @@ rectangle/.default={0.2cm}}
       % (current page marginpar area.south east);                
 
 %      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
-      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
+      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@questions@minyposition)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
       \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
