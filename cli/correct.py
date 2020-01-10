@@ -178,10 +178,11 @@ class Correct:
                 break
             try:
                 detected_answers, correct_answers = self.process(filename)
-                student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
-                self.results_mutex.acquire()
-                self.append_correction(student, page, detected_answers, correct_answers)
-                self.results_mutex.release()
+                if correct_answers: # probably no question in current file                
+                    student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
+                    self.results_mutex.acquire()
+                    self.append_correction(student, page, detected_answers, correct_answers)
+                    self.results_mutex.release()
             except Exception as e:
                 click.secho("\nIn file {}\n".format(filename) + str(e), fg="yellow")
             finally:
@@ -195,6 +196,9 @@ class Correct:
         offset = 5
         image = cv2.imread(filename)
         metadata = qrdecoder.decode(image, True)
+        if metadata['range'] == (0, 0): # no question and markers in current page
+            self.write(filename, image)
+            return [], []
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
         p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl
