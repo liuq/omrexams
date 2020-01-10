@@ -81,11 +81,12 @@ class Correct:
         if not self.watch_queue.empty():
             click.secho('Some exams deserve attention because of highly incoherent detection:', fg='red', blink=True)
             while not self.watch_queue.empty():
-                watch.add(os.path.basename(self.watch_queue.get()))
+                watch.add(self.watch_queue.get())
             delete_default = False
-            for filename in watch:
+            for w in watch:
+                filename = os.path.basename(w[0])
                 filename = os.path.join('tmp', ".".join(filename.split(".")[:-1]) + ".jpg")
-                click.secho('\t{}'.format(filename), fg='yellow')   
+                click.secho('\t{} {}'.format(filename, w[1]), fg='yellow')   
         # Collecting all corrected exams into a single pdf file
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
         with open(self.corrected, "wb") as f:
@@ -253,7 +254,7 @@ class Correct:
                 if counter[a] > len(correction) / 2:
                     tmp.append(a)
             if all(c1[i] != c2[i] for c1, c2 in combinations(correction, 2)):
-                self.watch_queue.put(filename)
+                self.watch_queue.put((filename, i))
             majority.append(set(tmp))                        
         return majority, correct_answers
 

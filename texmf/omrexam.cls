@@ -90,14 +90,12 @@ rectangle/.default={0.2cm}}
 \newcommand*{\XDistance}[2]{\path (#1); \pgfgetlastxy{\XCoordA}{\YCoord}; \path (#2); \pgfgetlastxy{\XCoordB}{\YCoord}; \pgfmathsetmacro{\DistanceX}{\XCoordB - \XCoordA}}%
 \newcommand*{\YDistance}[2]{\path (#1); \pgfgetlastxy{\XCoord}{\YCoordA}; \path (#2); \pgfgetlastxy{\XCoord}{\YCoordB}; \pgfmathsetmacro{\DistanceY}{\XCoordB - \XCoordA}}%
 
+\def\PosInfo#1#2{\expandafter\gdef\csname Pos@#1\endcsname{#2}}
+\def\PosInfo@get#1{\csname Pos@#1\endcsname}
+
 \DeclareRobustCommand{\omr@markers}{%
   \ifthenelse{\boolean{student@defined} \AND \boolean{examname@defined}}{%
   \begin{tikzpicture}[remember picture,overlay]        
-%    \draw [gray]
-%        (current page marginpar area.south west)
-%        rectangle
-%        (current page marginpar area.north east);
-
     \draw 
         (current page.north west)
         node [below right, text width=2cm, xshift=1cm, yshift=-1cm] (TL) {};
@@ -123,26 +121,41 @@ rectangle/.default={0.2cm}}
     \pgfmathtruncatemacro{\OMR@BottomRight@YCoord}{-(\OMR@BottomRight@YCoord - \CroppedPage@TopLeft@YCoord)};   
 
     % All distances/sizes are expressed in points
-    \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
     \draw
         (current page header area.north west)
         node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          \draw
+        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          
+    \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
+
+    \ExtractCoordinates{current page.center}{\OMR@CurrentPageCenter@XCoord}{\OMR@CurrentPageCenter@YCoord};
 
     % In order to determine which are the questions in the current page
     \ifthenelse{\isundefined{\exam@numquestions}}{}{%
       \def\OMR@questions@pagelist{}
+      \def\OMR@questions@posylist{}
       \foreach \question in {1, ..., \exam@numquestions} {%
         \ifthenelse{\cnttest{\PgInfo@get{question@\question}}{=}{\thepage}}{
           \xdef\OMR@questions@pagelist{\question,\OMR@questions@pagelist}
+          \pgfmathsetmacro\OMR@tmp{(\PosInfo@get{question@\question} - \OMR@CurrentPageCenter@YCoord)}
+          \xdef\OMR@questions@posylist{\OMR@tmp,\OMR@questions@posylist}
         }{}
       };
+
       \pgfmathsetmacro\OMR@questions@currentpage@start{int(max(0, min(\OMR@questions@pagelist)))}
       \pgfmathsetmacro\OMR@questions@currentpage@end{int(max(0, max(\OMR@questions@pagelist)))}
+      \pgfmathtruncatemacro{\OMR@questions@maxyposition}{max(\OMR@questions@posylist)}
+
+      % \draw [gray]
+      % (current page marginpar area.north west)
+      % rectangle 
+      % (current page marginpar area.south east);                
+
+%      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
+      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
       \draw 
         (current page.south east)
         node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
@@ -195,33 +208,50 @@ rectangle/.default={0.2cm}}
   }{\BODY}  
 }
 
-\newcommand\OMR@markbox[1]{%
-\begin{tikzpicture}[remember picture, overlay]
-  \coordinate (here) at (0, 0);
-  \draw (current page marginpar area.west |- here) + ($(0.0, {-0.5 * \OMR@Size})$) node [anchor=south west, align=left] {#1};
-\end{tikzpicture}%
-\ignorespaces%
+\newcounter{omranswers}
+\def\PosInfo@write#1#2{%
+  \begingroup
+    \edef\reserved@a{\write\@mainaux
+      {\string\PosInfo{#1}{#2}}}%
+    \reserved@a
+  \endgroup
 }
 
-\newcounter{omranswers}
 \newcommand{\omrchoices}[1]{%
-\OMR@markbox{
 \begin{checkomrchoiceswidth}{\marginparwidth}
-\raisebox{-0.5\baselineskip}{
-\begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size]
+\begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size, remember picture, overlay]  
+  \coordinate (here) at (0, 0);
+  \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] {\thequestion};  
+  \path (current page marginpar area.west) + (0.25, 0);
+  \pgfgetlastxy{\XCoord}{\YCoord};
+  \edef\q@object@label{question@\arabic{question}}%
+  \PosInfo@write{\q@object@label}{\YCoord}
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}
-  \node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
-  %\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
-  %\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
-  \node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
-  \node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
+  \draw (current page marginpar area.west |- here) + ($({1.25 * \position + 0.25}, 0)$) node [anchor=north west, draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] {};
+  \draw (current page marginpar area.west |- here) + ($({1.25 * \position + 0.25}, 1.0)$) node [anchor=north west, circle, inner sep=0pt, minimum size=\OMR@Size, color=black!50!white] {\small\ocr{\Alph{omranswers}}};
 };
 \end{tikzpicture}
-}
 \end{checkomrchoiceswidth}
 }
-}
+
+% \newcounter{omranswers}
+% \newcommand{\omrchoices}[1]{%
+% \OMR@markbox{
+%\begin{checkomrchoiceswidth}{\marginparwidth}
+% \begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size]  
+% \foreach \position in {1, ..., #1} {%
+%   \setcounter{omranswers}{\position}
+%   \node [draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] at (0, 0) {\thequestion};
+%   %\node [draw=black, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at (0, 0) {};
+%   %\node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($(0, {1.25 * \OMR@Size})$) {};
+%   \node [circle, inner sep=0pt, minimum size=\OMR@Size, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
+%   \node [draw=black!50!white, line width=\OMR@BorderWidth, circle, inner sep=0pt, minimum size=\OMR@Size] at ($({1.25 * \position}, 0)$) {};
+% };
+% \end{tikzpicture}
+%\end{checkomrchoiceswidth}
+% }
+% }
 
 % FIXME: only for testing (in order to prevent transparent background), it shoudl be removed later
 %\usepackage{xcolor}
