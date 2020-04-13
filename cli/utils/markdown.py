@@ -592,7 +592,7 @@ class MoodleRenderer(BaseRenderer):
             
         _ = ET.SubElement(category, 'category')
         _ = ET.SubElement(_, 'text')
-        category = self.parameters.get('category', 'default')
+        category = self.parameters.get('category', 'default-open')
         category = (category[:20] + "...") if len(category) >= 23 else category
         _.text = f"$course$/{category}"
 

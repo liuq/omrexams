@@ -13,12 +13,13 @@ class MoodleConverter:
     def convert(self):
         for filename in glob.glob(os.path.join(self.questions_path, '*.md')):
             output_file = os.path.basename(filename).split('.')[0]
-#            questions = self.load_questions(filename)
-#            document = self.generate_xml(output_file, questions)
-#            document.write(output_file + '.xml', xml_declaration=True, encoding='utf-8')
+            questions = self.load_questions(filename)
+            if questions:
+                document = self.generate_xml(output_file, questions)
+                document.write(output_file + '.xml', xml_declaration=True, encoding='utf-8')
             open_questions = self.load_open_questions(filename)
             if open_questions:
-                document = self.generate_xml(output_file, open_questions, True)
+                document = self.generate_xml('open-' + output_file, open_questions, True)
                 document.write(output_file + '-open.xml', xml_declaration=True, encoding='utf-8')
 
     def load_questions(self, filename):
