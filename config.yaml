@@ -13,7 +13,7 @@ exam: # exam details
   shuffle_questions: yes # whether the questions are proposed in a random order or in the original one
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
-  page_limits: 4 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
+  page_limits: 5 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
   max_questions: 20
 questions: 
   - from: "*.md"
@@ -22,14 +22,14 @@ questions:
     draw: 1
   - from: "11-hci.md"
     draw: 1
-  - from: "12-open.md"
+  - from: "12-aggiuntive.md"
     draw: 2
 header: |
   \sf
   \Large \theexam \newline
   \normalsize \thedate \newline
   \thematriculationno, \thestudent \newline
-  Durata 40 minuti 
+  Durata 55 minuti 
   \normalfont
 preamble: | 
   \small \sf

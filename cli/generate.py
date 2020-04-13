@@ -19,15 +19,16 @@ from . utils.directories import BASEDIR
 
 logger = logging.getLogger("omrexams")
 
+QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
+TITLE_RE = re.compile(r"#\s+.*")
+QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
+OPEN_QUESTION_RE = re.compile(r"{open-question}")
+
 class Generate:
     """
     This class is responsible of creating the individual exams for a number of students 
     or an overall testing document for checking the questions and their answers.
-    """
-    QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
-    TITLE_RE = re.compile(r"#\s+.*")
-    QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
-    OPEN_QUESTION_RE = re.compile(r"{open-question:(\d*\.\d+|\d+)([^\d]+)}")
+    """    
 
     def __init__(self, config, questions, output_prefix, **kwargs):
         self.config = config
@@ -59,12 +60,12 @@ class Generate:
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: not Generate.TITLE_RE.match(q) and not Generate.OPEN_QUESTION_RE.search(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
 
     def load_open_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: Generate.OPEN_QUESTION_RE.search(q), Generate.QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
     
     def process(self):
@@ -187,14 +188,14 @@ class Generate:
             while candidate_questions:
                 t = candidate_questions.pop()
                 topic_mutually_exclusive = [t]
-                q = re.search(Generate.QUESTION_RE, t[0])
+                q = re.search(QUESTION_RE, t[0])
                 if not q:
                     raise RuntimeError("Apparently, question \"{}\" has no text".format(t[0]))                
                 q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0
                 while j < len(candidate_questions):
-                    cq = re.search(Generate.QUESTION_RE, candidate_questions[j][0])
+                    cq = re.search(QUESTION_RE, candidate_questions[j][0])
                     if not cq:
                         raise RuntimeError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
                     cq_id = cq.group(2).strip() if cq.group(2) else None
@@ -254,13 +255,14 @@ class Generate:
             if open_questions:
                 content += '\n---\n'.join(map(lambda q: q[2], open_questions)) + '\n---\n'
             document = renderer.render(Document(content))   
-            tmp = map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions)))                        
+            tmp = list(map(lambda i: (*questions[i][:2], code_answer(renderer.questions[i]['answers']), renderer.questions[i]['permutation']), range(len(questions))))
+#            tmp += list(map(lambda i: (*open_questions[i][:2], code_answer(renderer.questions[i + len(questions)]['answers']), renderer.questions[i + len(questions)]['permutation']), range(len(open_questions))))
             overall_answers = list(code_answer(q['answers']) for q in renderer.questions)
-            return document, list(tmp), overall_answers
+            return document, tmp, overall_answers
     
     def append_exam(self, student, questions, answers):  
         data = { 
-            "student_id": student[0],
+            "student_id": str(student[0]),
             "fullname": student[1],                        
             "questions": []
         }
@@ -268,6 +270,8 @@ class Generate:
             data['questions'].append(q)
         data['answers'] = answers
         with TinyDB(self.output_list_filename) as db:
+#            import json
+#            print(json.dumps(data))
             db.table('exams').insert(data)
 
     def generate_test(self):

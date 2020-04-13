@@ -26,7 +26,7 @@ class Mark:
         self.datafile = datafile
         self.outputfile = outputfile
 
-    def mark(self, marking_function=custom):        
+    def mark(self, marking_function=uniform):        
         with TinyDB(self.datafile) as db:
             data = []
             Exam = Query()

@@ -10,6 +10,7 @@ import re
 import logging
 import click
 import os
+import xml.etree.ElementTree as ET
  
 logger = logging.getLogger("omrexams")
 
@@ -52,11 +53,14 @@ class QuestionTopic(span_token.SpanToken):
     def __init__(self, match):
         self.id = match.group(1)
 
-class OpenQuestion(span_token.SpanToken):
-    pattern = re.compile(r"{open-question:(\d*\.\d+|\d+)([^\d]+)}")
+class Lines(span_token.SpanToken):
+    pattern = re.compile(r"{lines:(\d*\.\d+|\d+)([^\d]+)}")
 
     def __init__(self, match):
         self.lines = r'\fillwithdottedlines{' + match.group(1) + match.group(2) + '}'
+
+class OpenQuestion(span_token.SpanToken):
+    pattern = re.compile(r"({open-question})")
         
 class QuestionList(block_token.List):
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
@@ -65,7 +69,7 @@ class QuestionBlock(block_token.BlockToken):
     """
     Question Block is identified by a horizontal rule with at least 3 elements at the very beginning of the line
     """
-    pattern = re.compile(r'^(?:-{3,})\s*$', )
+    pattern = re.compile(r'^(?:-{3,})\s*$')
 
     def __init__(self, lines):
         super().__init__(lines, block_token.tokenize)
@@ -100,7 +104,7 @@ class QuestionRenderer(LaTeXRenderer):
         self.questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, Lines], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -118,7 +122,7 @@ class QuestionRenderer(LaTeXRenderer):
             return '\\fbox{' + token.id + '}'
 
     
-    def render_open_question(self, token):
+    def render_lines(self, token):
         return token.lines
 
     def render_image(self, token):
@@ -384,3 +388,218 @@ class CheckmarkRenderer(HTMLRenderer, LaTeXRenderer):
             return template.format('checked')
         else:
             return template.format('')
+
+
+class MoodleRenderer(BaseRenderer):   
+    def __init__(self, *extras, **kwargs):
+        """
+        Args:
+            extras (list): allows subclasses to add even more custom tokens.
+        KeywordArgs:
+            basedir: the base directory for relative paths
+            section: the name of the section
+        """
+        self.questions = []
+        self.open_questions = []
+        # TODO: check parameter coherence
+        self.parameters = kwargs
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion], extras))
+        
+    def render_question_marker(self, token):
+        if not self.record_answers:
+            raise ValueError("Probably a misplaced question marker has been used (i.e., a list not starting with it) for question \"{}\"".format(self.questions[-1]['question']))
+        if token.marker != ' ':
+            self.questions[-1]['answers'].append(True)
+        else:
+            self.questions[-1]['answers'].append(False)            
+        return ''
+
+    def render_question_topic(self, token):
+        return ''
+        # if not self.parameters.get('test', False):
+        #     return ''
+        # else:
+        #     return '\\fbox{' + token.id + '}'
+
+    
+    def render_open_question(self, token):
+        return ''
+
+    def render_image(self, token):
+        path = os.path.realpath(token.src)
+        if not os.path.isabs(path):
+            path = os.path.join(self.parameters.get('basedir'), path)
+        # TODO: insert image as a base64 encoded file
+        return ''
+
+    def render_question_block(self, token):
+        # possibly, the first question could start without a marker 
+        # and could contain the heading of the section
+        self.questions.append({ 'question': "", 'choices': [], 'answers': [] })
+        inner = self.render_inner(token)
+        return inner
+
+    def render_table_row(self, token):
+        cells = [self.render(child) for child in token.children]
+        return ' | '.join(cells) + '\n'
+    
+    def render_heading(self, token):
+        if token.level == 1:            
+            return ''
+        inner = self.render_inner(token).strip()
+        if any(lambda c: type(c) == OpenQuestion for c in token.children):
+            self.open_questions.append(inner)
+        else:
+            self.questions[-1]['question'] = inner 
+        return ''  
+
+    def render_list(self, token):
+        inner = self.render_inner(token)
+        if inner:
+            return inner
+        else:
+            return ''
+
+    def custom_render_list_item(self, token):
+        inner = self.render_inner(token)
+        if inner:
+            return '- {}\n'.format(inner)
+        else:
+            return ""
+
+    def render_question_list(self, token):
+        self.record_answers = True
+        answers = [self.render_list_item(child) for child in token.children]
+        self.record_answers = False
+        if not any(self.questions[-1]['answers']):
+            click.secho("Warning: question \"{}\" has no correct answer".format(self.questions[-1]['question']), fg='yellow')
+            logger.warning("No correct answer for current question")
+        inner = ''.join(answers)
+        return inner
+
+    def render_block_code(self, token):
+        template = ('```{language}\n'
+                    '{}'
+                    '```\n')
+        inner = self.render_raw_text(token.children[0])
+        if token.language:
+            return template.format(inner, language=token.language)
+        else:
+            return template.format(inner, language="")
+    
+    def render_list_item(self, token):
+        if not self.record_answers:
+            return self.custom_render_list_item(token)
+        else:
+            self.questions[-1]['choices'].append(" ".join(self.render(child) for child in token.children))
+            return ''
+        #    raise Error("Once a question list is started all the list items must be questions")                               
+
+    def render_questions(self, token):    
+        def render_question(question):
+            q = ET.Element('question', type='multichoice')
+            name = ET.Element('name')
+            _ = ET.SubElement(name, 'text')
+            _.text = (question['question'][:30] + '...') if len(question['question']) > 33 else question['question']
+            q.append(name)
+            qtext = ET.Element('questiontext', format='markdown')
+            _ = ET.SubElement(qtext, 'text')
+            _.text = question['question']            
+            q.append(qtext)
+            _ = ET.Element('shuffleanswers')
+            _.text = 'true'
+            q.append(_)
+            _ = ET.Element('answernumbering')
+            _.text = 'ABCD'
+            q.append(_)
+            _ = ET.Element('single')
+            n_correct = sum(filter(lambda a: a, question['answers'])) 
+            if self.parameters.get('single', False):
+                _.text = 'true'
+                if n_correct != 1:
+                    logger.warning(f'Question {question["question"]} has {n_correct} correct answers but the --single flag was specified')
+            else:
+                _.text = 'false'
+            q.append(_)
+            n = len(question['choices'])
+            for i in range(n):
+                choice, correct = question['choices'][i], question['answers'][i]
+                if correct:
+                    fraction = round(100 / n_correct)
+                else:
+                    fraction = round(self.parameters.get('penalty', -10))
+                a = ET.Element('answer', format='markdown', fraction=f"{fraction}")
+                _ = ET.SubElement(a, 'text')
+                _.text = choice
+                q.append(a)
+            return q        
+
+
+        self.footnotes.update(token.footnotes)
+        inner = self.render_inner(token)    
+        # get rid of the last, empty, question if is present
+        if len(self.questions) > 1 and self.questions[-1]['question'] == '':
+            self.questions.pop(-1)
+
+        root = ET.Element('quiz')
+        category = ET.SubElement(root, 'question', type='category')
+         
+        _ = ET.SubElement(category, 'category')
+        _ = ET.SubElement(_, 'text')
+        category = self.parameters.get('category', 'default')
+        category = (category[:20] + "...") if len(category) >= 23 else category
+        _.text = f"$course$/{category}"
+
+        for q in self.questions:
+            root.append(render_question(q))
+
+        return ET.ElementTree(root)
+
+
+    def render_open_questions(self, token):    
+        def render_open_question(question):
+            q = ET.Element('question', type='essay')
+            name = ET.Element('name')
+            _ = ET.SubElement(name, 'text')
+            _.text = (question[:30] + '...') if len(question) > 33 else question
+            q.append(name)
+            qtext = ET.Element('questiontext', format='markdown')
+            _ = ET.SubElement(qtext, 'text')
+            _.text = question          
+            q.append(qtext)
+            _ = ET.Element('responseformat')
+            _.text = 'editor'
+            q.append(_)
+            _ = ET.Element('responserequired')
+            _.text = str(1)
+            q.append(_)
+            _ = ET.Element('responsefieldlines')
+            _.text = str(15)
+            q.append(_)
+            _ = ET.Element('attachments')
+            _.text = str(0)
+            q.append(_)
+            return q        
+
+        self.footnotes.update(token.footnotes)
+        inner = self.render_inner(token)    
+        # get rid of the last, empty, question if is present
+        if len(self.open_questions) > 1 and self.open_questions[-1] == '':
+            self.open_questions.pop(-1)
+
+        root = ET.Element('quiz')
+        category = ET.SubElement(root, 'question', type='category')
+            
+        _ = ET.SubElement(category, 'category')
+        _ = ET.SubElement(_, 'text')
+        category = self.parameters.get('category', 'default')
+        category = (category[:20] + "...") if len(category) >= 23 else category
+        _.text = f"$course$/{category}"
+
+        for q in self.open_questions:
+            root.append(render_open_question(q))
+
+        return ET.ElementTree(root)
+
+
+        
