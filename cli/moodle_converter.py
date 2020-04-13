@@ -19,27 +19,24 @@ class MoodleConverter:
                 document.write(output_file + '.xml', xml_declaration=True, encoding='utf-8')
             open_questions = self.load_open_questions(filename)
             if open_questions:
-                document = self.generate_xml('open-' + output_file, open_questions, True)
+                document = self.generate_xml(output_file + '-open', open_questions)
                 document.write(output_file + '-open.xml', xml_declaration=True, encoding='utf-8')
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
             content = f.read()
 
-        questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(content)))
+        questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(content)))
         return questions
     
     def load_open_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
         return []
 
-    def generate_xml(self, category, questions, open=False):
+    def generate_xml(self, category, questions):
         with MoodleRenderer(basedir=os.path.realpath(self.questions_path), single=self.single, penalty=self.penalty, category=category) as renderer:
             content = '---\n' + '\n---\n'.join(map(lambda q: q, questions)) + '\n---\n'
-            if not open:
-                document = renderer.render_questions(Document(content))
-            else:
-                document = renderer.render_open_questions(Document(content))
+            document = renderer.render_questions(Document(content))
             return document

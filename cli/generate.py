@@ -22,7 +22,7 @@ logger = logging.getLogger("omrexams")
 QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
 TITLE_RE = re.compile(r"#\s+.*")
 QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
-OPEN_QUESTION_RE = re.compile(r"{open-question}")
+OPEN_QUESTION_RE = re.compile(r"#{2,}\s*(.+?)(?={open-question})")
 
 class Generate:
     """
@@ -60,12 +60,12 @@ class Generate:
 
     def load_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
 
     def load_open_questions(self, filename):
         with open(filename, 'r') as f:
-            questions = list(filter(lambda q: OPEN_QUESTION_RE.search(q), QUESTION_MARKER_RE.split(f.read())))
+            questions = list(filter(lambda q: OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
     
     def process(self):

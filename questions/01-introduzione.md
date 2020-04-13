@@ -68,7 +68,7 @@
 
 ## Un algoritmo
 
-- [ ] è un metodo empirico per la ricerca di soluzioni a qualche problema
+- [ ] è un metodo empirico (a tentativi) per la ricerca di soluzioni a qualche problema
 - [x] dev'essere determinato, ossia specificato in modo non ambiguo
 - [x] deve terminare comunicando la risposta corretta oppure che la risposta non è possibile
 
@@ -151,4 +151,4 @@
 
 - [x] 1936, anno dei primi studi sulla computabilità di Turing
 - [ ] 1947, invenzione del transistor a semiconduttore  di Bardeen, Bartain e Shockley
-- [ ] 1890, invenzione della macchina tabulatrice
+- [ ] 1981, introduzione dei primi personal computer

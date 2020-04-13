@@ -120,7 +120,6 @@ class QuestionRenderer(LaTeXRenderer):
             return ''
         else:
             return '\\fbox{' + token.id + '}'
-
     
     def render_lines(self, token):
         return token.lines
@@ -239,9 +238,8 @@ class QuestionRenderer(LaTeXRenderer):
         self.footnotes.update(token.footnotes)
         inner = self.render_inner(token)    
         solutions = []
-        # get rid of the last, empty, question if is present
-        if self.questions[-1]['question'] == '':
-            self.questions.pop(-1)
+        # get rid of the empty questions if they are present
+        self.questions = list(filter(lambda q: q['question'] != '', self.questions))
         for q in self.questions:
             current = ""
             for i in range(len(q['answers'])):
@@ -403,7 +401,7 @@ class MoodleRenderer(BaseRenderer):
         self.open_questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion, Lines], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -420,6 +418,9 @@ class MoodleRenderer(BaseRenderer):
         #     return ''
         # else:
         #     return '\\fbox{' + token.id + '}'
+
+    def render_lines(self, token):
+        return ''
 
     
     def render_open_question(self, token):
@@ -445,9 +446,12 @@ class MoodleRenderer(BaseRenderer):
     
     def render_heading(self, token):
         if token.level == 1:            
-            return ''
+            return ''        
         inner = self.render_inner(token).strip()
-        if any(lambda c: type(c) == OpenQuestion for c in token.children):
+        if token.level > 2:  
+            return '{inner}\n'.format(inner=inner)
+
+        if any(type(c) == OpenQuestion for c in token.children):
             self.open_questions.append(inner)
         else:
             self.questions[-1]['question'] = inner 
@@ -496,11 +500,11 @@ class MoodleRenderer(BaseRenderer):
         #    raise Error("Once a question list is started all the list items must be questions")                               
 
     def render_questions(self, token):    
-        def render_question(question):
+        def render_question(question, id):
             q = ET.Element('question', type='multichoice')
             name = ET.Element('name')
             _ = ET.SubElement(name, 'text')
-            _.text = (question['question'][:30] + '...') if len(question['question']) > 33 else question['question']
+            _.text = "{:02d} {}".format(id, (question['question'][:30] + '...') if len(question['question']) > 33 else question['question'])
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
@@ -532,36 +536,13 @@ class MoodleRenderer(BaseRenderer):
                 _ = ET.SubElement(a, 'text')
                 _.text = choice
                 q.append(a)
-            return q        
+            return q     
 
-
-        self.footnotes.update(token.footnotes)
-        inner = self.render_inner(token)    
-        # get rid of the last, empty, question if is present
-        if len(self.questions) > 1 and self.questions[-1]['question'] == '':
-            self.questions.pop(-1)
-
-        root = ET.Element('quiz')
-        category = ET.SubElement(root, 'question', type='category')
-         
-        _ = ET.SubElement(category, 'category')
-        _ = ET.SubElement(_, 'text')
-        category = self.parameters.get('category', 'default')
-        category = (category[:20] + "...") if len(category) >= 23 else category
-        _.text = f"$course$/{category}"
-
-        for q in self.questions:
-            root.append(render_question(q))
-
-        return ET.ElementTree(root)
-
-
-    def render_open_questions(self, token):    
-        def render_open_question(question):
+        def render_open_question(question, id):
             q = ET.Element('question', type='essay')
             name = ET.Element('name')
             _ = ET.SubElement(name, 'text')
-            _.text = (question[:30] + '...') if len(question) > 33 else question
+            _.text = "{:02d} {}".format(id, (question[:30] + '...') if len(question) > 33 else question)
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
@@ -579,27 +560,29 @@ class MoodleRenderer(BaseRenderer):
             _ = ET.Element('attachments')
             _.text = str(0)
             q.append(_)
-            return q        
+            
+            return q     
 
         self.footnotes.update(token.footnotes)
         inner = self.render_inner(token)    
-        # get rid of the last, empty, question if is present
-        if len(self.open_questions) > 1 and self.open_questions[-1] == '':
-            self.open_questions.pop(-1)
 
         root = ET.Element('quiz')
         category = ET.SubElement(root, 'question', type='category')
-            
+         
         _ = ET.SubElement(category, 'category')
         _ = ET.SubElement(_, 'text')
-        category = self.parameters.get('category', 'default-open')
+        category = self.parameters.get('category', 'default')
         category = (category[:20] + "...") if len(category) >= 23 else category
         _.text = f"$course$/{category}"
 
-        for q in self.open_questions:
-            root.append(render_open_question(q))
+        # avoid rendering of empty questions
+        for i, q in enumerate(filter(lambda q: q['question'] != '', self.questions)):
+            root.append(render_question(q, i))
+
+        # avoid rendering of empty questions
+        for i, q in enumerate(filter(lambda q: q != '', self.open_questions)):
+            root.append(render_open_question(q, i))
 
         return ET.ElementTree(root)
-
 
         
