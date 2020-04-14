@@ -11,6 +11,8 @@ import logging
 import click
 import os
 import xml.etree.ElementTree as ET
+import base64
+
  
 logger = logging.getLogger("omrexams")
 
@@ -61,6 +63,13 @@ class Lines(span_token.SpanToken):
 
 class OpenQuestion(span_token.SpanToken):
     pattern = re.compile(r"({open-question})")
+
+class LatexFormula(span_token.SpanToken):
+    pattern = re.compile(r'(?<!\\)((?<!\$)\${1,2}(?!\$))(?(1)(.*?))(?<!\\)(?<!\$)\1(?!\$)')
+    
+    def __init__(self, match):
+        self.symbol = match.group(1)
+        self.content = match.group(2)
         
 class QuestionList(block_token.List):
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
@@ -127,7 +136,7 @@ class QuestionRenderer(LaTeXRenderer):
     def render_image(self, token):
         self.packages['graphicx'] = []
         self.packages['adjustbox'] = ['export']
-        path = os.path.realpath(token.src)
+        path = os.path.join(token.src)
         if not os.path.isabs(path):
             path = os.path.join(self.parameters.get('basedir'), path)
         return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
@@ -336,7 +345,7 @@ class DocumentStripRenderer(LaTeXRenderer):
     def render_image(self, token):
         self.packages['graphicx'] = []
         self.packages['adjustbox'] = ['export']
-        path = os.path.realpath(token.src)
+        path = os.path.join(token.src)
         if not os.path.isabs(path):
             path = os.path.join(self.parameters.get('basedir'), path)
         return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
@@ -398,10 +407,9 @@ class MoodleRenderer(BaseRenderer):
             section: the name of the section
         """
         self.questions = []
-        self.open_questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion, Lines], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion, Lines, LatexFormula], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -422,23 +430,30 @@ class MoodleRenderer(BaseRenderer):
     def render_lines(self, token):
         return ''
 
+    def render_latex_formula(self, token):
+        if token.symbol == '$':
+            return f'\\\\( {token.content} \\\\)'
+        else: # token.symbol == '$$'
+            return f'\\\\[ {token.content} \\\\]'
     
     def render_open_question(self, token):
         return ''
 
     def render_image(self, token):
-        path = os.path.realpath(token.src)
+        path = os.path.join(token.src)
         if not os.path.isabs(path):
             path = os.path.join(self.parameters.get('basedir'), path)
-        # TODO: insert image as a base64 encoded file
-        return ''
+        self.questions[-1]['images'].append(path)
+        inner = self.render_inner(token)
+        return f'![{inner}](@@PLUGINFILE@@/{os.path.basename(token.src)})'
 
     def render_question_block(self, token):
         # possibly, the first question could start without a marker 
         # and could contain the heading of the section
-        self.questions.append({ 'question': "", 'choices': [], 'answers': [] })
+        self.questions.append({ 'question': "", 'choices': [], 'answers': [], 'images': [], 'open': False })
         inner = self.render_inner(token)
-        return inner
+        self.questions[-1]['question'] += f'\n{inner}'
+        return ''
 
     def render_table_row(self, token):
         cells = [self.render(child) for child in token.children]
@@ -451,11 +466,9 @@ class MoodleRenderer(BaseRenderer):
         if token.level > 2:  
             return '{inner}\n'.format(inner=inner)
 
-        if any(type(c) == OpenQuestion for c in token.children):
-            self.open_questions.append(inner)
-        else:
-            self.questions[-1]['question'] = inner 
-        return ''  
+        self.questions[-1]['question'] = inner
+        self.questions[-1]['open'] = any(type(c) == OpenQuestion for c in token.children)  
+        return ''
 
     def render_list(self, token):
         inner = self.render_inner(token)
@@ -508,7 +521,13 @@ class MoodleRenderer(BaseRenderer):
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
-            _.text = question['question']            
+            _.text = question['question']  
+            for path in question['images']:
+                with open(path, 'rb') as f:
+                    content = base64.b64encode(f.read())
+                    _ = ET.Element('file', name=f'{os.path.basename(path)}', path='/', encoding='base64')
+                    _.text = content.decode()
+                    qtext.append(_)          
             q.append(qtext)
             _ = ET.Element('shuffleanswers')
             _.text = 'true'
@@ -530,23 +549,35 @@ class MoodleRenderer(BaseRenderer):
                 choice, correct = question['choices'][i], question['answers'][i]
                 if correct:
                     fraction = round(100 / n_correct)
+                elif 'penalty' in self.parameters:
+                    fraction = round(self.parameters.get('penalty'))
                 else:
-                    fraction = round(self.parameters.get('penalty', -10))
+                    fraction = round(100 / (n - 1))
                 a = ET.Element('answer', format='markdown', fraction=f"{fraction}")
                 _ = ET.SubElement(a, 'text')
-                _.text = choice
+                _.text = choice                
                 q.append(a)
+            _ = ET.Element('penalty')
+            _.text = '1.0'
+            q.append(_)
+            
             return q     
 
         def render_open_question(question, id):
             q = ET.Element('question', type='essay')
             name = ET.Element('name')
             _ = ET.SubElement(name, 'text')
-            _.text = "{:02d} {}".format(id, (question[:30] + '...') if len(question) > 33 else question)
+            _.text = "{:02d} {}".format(id, (question['question'][:30] + '...') if len(question['question']) > 33 else question['question'])
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
-            _.text = question          
+            _.text = question['question']        
+            for path in question['images']:
+                with open(path, 'rb') as f:
+                    content = base64.b64encode(f.read())
+                    _ = ET.Element('file', name=f'{os.path.basename(path)}', path='/', encoding='base64')
+                    _.text = content.decode()
+                    qtext.append(_)
             q.append(qtext)
             _ = ET.Element('responseformat')
             _.text = 'editor'
@@ -561,7 +592,7 @@ class MoodleRenderer(BaseRenderer):
             _.text = str(0)
             q.append(_)
             
-            return q     
+            return q             
 
         self.footnotes.update(token.footnotes)
         inner = self.render_inner(token)    
@@ -576,12 +607,11 @@ class MoodleRenderer(BaseRenderer):
         _.text = f"$course$/{category}"
 
         # avoid rendering of empty questions
-        for i, q in enumerate(filter(lambda q: q['question'] != '', self.questions)):
-            root.append(render_question(q, i))
-
-        # avoid rendering of empty questions
-        for i, q in enumerate(filter(lambda q: q != '', self.open_questions)):
-            root.append(render_open_question(q, i))
+        for i, q in enumerate(filter(lambda q: q['question'].strip() != '', self.questions)):
+            if not q['open']:
+                root.append(render_question(q, i))
+            else:
+                root.append(render_open_question(q, i))
 
         return ET.ElementTree(root)
 

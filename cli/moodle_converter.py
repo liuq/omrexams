@@ -1,8 +1,11 @@
 import xml.dom as xml
+import re
 from . generate import QUESTION_MARKER_RE, TITLE_RE, QUESTION_RE, OPEN_QUESTION_RE
 from . utils.markdown import MoodleRenderer, Document
 import os
 import glob
+
+TOPIC_RE = re.compile(r"##\s*.+?{topic:(#[\w-]+)}")
 
 class MoodleConverter:
     def __init__(self, questions_dir, single, penalty):
@@ -26,8 +29,20 @@ class MoodleConverter:
         with open(filename, 'r') as f:
             content = f.read()
 
-        questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(content)))
-        return questions
+        # this is to prevent having same-topic same content questions in the output file
+        candidate_questions = list(filter(lambda q: not TITLE_RE.match(q) and not OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(content)))        
+        questions = {}
+        for q in candidate_questions:            
+            m = QUESTION_RE.search(q)
+            if m.group(2) and not m.group(2) in questions:
+                questions[m.group(2)] = q
+            else:
+                # normalize the text dropping multiple spaces
+                key = re.compile(r"\s+").sub(" ", m.group(1)).strip()
+                if not key in questions:
+                    questions[key] = q                
+
+        return questions.values()
     
     def load_open_questions(self, filename):
         with open(filename, 'r') as f:
