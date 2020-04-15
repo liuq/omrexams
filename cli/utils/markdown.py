@@ -452,7 +452,7 @@ class MoodleRenderer(BaseRenderer):
         # and could contain the heading of the section
         self.questions.append({ 'question': "", 'choices': [], 'answers': [], 'images': [], 'open': False })
         inner = self.render_inner(token)
-        self.questions[-1]['question'] += f'\n{inner}'
+        self.questions[-1]['question'] += f'\n\n{inner}'
         return ''
 
     def render_table_row(self, token):
