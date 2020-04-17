@@ -34,12 +34,13 @@ class MoodleConverter:
         questions = {}
         for q in candidate_questions:            
             m = QUESTION_RE.search(q)
-            if m.group(2) and not m.group(2) in questions:
-                questions[m.group(2)] = q
+            if m.group(2):
+                if m.group(2) not in questions:
+                    questions[m.group(2)] = q
             else:
                 # normalize the text dropping multiple spaces
                 key = re.compile(r"\s+").sub(" ", m.group(1)).strip()
-                if not key in questions:
+                if key not in questions:
                     questions[key] = q                
 
         return questions.values()
