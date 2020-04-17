@@ -508,8 +508,7 @@ class MoodleRenderer(BaseRenderer):
         if not self.record_answers:
             return self.custom_render_list_item(token)
         else:
-            if token.children:
-                self.questions[-1]['choices'].append(" ".join(self.render(child) for child in token.children))
+            self.questions[-1]['choices'].append(" ".join(self.render(child) for child in token.children))
             return ''
         #    raise Error("Once a question list is started all the list items must be questions")                               
 
@@ -550,7 +549,7 @@ class MoodleRenderer(BaseRenderer):
                 choice, correct = question['choices'][i], question['answers'][i]
                 if correct:
                     fraction = round(100 / n_correct)
-                elif 'penalty' in self.parameters:
+                elif 'penalty' in self.parameters and self.parameters.get('penalty'):
                     fraction = round(self.parameters.get('penalty'))
                 else:
                     fraction = round(100 / (n - 1))

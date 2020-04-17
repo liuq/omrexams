@@ -259,7 +259,7 @@ def mark(ctx, datafile, output, yes):
 @cli.command()
 @click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), default=os.path.join('.', 'questions'), required=True)
 @click.option('-s', '--single', is_flag=True, default=False, help='State whether the questions have a single correct answer (a radio button will be rendered in moodle)')
-@click.option('-p', '--penalty', type=int, default=-10, help='Penalty (in percentage) to be applied to wrong answers')
+@click.option('-p', '--penalty', type=int, help='Penalty (in percentage) to be applied to wrong answers')
 @click.pass_context
 def moodle(ctx, questions_dir, single, penalty):
     """
