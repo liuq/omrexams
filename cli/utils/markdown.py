@@ -508,7 +508,8 @@ class MoodleRenderer(BaseRenderer):
         if not self.record_answers:
             return self.custom_render_list_item(token)
         else:
-            self.questions[-1]['choices'].append(" ".join(self.render(child) for child in token.children))
+            if token.children:
+                self.questions[-1]['choices'].append(" ".join(self.render(child) for child in token.children))
             return ''
         #    raise Error("Once a question list is started all the list items must be questions")                               
 
