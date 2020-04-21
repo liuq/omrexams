@@ -552,7 +552,7 @@ class MoodleRenderer(BaseRenderer):
                 elif 'penalty' in self.parameters and self.parameters.get('penalty'):
                     fraction = round(self.parameters.get('penalty'), -1)
                 else:
-                    fraction = round(100 / (n - 1), -1)
+                    fraction = -round(100 / (n - 1), -1)
                 a = ET.Element('answer', format='markdown', fraction=f"{fraction}")
                 _ = ET.SubElement(a, 'text')
                 _.text = choice                
