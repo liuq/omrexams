@@ -132,12 +132,12 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                for i, exam in enumerate(pdf_files):
+                for exam in pdf_files:
                     pdf = PdfFileReader(open(exam, 'rb'))                
                     merger.append(pdf)
                     if pdf.numPages % 2 == 1:
                         merger.append(blank)
-                    bar.update(i)
+                    bar.update(1)
             with open(self.output_pdf_filename, 'wb') as f:
                 merger.write(f)
         else:
@@ -149,7 +149,7 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                for i, exam in enumerate(pdf_files):
+                for exam in pdf_files:
                     pdf = PdfFileReader(open(exam, 'rb'))
                     a3page = PageObject.createBlankPage(**A3SIZE)
                     for p in range(pdf.numPages):
@@ -164,7 +164,7 @@ class Generate:
                             # add page 
                             writer.addPage(a3page)
                             a3page = PageObject.createBlankPage(**A3SIZE)  
-                    bar.update(i)
+                    bar.update(1)
             with open(self.output_pdf_filename, 'wb') as f:
                 writer.write(f)
         
