@@ -135,7 +135,8 @@ rectangle/.default={0.2cm}}
 
     \draw
         (current page header area.south east)
-        node[below right, yshift=1.7cm, xshift=0.8cm, text width=\marginparwidth, rounded rectangle, fill=black!10!white] {\small \Warning~ \textsf{\textbf{Non scrivere in quest'area! Va usata solo per annerire i cerchi di risposta.}} \\ \hspace{15ex}{\LARGE $\Downarrow$}};
+        node[below right, yshift=1.7cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! Va usata solo per annerire i cerchi di risposta.}}}};
+    \node [below of=WARN] {\LARGE $\Downarrow$};
     \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
@@ -197,12 +198,12 @@ rectangle/.default={0.2cm}}
 } 
 
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
-\node[shape=circle, draw, inner sep=0.5pt] (char) {#1};}}
+\node[shape=circle, draw, inner sep=0.2pt] (char) {#1};}}
 \renewcommand{\questionlabel}{\textbf{{\thequestion}.}}
 \renewcommand{\choicelabel}{\textbf{\sffamily\thechoice})}
 
 \DeclareOption{circled}{
-  \renewcommand{\choicelabel}{\circled{\thechoice}}
+  \renewcommand{\choicelabel}{\circled{\textbf{\sffamily\thechoice}}}
 }
 \ProcessOptions\relax
 
