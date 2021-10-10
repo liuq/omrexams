@@ -65,6 +65,7 @@
  \makebox[0pt][c]{\color{red}\Large$\bigtriangleup$}}}%
 
 \newunicodechar{⚠}{\Warning}
+\newunicodechar{◼}{$\blacksquare$}
 
 \pagestyle{empty}
 
@@ -131,7 +132,7 @@ rectangle/.default={0.2cm}}
     % All distances/sizes are expressed in points
     \draw
         (current page header area.north west)
-        node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
+        node[below right, xshift=2.1cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
 
     \draw
         (current page header area.south east)

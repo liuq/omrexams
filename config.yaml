@@ -48,29 +48,29 @@ questions:
     draw: 1
 header: |
   \sf
-  \Large \theexam \newline
-  \normalsize \thedate \newline
-  \thematriculationno, \thestudent \newline
-  Durata 55 minuti \newline
-  Pagina \thepage
+  \large \theexam \newline
+  \normalsize \thedate – \thematriculationno, \thestudent \newline
+  Durata 55 minuti - Pagina \thepage \newline
   \normalfont
 preamble: | 
   \sf
-  \Large \Warning **Leggere con molta attenzione.** 
+  Matricola: \makebox[2cm]{\hrulefill} Nome e cognome: \hrulefill
 
-  \small
-
+  \begin{tcolorbox}[title={\sf \Warning~**Leggere con molta attenzione**~\Warning},colframe=black!10!white, center title,coltitle=black]
+  \sf \footnotesize
   Il compito va **svolto su questo foglio** che dovrà essere consegnato al termine della prova. 
+  Riportate **subito** il vostro **numero di matricola** e **nominativo** qui sopra.
+
   Le **risposte definitive** dovranno essere fornite **annerendo i cerchi presenti**
-  sulla parte destra del foglio come indicato nella prima figura. Tutte le altre indicazioni
-  sono considerate scorrette.
+  sulla parte destra del foglio **come indicato nella prima figura**. Tutte le altre indicazioni
+  sono scorrette.
 
   ![](images/omr_instructions.pdf)  
 
-  \Warning Poiché **NON È CONSENTITA LA CORREZIONE** delle risposte definitive si consiglia di appuntare le
+  \Warning~Poiché **NON È CONSENTITA LA CORREZIONE** delle risposte definitive si consiglia di appuntare le
   risposte sulla parte contenente il testo e di riportarle sulla parte a lettura ottica (con i cerchi) 
   *solamente* quando si è certi delle risposte stesse. 
-  \Warning **Non stropicciare il foglio e non scrivere o scarabocchiare sulla parte della pagina contenente i cerchi né sui QRCode**, 
+  \Warning~**Non stropicciare il foglio e non scrivere o scarabocchiare sulla parte della pagina contenente i cerchi né sui QRCode**, 
   ciò potrebbe invalidare le vostre risposte e di conseguenza il compito. 
   Potete prendere appunti sulla parte contenente il testo delle domande, ma la risposta definitiva è 
   quella riportata sulla parte a lettura ottica.
@@ -79,8 +79,12 @@ preamble: |
   ciò darà luogo **immediatamente** e **incontestabilmente** all'**annullamento** della prova d'esame.
   Alcune domande possono avere **una o più risposte corrette**: l'individuazione di **tutte** le risposte corrette 
   attribuirà **1 punto**.
-  \normalfont \normalsize 
+  
+  \normalfont \normalsize
+  \end{tcolorbox}  
 footer: # currently no footer
 choices:
   circled: True
   oneparchoices: True
+packages:
+  tcolorbox: []

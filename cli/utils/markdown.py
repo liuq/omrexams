@@ -335,13 +335,16 @@ class DocumentStripRenderer(LaTeXRenderer):
         # TODO: check parameter coherence
         self.parameters = kwargs
         super().__init__(*chain([], extras))
-
-    def render_table_row(self, token):
-        cells = [self.render(child) for child in token.children]
-        return ' & '.join(cells) + ' \\\\\n'
     
     def render_document(self, token):
         return self.render_inner(token)
+
+    def render_raw_text(self, token, escape=True):
+        return (token.content.replace('$', '\\$').replace('#', '\\#')
+#                                .replace('{', '\\{').replace('}', '\\}')
+                                .replace('&', '\\&').replace('_', '\\_')
+                                .replace('%', '\\%')
+                ) if escape else token.content
 
     def render_image(self, token):
         self.packages['graphicx'] = []
