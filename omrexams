@@ -164,7 +164,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     else:
         click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
         click.secho('Starting serials from {}'.format(serial), fg='cyan')
-        student_list = list(map(lambda s: (s, "◼"), range(serial, serial + count)))
+        student_list = list(map(lambda s: (s, "▢"), range(serial, serial + count)))
     click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 

@@ -58,6 +58,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[export]{adjustbox}
 \usepackage{newunicodechar}
+%\usepackage{fontspec}
+%\setmainfont{OpenDyslexic}
 
 \newcommand\Warning{%
  \makebox[1.4em][c]{%
@@ -66,6 +68,7 @@
 
 \newunicodechar{⚠}{\Warning}
 \newunicodechar{◼}{$\blacksquare$}
+\newunicodechar{▢}{$\square$}
 
 \pagestyle{empty}
 
@@ -88,6 +91,8 @@ rectangle/.default={0.2cm}}
 \newcommand\theheader{}
 \DeclareRobustCommand{\header}[1]{\renewcommand\theheader{#1}}
 \newcommand\thedate{\@date}
+\newcommand\thefooter{}
+\DeclareRobustCommand{\footer}[1]{\renewcommand\thefooter{#1}}
 
 \newlength{\OMR@Size}
 \setlength{\OMR@Size}{14pt}
@@ -133,10 +138,12 @@ rectangle/.default={0.2cm}}
     \draw
         (current page header area.north west)
         node[below right, xshift=2.1cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
-
+    \draw
+        (current page footer area.south west)
+        node[below right, yshift=0.5cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\thefooter}};  
     \draw
         (current page header area.south east)
-        node[below right, yshift=1.7cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! Va usata solo per annerire i cerchi di risposta.}}}};
+        node[below right, yshift=1.7cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Va usata solo per annerire i cerchi di risposta.}}}};
     \node [below of=WARN] {\LARGE $\Downarrow$};
     \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
@@ -199,12 +206,12 @@ rectangle/.default={0.2cm}}
 } 
 
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
-\node[shape=circle, draw, inner sep=0.2pt] (char) {#1};}}
+\node[anchor=text, shape=circle, draw, inner sep=0.2pt, minimum size=1.2em] (char) {#1};}}
 \renewcommand{\questionlabel}{\textbf{{\thequestion}.}}
 \renewcommand{\choicelabel}{\textbf{\sffamily\thechoice})}
 
 \DeclareOption{circled}{
-  \renewcommand{\choicelabel}{\circled{\textbf{\sffamily\thechoice}}}
+  \renewcommand{\choicelabel}{\circled{\sffamily\footnotesize\thechoice}}
 }
 \ProcessOptions\relax
 
@@ -250,7 +257,7 @@ rectangle/.default={0.2cm}}
 \begin{checkomrchoiceswidth}{\marginparwidth}
 \begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size, remember picture, overlay]  
   \coordinate (here) at (0, 0);
-  \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] {\thequestion};  
+  \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] {\sf\thequestion};  
   \path (current page marginpar area.west) + (0.25, 0);
   \pgfgetlastxy{\XCoord}{\YCoord};
   \edef\q@object@label{question@\arabic{question}}

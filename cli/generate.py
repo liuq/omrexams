@@ -273,11 +273,18 @@ class Generate:
                 preamble = renderer.render(Document(self.config.get('preamble')))
         else:
             preamble = ''
+        if self.config.get('footer'):
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
+                footer = renderer.render(Document(self.config.get('footer')))
+        else:
+            footer = ''
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=self.exam_date, exam=self.config['exam'].get('name'), 
                               student_no=student[0],
-                              student_name=student[1] if student[1] != 'Additional student' else '_' * 20, header=header, 
+                              student_name=student[1] if student[1] != 'Additional student' else '_' * 20, 
+                              header=header, 
                               preamble=preamble,
+                              footer=footer,
                               packages=self.config.get('packages', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
                               oneparchoices=self.oneparchoices,
@@ -319,6 +326,11 @@ class Generate:
                 preamble = renderer.render(Document(self.config.get('preamble')))
         else:
             preamble = ''
+        if self.config.get('footer'):
+            with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
+                footer = renderer.render(Document(self.config.get('footer')))
+        else:
+            footer = ''
 
         questions = ""
         for r in sorted(rules.keys()):
@@ -330,6 +342,7 @@ class Generate:
                               exam=self.config['exam'].get('name'), 
                               header=header, 
                               preamble=preamble,
+                              footer=footer,
                               packages=self.config.get('packages', {}),
                               test=True,
                               circled=self.config.get('choices', {}).get('circled', False),
@@ -350,6 +363,7 @@ class Generate:
                               student_name="", 
                               header=header, 
                               preamble=preamble,
+                              footer=footer,
                               test=True,
                               oneparchoices=self.oneparchoices,
                               circled=self.config.get('choices', {}).get('circled', False),

@@ -49,12 +49,18 @@ questions:
 header: |
   \sf
   \large \theexam \newline
-  \normalsize \thedate – \thematriculationno, \thestudent \newline
-  Durata 55 minuti - Pagina \thepage \newline
-  \normalfont
+  \normalsize \thedate \newline
+  \thematriculationno \newline
+  Durata 55 minuti
+  \normalsize
 preamble: | 
+  \vspace{-2\baselineskip}
+  \begin{tcolorbox}[colframe=black!10!white]
   \sf
-  Matricola: \makebox[2cm]{\hrulefill} Nome e cognome: \hrulefill
+  ~\\\\[0.1\baselineskip]
+  Matricola: \makebox[3cm]{\dotfill} \\\\[0.8\baselineskip]
+  Cognome: \makebox[4.5cm]{\dotfill} Nome: \makebox[4.5cm]{\dotfill}
+  \end{tcolorbox}
 
   \begin{tcolorbox}[title={\sf \Warning~**Leggere con molta attenzione**~\Warning},colframe=black!10!white, center title,coltitle=black]
   \sf \footnotesize
@@ -70,6 +76,7 @@ preamble: |
   \Warning~Poiché **NON È CONSENTITA LA CORREZIONE** delle risposte definitive si consiglia di appuntare le
   risposte sulla parte contenente il testo e di riportarle sulla parte a lettura ottica (con i cerchi) 
   *solamente* quando si è certi delle risposte stesse. 
+
   \Warning~**Non stropicciare il foglio e non scrivere o scarabocchiare sulla parte della pagina contenente i cerchi né sui QRCode**, 
   ciò potrebbe invalidare le vostre risposte e di conseguenza il compito. 
   Potete prendere appunti sulla parte contenente il testo delle domande, ma la risposta definitiva è 
@@ -82,7 +89,8 @@ preamble: |
   
   \normalfont \normalsize
   \end{tcolorbox}  
-footer: # currently no footer
+footer: |
+  \sf \small Pagina \thepage \normalfont
 choices:
   circled: True
   oneparchoices: True
