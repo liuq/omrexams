@@ -164,6 +164,7 @@ class Generate:
                             # add page 
                             writer.addPage(a3page)
                             a3page = PageObject.createBlankPage(**A3SIZE)  
+                    bar.update(i)
             with open(self.output_pdf_filename, 'wb') as f:
                 writer.write(f)
         
