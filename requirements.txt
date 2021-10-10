@@ -15,3 +15,5 @@ img2pdf
 pyyaml
 pylatex
 wheel
+mistletoe
+pypdf2
