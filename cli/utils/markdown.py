@@ -12,6 +12,7 @@ import click
 import os
 import xml.etree.ElementTree as ET
 import base64
+from itertools import chain
 
  
 logger = logging.getLogger("omrexams")
@@ -21,7 +22,7 @@ class PreambleEnvironment(pylatex.base_classes.Environment):
     A class representing a custom LaTeX environment for the preamble.
     """
     _latex_name = 'minipage'
-    packages = []    
+    packages = []
     escape = False
     content_separator = "\n"
 
@@ -113,7 +114,7 @@ class QuestionRenderer(LaTeXRenderer):
         self.questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, Lines], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, Lines], extras)) 
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -190,10 +191,10 @@ class QuestionRenderer(LaTeXRenderer):
             return ""
 
     def render_question_list(self, token):
-        if not self.parameters.get('test', False):
-            template = " \\omrchoices{{{choiceno}}}\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
-        else:
-            template = "\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
+        #if not self.parameters.get('test', False):
+        template = " \\omrchoices{{{choiceno}}}\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
+        #else:
+        #    template = "\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
         if self.parameters.get('oneparchoices', False):
             template = template.replace('{choices}', '{oneparchoices}')
             template = template.replace('\\begin', '\\par\n\\begin')
@@ -276,11 +277,11 @@ class QuestionRenderer(LaTeXRenderer):
 #            options=options)
         doc.preamble.append(pylatex.Package('polyglossia'))
         doc.preamble.append(pylatex.Command('setdefaultlanguage', self.parameters.get('language', '').lower()))
-        for package in self.packages.keys():
-            if not self.packages[package]:
+        for package, options in chain(self.packages.items(), self.parameters.get('packages', {}).items()):
+            if not options:
                 doc.preamble.append(pylatex.Package(package))
             else:
-                doc.preamble.append(pylatex.Package(package, options=self.packages[package]))
+                doc.preamble.append(pylatex.Package(package, options=options))
         doc.preamble.append(pylatex.Package('listings'))
         doc.preamble.append(pylatex.Command('examname', self.parameters['exam']))
         doc.preamble.append(pylatex.Command('student', 
@@ -303,7 +304,7 @@ class QuestionRenderer(LaTeXRenderer):
         doc = pylatex.Document(documentclass='omrexam', 
             inputenc=None, lmodern=False, fontenc=None, textcomp=None)
         doc.preamble.append(pylatex.Package('polyglossia'))
-        doc.preamble.append(pylatex.Command('setdefaultlanguage', self.parameters['language']))
+        doc.preamble.append(pylatex.Command('setdefaultlanguage', self.parameters.get('language', '').lower()))
         doc.preamble.append(pylatex.Package('listings'))
         doc.preamble.append(pylatex.Command('examname', self.parameters['exam']))
         doc.preamble.append(pylatex.Command('student', 

@@ -1,0 +1,38 @@
+\documentclass[10pt]{standalone}
+\usepackage{graphicx}
+\usepackage[ocr-b]{ocr}
+\usepackage{tikz}
+\usetikzlibrary{shapes.misc}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{decorations.markings}
+
+
+\newcounter{omranswers}
+\newcommand{\omrchoices}[1]{%
+\begin{tikzpicture}[x=14pt, y=14pt]
+\foreach \position in {1, ..., #1} {%
+  \setcounter{omranswers}{\position}
+%\node [draw, fill=black, circle, inner sep=0pt, minimum size=14pt, text=white, font=\small] at (0, 0) {\thequestion};
+  \node [circle, inner sep=0pt, minimum size=14pt, color=gray] at ($({1.25 * \position}, 1.0)$) {\small\ocr{\Alph{omranswers}}};
+  \node [draw=black!50!white, line width=2pt, circle, inner sep=0pt, minimum size=14pt] at ($({1.25 * \position}, 0)$) {};
+};
+\end{tikzpicture}
+}
+
+\begin{document}
+\begin{sf}
+\bgroup
+%\def\arraystretch{0.1}
+\begin{tabular}{cccccc}
+%\includegraphics[width=1.5cm]{omr_ok_x.png} & 
+%\includegraphics[width=1.5cm]{omr_no_x1.png} & 
+%\includegraphics[width=1.5cm]{omr_no_x2.png} &
+%\includegraphics[width=1.5cm]{omr_no_x3.png} &
+%\includegraphics[width=1.5cm]{omr_no_x4.png} \\
+\omrchoices{3} & \omrchoices{3} & \omrchoices{3} & \omrchoices{3} & \omrchoices{3} & \omrchoices{3} \\
+%Ok & No & No & No & No & No \\
+\end{tabular}
+\egroup
+\end{sf}
+\end{document}

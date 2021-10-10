@@ -12,6 +12,7 @@ import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
+from PyPDF2.pdf import PageObject
 import math
 from datetime import datetime as dt
 from tinydb import TinyDB
@@ -23,6 +24,11 @@ QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
 TITLE_RE = re.compile(r"#\s+.*")
 QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
 OPEN_QUESTION_RE = re.compile(r"#{2,}\s*(.+?)(?={open-question})")
+
+# A4 size, portrait is 595pt x 842pt
+A4SIZE = { 'width': 595, 'height': 842 }
+# A3 size, landscape is 1190pt x 842pt
+A3SIZE = { 'width': 1190, 'height': 842 }
 
 class Generate:
     """
@@ -36,6 +42,9 @@ class Generate:
         self.output_pdf_filename = "{}.pdf".format(output_prefix)
         self.test = kwargs.get('test', False)
         self.oneparchoices = kwargs.get('oneparchoices', False)
+        self.paper = kwargs.get('paper', 'A4')
+        if self.paper not in ('A4', 'A3'):
+            raise AttributeError('paper value should be either "A3" or "A4"')
         # TODO: emit logging if these parameters are not set
         if not self.test:
             self.output_list_filename = "{}.json".format(output_prefix)
@@ -44,7 +53,7 @@ class Generate:
             self.topics = {}   
             self.seed = kwargs.get('seed', 0)
             with TinyDB(self.output_list_filename) as db:
-                db.purge_table('metadata')
+                db.drop_table('metadata')
                 db.table('metadata').insert({ 'seed': self.seed, 'generation_date': dt.now().strftime("%F") })
 
     def load_rules(self):
@@ -111,19 +120,42 @@ class Generate:
                 prev = self.results.value
                 self.results_mutex.release()
         click.secho('Collating PDF', fg='red', underline=True)
-        merger = PdfFileMerger()
-        _blank = PdfFileWriter()
-        # A4 size il 595pt x 842pt
-        _blank.addBlankPage(width=595, height=842)    
-        blank = io.BytesIO()
-        _blank.write(blank)   
-        for exam in sorted(glob.glob(os.path.join('tmp', '*.pdf'))):
-            pdf = PdfFileReader(open(exam, 'rb'))                
-            merger.append(pdf)
-            if pdf.getNumPages() % 2 == 1:
-                merger.append(blank)
-        with open(self.output_pdf_filename, 'wb') as f:
-            merger.write(f)
+        if self.paper == "A4":
+            # This is for A4 management            
+            merger = PdfFileMerger()
+            _blank = PdfFileWriter()
+            _blank.addBlankPage(**A4SIZE)    
+            blank = io.BytesIO()
+            _blank.write(blank)   
+            for exam in sorted(glob.glob(os.path.join('tmp', '*.pdf'))):
+                pdf = PdfFileReader(open(exam, 'rb'))                
+                merger.append(pdf)
+                if pdf.numPages % 2 == 1:
+                    merger.append(blank)
+            with open(self.output_pdf_filename, 'wb') as f:
+                merger.write(f)
+        else:
+            # This is for A3 management
+            writer = PdfFileWriter()
+            a3page = None
+            for exam in sorted(glob.glob(os.path.join('tmp', '*.pdf'))):
+                pdf = PdfFileReader(open(exam, 'rb'))
+                a3page = PageObject.createBlankPage(**A3SIZE)
+                for p in range(pdf.numPages):
+                    page = pdf.getPage(p)
+                    if p % 2 == 0:
+                        # page left
+                        a3page.mergePage(page) 
+                    else:
+                        # page right
+                        a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
+                    if p % 2 == 1 or p == pdf.getNumPages() - 1:
+                        # add page 
+                        writer.addPage(a3page)
+                        a3page = PageObject.createBlankPage(**A3SIZE)  
+            with open(self.output_pdf_filename, 'wb') as f:
+                writer.write(f)
+        
         if not self.error.value:
             click.secho('Removing tmp', fg='yellow')
             rmtree('tmp')
@@ -190,14 +222,14 @@ class Generate:
                 topic_mutually_exclusive = [t]
                 q = re.search(QUESTION_RE, t[0])
                 if not q:
-                    raise RuntimeError("Apparently, question \"{}\" has no text".format(t[0]))                
+                    raise RuntimeError("Apparently, question \"{}\" in filename {} has no text".format(t[0], filename))                
                 q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0
                 while j < len(candidate_questions):
                     cq = re.search(QUESTION_RE, candidate_questions[j][0])
                     if not cq:
-                        raise RuntimeError("Apparently, question \"{}\" has no text".format(topic['content'][j]))
+                        raise RuntimeError("Apparently, question \"{}\" in filename {} has no text".format(topic['content'][j], filename))
                     cq_id = cq.group(2).strip() if cq.group(2) else None
                     if q == cq.group(1).strip().lower() or (q_id is not None and  q_id == cq_id):
                         topic_mutually_exclusive.append(candidate_questions.pop(j))                        
@@ -246,6 +278,7 @@ class Generate:
                               student_no=student[0],
                               student_name=student[1] if student[1] != 'Additional student' else '_' * 20, header=header, 
                               preamble=preamble,
+                              packages=self.config.get('packages', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
                               oneparchoices=self.oneparchoices,
                               circled=self.config.get('choices', {}).get('circled', False),
@@ -297,7 +330,9 @@ class Generate:
                               exam=self.config['exam'].get('name'), 
                               header=header, 
                               preamble=preamble,
+                              packages=self.config.get('packages', {}),
                               test=True,
+                              circled=self.config.get('choices', {}).get('circled', False),
                               oneparchoices=self.oneparchoices,
                               basedir=os.path.realpath(self.questions_path)) as renderer:
                 renderer.render(Document(current_questions))
@@ -317,6 +352,7 @@ class Generate:
                               preamble=preamble,
                               test=True,
                               oneparchoices=self.oneparchoices,
+                              circled=self.config.get('choices', {}).get('circled', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
             document = renderer.render(Document(questions)) 
         click.secho('Generating PDF with all corrected questions', fg='red', underline=True)

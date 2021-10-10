@@ -11,10 +11,12 @@ from . image_utils import order_points
 
 def decode(image, highlight=False, offset=5):
     if len(image.shape) > 2:
-        image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)    
     qrcodes = pyzbar.decode(image, symbols=[ZBarSymbol.QRCODE])
     if len(qrcodes) < 2:
         _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        if cv2.countNonZero(binary) >= (image.shape[0] * image.shape[1]) * 0.99: # Blank image
+            return None
         qrcodes = pyzbar.decode(binary, symbols=[ZBarSymbol.QRCODE])
     t = 255
     while t > 0 and len(qrcodes) < 2:
@@ -34,7 +36,7 @@ def decode(image, highlight=False, offset=5):
             # currently assumes that the image has the right orientation 
             # if this is not the case, the qrcode.polygon can be inspected
             # and possibly used for rotation
-            cv2.rectangle(image, (x - offset, y - offset), (x + w + offset, y + h + offset), GREEN, 3)
+            cv2.rectangle(image, (int(x - offset), int(y - offset)), (int(x + w + offset), int(y + h + offset)), GREEN, 3)
     # extract information from the qrcodes
     top_left_decode = decode_top_left(str(qrcodes[0].data))
     bottom_right_decode = decode_bottom_right(str(qrcodes[1].data))        

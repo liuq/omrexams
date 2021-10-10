@@ -44,7 +44,7 @@
   top=3.75cm, 
   headheight=2.25cm, 
   bottom=3.5cm, 
-  left=1.5cm, 
+  left=1cm, 
   right=6.5cm,
   marginparsep=0.5cm, 
   marginparwidth=4.5cm]{geometry}
@@ -52,11 +52,19 @@
 \usepackage[nolinks]{qrcode}
 \usepackage{environ}
 \usepackage{xifthen}
-\usepackage{calc}
+%\usepackage{calc}
 \usepackage[ocr-b]{ocr}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage[export]{adjustbox}
+\usepackage{newunicodechar}
+
+\newcommand\Warning{%
+ \makebox[1.4em][c]{%
+ \makebox[0pt][c]{\raisebox{.1em}{\small!}}%
+ \makebox[0pt][c]{\color{red}\Large$\bigtriangleup$}}}%
+
+\newunicodechar{⚠}{\Warning}
 
 \pagestyle{empty}
 
@@ -124,6 +132,12 @@ rectangle/.default={0.2cm}}
     \draw
         (current page header area.north west)
         node[below right, xshift=2cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
+
+    \draw
+        (current page header area.south east)
+        node[below right, yshift=1.7cm, xshift=0.8cm, text width=\marginparwidth, rounded rectangle, fill=black!10!white] {\small \Warning~ \textsf{\textbf{Non scrivere in quest'area! Va usata solo per annerire i cerchi di risposta.}} \\ \hspace{15ex}{\LARGE $\Downarrow$}};
+    \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
+    \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
         (current page.north west)
         node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          
@@ -143,7 +157,7 @@ rectangle/.default={0.2cm}}
           \pgfmathsetmacro\OMR@tmp{(\PosInfo@get{question@\question} - \OMR@CurrentPageCenter@YCoord + \CroppedPage@TopLeft@YCoord)}
           \xdef\OMR@questions@posylist{\OMR@tmp,\OMR@questions@posylist}
         }{}
-      };
+      };    
       \ifthenelse{\equal{\OMR@questions@pagelist}{}}%
       {
         \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
@@ -183,7 +197,7 @@ rectangle/.default={0.2cm}}
 } 
 
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
-\node[shape=circle, draw, inner sep=1pt] (char) {\footnotesize{#1}};}}
+\node[shape=circle, draw, inner sep=0.5pt] (char) {#1};}}
 \renewcommand{\questionlabel}{\textbf{{\thequestion}.}}
 \renewcommand{\choicelabel}{\textbf{\sffamily\thechoice})}
 
@@ -237,7 +251,7 @@ rectangle/.default={0.2cm}}
   \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] {\thequestion};  
   \path (current page marginpar area.west) + (0.25, 0);
   \pgfgetlastxy{\XCoord}{\YCoord};
-  \edef\q@object@label{question@\arabic{question}}%
+  \edef\q@object@label{question@\arabic{question}}
   \PosInfo@write{\q@object@label}{\YCoord}
 \foreach \position in {1, ..., #1} {%
   \setcounter{omranswers}{\position}

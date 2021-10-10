@@ -8,49 +8,79 @@ excel: # metadata description of the excel file for mapping to the expected form
     on_column: 0
   encoding: latin-1 # also this might infamously be needed by the silly esse3 output
 exam: # exam details
-  name: Fondamenti di Informatica – Relazioni Pubbliche # exam name
+  name: Fondamenti di Programmazione – Ing. Elettronica e Ing. Gestionale # exam name
   language: Italian # localization to be used
   shuffle_questions: yes # whether the questions are proposed in a random order or in the original one
   shuffle_answers: yes # whether the answers to each question are randomly rearranged
   grading_scale: Uniform # either Uniform, meaning 1/n for correct and wrong answers and 0 for unanswered or a triple of points for correct, wrong, unanswered
-  page_limits: 5 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
+  page_limits: 4 # The LaTeX compilation fails and tries to create another exam if the page limit is exceeded
   max_questions: 20
 questions: 
-  - from: "*.md"
-    draw: 2
-  - from: "09-sociali.md"
+  - from: "01 notazione posizionale 01.md"
     draw: 1
-  - from: "11-hci.md"
+  - from: "01 notazione posizionale 02.md"
     draw: 1
-  - from: "12-aggiuntive.md"
-    draw: 2
+  - from: "01 notazione posizionale 03.md"
+    draw: 1
+  - from: "02 codifica interi 01.md"
+    draw: 1
+  - from: "02 codifica interi 02.md"
+    draw: 1
+  - from: "02 codifica interi 03.md"
+    draw: 1
+  - from: "03 codifica reali 01.md"
+    draw: 1
+  - from: "03 codifica reali 02.md"
+    draw: 1
+  - from: "04 operazioni in ca2 01.md"
+    draw: 1
+  - from: "04 operazioni in ca2 02.md"
+    draw: 1
+  - from: "05 codifica dei testi 01.md"
+    draw: 1
+  - from: "06 programmazione strutturata 01.md"
+    draw: 1
+  - from: "06 programmazione strutturata 02.md"
+    draw: 1
+  - from: "07 algoritmi 01.md"
+    draw: 1
+  - from: "07 algoritmi 02.md"
+    draw: 1
 header: |
   \sf
   \Large \theexam \newline
   \normalsize \thedate \newline
   \thematriculationno, \thestudent \newline
-  Durata 55 minuti 
+  Durata 55 minuti \newline
+  Pagina \thepage
   \normalfont
 preamble: | 
-  \small \sf
-  **Leggere con attenzione.**
+  \sf
+  \Large \Warning **Leggere con molta attenzione.** 
+
+  \small
+
   Il compito va **svolto su questo foglio** che dovrà essere consegnato al termine della prova. 
-  Le **risposte definitive** dovranno essere fornite annerendo i cerchi presenti 
+  Le **risposte definitive** dovranno essere fornite **annerendo i cerchi presenti**
   sulla parte destra del foglio come indicato nella prima figura. Tutte le altre indicazioni
   sono considerate scorrette.
 
-  ![](images/omr_instructions.pdf)
+  ![](images/omr_instructions.pdf)  
 
-  **Non è consentita la correzione** delle risposte definitive: si consiglia di ricopiare 
-  le risposte sulla parte a lettura ottica *solamente* quando si è certi delle risposte stesse. 
-  Inoltre, **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
+  \Warning Poiché **NON È CONSENTITA LA CORREZIONE** delle risposte definitive si consiglia di appuntare le
+  risposte sulla parte contenente il testo e di riportarle sulla parte a lettura ottica (con i cerchi) 
+  *solamente* quando si è certi delle risposte stesse. 
+  \Warning **Non stropicciare il foglio e non scrivere o scarabocchiare sulla parte della pagina contenente i cerchi né sui QRCode**, 
+  ciò potrebbe invalidare le vostre risposte e di conseguenza il compito. 
+  Potete prendere appunti sulla parte contenente il testo delle domande, ma la risposta definitiva è 
+  quella riportata sulla parte a lettura ottica.
+
+  Si ricorda che **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
   ciò darà luogo **immediatamente** e **incontestabilmente** all'**annullamento** della prova d'esame.
-  Ogni domanda può avere **una o più risposte corrette**: l'individuazione di tutte le risposte corrette 
-  attribuirà **1 punto**, **0 punti** saranno attribuiti alla **mancata risposta**, un punteggio negativo 
-  (da determinarsi) alle risposte scorrette.
-  Tenere a portata di mano un **documento di identità** per la convalida del compito da parte del docente.
-  \normalsize 
+  Alcune domande possono avere **una o più risposte corrette**: l'individuazione di **tutte** le risposte corrette 
+  attribuirà **1 punto**.
+  \normalfont \normalsize 
 footer: # currently no footer
 choices:
   circled: True
-  oneparchoices: False
+  oneparchoices: True

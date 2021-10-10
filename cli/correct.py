@@ -49,7 +49,7 @@ class Correct:
         os.mkdir('tmp')
         with TinyDB("{}.tmp".format(self.data_filename)) as db:
             if 'correction' in db.tables():
-                db.purge_table('correction')
+                db.drop_table('correction')
         self.tasks_queue = mp.JoinableQueue()
         self.watch_queue = mp.Queue()
         self.results_mutex = mp.RLock()
@@ -121,14 +121,14 @@ class Correct:
                 results = table.search(Correction.student_id == student)
                 results = sorted(results, key=lambda r: int(r['page']))
                 for page in results:
-                    data[student]['correct_answers'] += list(map(set, page['correct_answers']))
-                    data[student]['given_answers'] += list(map(set, page['detected_answers']))
+                    data[student]['correct_answers'] += list(map(list, page['correct_answers']))
+                    data[student]['given_answers'] += list(map(list, page['detected_answers']))
             if 'correction' in db2.tables():
-                db2.purge_table('correction')
+                db2.drop_table('correction')
             table = db2.table('correction')
             for student in data:
                 table.insert({ 'student_id': student, **data[student] })   
-            db2.purge_table('statistics')
+            db2.drop_table('statistics')
             statistics = db2.table('statistics')    
             Statistics = Query()                       
             # check consistency of correct answers (apriori/encoded)
@@ -181,7 +181,7 @@ class Correct:
                 if correct_answers: # probably no question in current file                
                     student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
                     self.results_mutex.acquire()
-                    self.append_correction(student, page, detected_answers, correct_answers)
+                    self.append_correction(student, page, list(map(list, detected_answers)), list(map(list, correct_answers)))
                     self.results_mutex.release()
             except Exception as e:
                 click.secho("\nIn file {}\n".format(filename) + str(e), fg="yellow")
@@ -204,7 +204,7 @@ class Correct:
         p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl
         p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
-        cv2.rectangle(image, tuple(p0 - offset), tuple(p1 + offset), BLUE, 3)        
+        cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
         # contour detection
         correction = [None] * 3
         try:
@@ -238,6 +238,7 @@ class Correct:
         cv2.putText(image, given_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - 4 * height), cv2.FONT_HERSHEY_SIMPLEX, 1, MAGENTA, 3)
         cv2.putText(image, correct_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - height), cv2.FONT_HERSHEY_SIMPLEX, 1, BLUE, 3)
         self.write(filename, image)
+
         return majority, correct
         
     def majority_correction(self, filename, correction):
@@ -285,8 +286,8 @@ class Correct:
             data = { 
                 "student_id": student, 
                 "page": page, 
-                "detected_answers": detected_answers, 
-                "correct_answers": correct_answers 
+                "detected_answers": detected_answers,
+                "correct_answers": correct_answers
             }
             table.insert(data)
 
@@ -567,8 +568,10 @@ class Correct:
         y, x = np.ogrid[-s // 2 : s // 2, -s // 2 : s // 2]
         mask = x * x + y * y <= s * s    
         
-        maxima = peak_local_max(response, footprint=mask, #min_distance=s, 
-                                exclude_border=False, threshold_rel=0.5, indices=False) * 255
+        peak_indexes = peak_local_max(response, footprint=mask, #min_distance=s, 
+                                      exclude_border=False, threshold_rel=0.5) 
+        maxima = np.zeros_like(response, dtype=int)
+        maxima[tuple(peak_indexes.T)] = 255        
         maxima = cv2.normalize(maxima, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
         
         contours, _ = cv2.findContours(maxima, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
