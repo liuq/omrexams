@@ -127,32 +127,43 @@ class Generate:
             _blank.addBlankPage(**A4SIZE)    
             blank = io.BytesIO()
             _blank.write(blank)   
-            for exam in sorted(glob.glob(os.path.join('tmp', '*.pdf'))):
-                pdf = PdfFileReader(open(exam, 'rb'))                
-                merger.append(pdf)
-                if pdf.numPages % 2 == 1:
-                    merger.append(blank)
+            pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
+            with click.progressbar(length=len(pdf_files), label='Exam files',
+                               bar_template='%(label)s |%(bar)s| %(info)s',
+                               fill_char=click.style(u'█', fg='cyan'),
+                               empty_char=' ', show_pos=True) as bar:
+                for i, exam in enumerate(pdf_files):
+                    pdf = PdfFileReader(open(exam, 'rb'))                
+                    merger.append(pdf)
+                    if pdf.numPages % 2 == 1:
+                        merger.append(blank)
+                    bar.update(i)
             with open(self.output_pdf_filename, 'wb') as f:
                 merger.write(f)
         else:
             # This is for A3 management
             writer = PdfFileWriter()
             a3page = None
-            for exam in sorted(glob.glob(os.path.join('tmp', '*.pdf'))):
-                pdf = PdfFileReader(open(exam, 'rb'))
-                a3page = PageObject.createBlankPage(**A3SIZE)
-                for p in range(pdf.numPages):
-                    page = pdf.getPage(p)
-                    if p % 2 == 0:
-                        # page left
-                        a3page.mergePage(page) 
-                    else:
-                        # page right
-                        a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
-                    if p % 2 == 1 or p == pdf.getNumPages() - 1:
-                        # add page 
-                        writer.addPage(a3page)
-                        a3page = PageObject.createBlankPage(**A3SIZE)  
+            pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
+            with click.progressbar(length=len(pdf_files), label='Exam files',
+                               bar_template='%(label)s |%(bar)s| %(info)s',
+                               fill_char=click.style(u'█', fg='cyan'),
+                               empty_char=' ', show_pos=True) as bar:
+                for i, exam in enumerate(pdf_files):
+                    pdf = PdfFileReader(open(exam, 'rb'))
+                    a3page = PageObject.createBlankPage(**A3SIZE)
+                    for p in range(pdf.numPages):
+                        page = pdf.getPage(p)
+                        if p % 2 == 0:
+                            # page left
+                            a3page.mergePage(page) 
+                        else:
+                            # page right
+                            a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
+                        if p % 2 == 1 or p == pdf.getNumPages() - 1:
+                            # add page 
+                            writer.addPage(a3page)
+                            a3page = PageObject.createBlankPage(**A3SIZE)  
             with open(self.output_pdf_filename, 'wb') as f:
                 writer.write(f)
         
