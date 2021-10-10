@@ -12,3 +12,8 @@ scikit-image
 tinydb
 Wand
 img2pdf
+pyyaml
+pylatex
+wheel
+mistletoe
+pypdf2
