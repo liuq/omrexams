@@ -203,6 +203,7 @@ class QuestionRenderer(LaTeXRenderer):
         # TODO: get a random permutation, the same for both the multiple choices and the answers
         answers = ['\n\t\\choice {inner}'.format(inner=self.render_list_item(child)) for child in token.children]
         if len(answers) != len(self.questions[-1]['answers']):
+            print(answers, self.questions[-1]['answers'])
             raise ValueError("Answers mismatch for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
                 len(answers), len(self.questions[-1]['answers'])))
         self.record_answers = False
@@ -266,6 +267,8 @@ class QuestionRenderer(LaTeXRenderer):
             options.append('circled')
         if self.parameters.get('usesf'):
             options.append('sflabel')
+        if self.parameters.get('dyslexia'):
+            options.append('dyslexia')
             
         doc = pylatex.Document('basic')
         doc.documentclass = pylatex.Command('documentclass',
@@ -301,15 +304,20 @@ class QuestionRenderer(LaTeXRenderer):
 
     def render_test(self, token):
         self.footnotes.update(token.footnotes)
+        self.parameters['shuffle'] = False
         inner = self.render_inner(token)                
         doc = pylatex.Document(documentclass='omrexam', 
             inputenc=None, lmodern=False, fontenc=None, textcomp=None)
         doc.preamble.append(pylatex.Package('polyglossia'))
         doc.preamble.append(pylatex.Command('setdefaultlanguage', self.parameters.get('language', '').lower()))
+        for package, options in chain(self.packages.items(), self.parameters.get('packages', {}).items()):
+            if not options:
+                doc.preamble.append(pylatex.Package(package))
+            else:
+                doc.preamble.append(pylatex.Package(package, options=options))
         doc.preamble.append(pylatex.Package('listings'))
         doc.preamble.append(pylatex.Command('examname', self.parameters['exam']))
-        doc.preamble.append(pylatex.Command('student', 
-            arguments=["00000", "Student Name"]))
+        doc.preamble.append(pylatex.Command('student', arguments=["00000", "Student Name"]))
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))
         doc.preamble.append(pylatex.Command('solution', ''))
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))

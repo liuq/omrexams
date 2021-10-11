@@ -2,7 +2,7 @@
 
 ---
 
-## Si indichino le uguaglianze corrette:
+## Si indichino le uguaglianze corrette (sono possibili più risposte):
 
 - [x] $1111111_{2}$ in complemento a 2 su sette bit = $-1_{10}$
 - [x] $11111111_{2}$ in complemento a 2 su otto bit = $-1_{10}$
@@ -13,7 +13,7 @@
 
 ---
 
-## Si indichino le uguaglianze corrette:
+## Si indichino le uguaglianze corrette (sono possibili più risposte):
 
 - [ ] $80_{16}$ in complemento a 2 su otto bit = $-1_{10}$
 - [x] $80_{16}$ in complemento a 2 su otto bit = $-128_{10}$
@@ -24,7 +24,7 @@
 
 ---
 
-## Si indichino le uguaglianze corrette:
+## Si indichino le uguaglianze corrette (sono possibili più risposte):
 
 - [x] $11_{2}$ in complemento a 2 su due bit = $-1_{10}$
 - [ ] $11_{2}$ in complemento a 2 su due bit = $3_{10}$

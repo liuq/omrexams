@@ -28,25 +28,26 @@ questions:
     draw: 1
   - from: "02 codifica interi 03.md"
     draw: 1
-  - from: "03 codifica reali 01.md"
-    draw: 1
+  # - from: "03 codifica reali 01.md"
+  #   draw: 1
   - from: "03 codifica reali 02.md"
     draw: 1
-  - from: "04 operazioni in ca2 01.md"
-    draw: 1
+  # - from: "04 operazioni in ca2 01.md"
+  #   draw: 1
   - from: "04 operazioni in ca2 02.md"
     draw: 1
   - from: "05 codifica dei testi 01.md"
     draw: 1
   - from: "06 programmazione strutturata 01.md"
     draw: 1
-  - from: "06 programmazione strutturata 02.md"
-    draw: 1
+  # - from: "06 programmazione strutturata 02.md"
+  #   draw: 1
   - from: "07 algoritmi 01.md"
     draw: 1
   - from: "07 algoritmi 02.md"
     draw: 1
 header: |
+  \setmainfont{OpenDyslexic}
   \sf
   \large \theexam \newline
   \normalsize \thedate \newline
@@ -83,8 +84,8 @@ preamble: |
 
   Si ricorda che **non è consentito comunicare** utilizzando qualunque mezzo, né condividere alcun materiale;
   ciò darà luogo **immediatamente** e **incontestabilmente** all'**annullamento** della prova d'esame.
-  Nelle domande indicate possono esserci più risposte corrette: in tal caso, l'individuazione di tutte le risposte corrette 
-  attribuirà 1 punto. 
+  Alcune domande possono avere **una o più risposte corrette**: l'individuazione di **tutte** le risposte corrette 
+  attribuirà **1 punto**. Una penalizzazione sarà attribuita nel caso vengano indicate eventuali risposte **non corrette**.
 
   \normalfont \normalsize
   \end{tcolorbox}  
@@ -93,5 +94,6 @@ footer: |
 choices:
   circled: True
   oneparchoices: True
+  dyslexia: True
 packages:
   tcolorbox: []

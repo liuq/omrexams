@@ -11,7 +11,7 @@
 
 ---
 
-## Quali sono i numeri la cui rappresentazione non varia al variare della base (considerando tutte le possibili basi)?
+## Quali sono i numeri la cui rappresentazione intera positiva non varia al variare della base (considerando tutte le possibili basi)?
 
 - [ ] 0 e -1
 - [ ] -1

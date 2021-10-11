@@ -52,14 +52,20 @@
 \usepackage[nolinks]{qrcode}
 \usepackage{environ}
 \usepackage{xifthen}
-%\usepackage{calc}
 \usepackage[ocr-b]{ocr}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage[export]{adjustbox}
 \usepackage{newunicodechar}
-%\usepackage{fontspec}
-%\setmainfont{OpenDyslexic}
+\usepackage{fdsymbol}
+\usepackage{listings}
+\lstset{
+  escapeinside={\%*}{*)},
+  inputencoding=utf8
+}
+\usepackage{fontspec}
+
+\CorrectChoiceEmphasis{\bfseries\boldmath\color{red}}
 
 \newcommand\Warning{%
  \makebox[1.4em][c]{%
@@ -69,6 +75,13 @@
 \newunicodechar{⚠}{\Warning}
 \newunicodechar{◼}{$\blacksquare$}
 \newunicodechar{▢}{$\square$}
+\newunicodechar{▲}{$\blacktriangle$}
+\newunicodechar{★}{$\bigstar$}
+\newunicodechar{♦}{$\blacklozenge$}
+\newunicodechar{♥}{$\varheartsuit$}
+\newunicodechar{♦}{$\vardiamondsuit$}
+\newunicodechar{♠}{$\spadesuit$}
+\newunicodechar{♣}{$\clubsuit$}
 
 \pagestyle{empty}
 
@@ -213,6 +226,7 @@ rectangle/.default={0.2cm}}
 \DeclareOption{circled}{
   \renewcommand{\choicelabel}{\circled{\sffamily\footnotesize\thechoice}}
 }
+\DeclareOption{dyslexia}{\setmainfont{OpenDyslexic}}
 \ProcessOptions\relax
 
 % Check that \student and \exam have been set
@@ -257,7 +271,7 @@ rectangle/.default={0.2cm}}
 \begin{checkomrchoiceswidth}{\marginparwidth}
 \begin{tikzpicture}[x=\OMR@Size, y=\OMR@Size, remember picture, overlay]  
   \coordinate (here) at (0, 0);
-  \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\small] {\sf\thequestion};  
+  \draw (current page marginpar area.west |- here) + (0.25, 0) node [anchor=north west, draw, fill=black, circle, inner sep=0pt, minimum size=\OMR@Size, text=white, font=\footnotesize] {\sf\thequestion};  
   \path (current page marginpar area.west) + (0.25, 0);
   \pgfgetlastxy{\XCoord}{\YCoord};
   \edef\q@object@label{question@\arabic{question}}

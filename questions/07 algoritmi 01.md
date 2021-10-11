@@ -2,85 +2,85 @@
 
 ---
 
-## Il seguente segmento di codice deve calcolare y = x elevato a n mediante moltiplicazioni successive. Si indichi il completamento corretto.
+## Il seguente segmento di codice deve calcolare l'elevazione a potenza $y = x^n$ mediante moltiplicazioni successive. Si indichi la sostituzione corretta delle due istruzioni contrassegnate da ▲ e ★.
 
 ```
 cnt <- 0;
 y <- 1;
-while (  A  )
+while ( %*▲*) ) 
 {
-   B
+   %*★*)
    cnt <- cnt + 1;
 }
 ```
 
 
-- [x] A: `cnt < n`  B: `y <- y * x;`
-- [ ] A: `cnt < n`  B: `y <- y * (x + 1);`
-- [ ] A: `cnt <= n` B: `y <- y * (x - 1);`
-- [ ] A: `cnt > n`  B: `y <- y * x;`
-- [ ] A: `cnt > n`  B: `y <- y * (x + 1);`
-- [ ] A: `cnt >= n` B: `y <- y * (x - 1);`
+- [x] ▲: `cnt < n`  ★: `y <- y * x;`
+- [ ] ▲: `cnt < n`  ★: `y <- y * (x + 1);`
+- [ ] ▲: `cnt <= n` ★: `y <- y * (x - 1);`
+- [ ] ▲: `cnt > n`  ★: `y <- y * x;`
+- [ ] ▲: `cnt > n`  ★: `y <- y * (x + 1);`
+- [ ] ▲: `cnt >= n` ★: `y <- y * (x - 1);`
 
 ---
 
-## Il seguente segmento di codice deve calcolare y = x * n mediante somme successive. Si indichi il completamento corretto.
+## Il seguente segmento di codice deve calcolare la moltiplicazione $y = x \cdot n$ mediante somme successive. Si indichi la sostituzione corretta delle due istruzioni contrassegnate da ▲ e ★.
 
 ```
 cnt <- 0;
 y <- 0;
-while (  A  )
+while (  %*▲*)  )
 {
-   B
+   %*★*)
    cnt <- cnt + 1;
 }
 ```
 
-- [x] A: `cnt < n`  B: `y <- y + x;`
-- [ ] A: `cnt < n`  B: `y <- y + (x + 1);`
-- [ ] A: `cnt <= n` B: `y <- y + (x - 1);`
-- [ ] A: `cnt > n`  B: `y <- y + x;`
-- [ ] A: `cnt > n`  B: `y <- y + (x + 1);`
-- [ ] A: `cnt >= n` B: `y <- y + (x - 1);`
+- [x] ▲: `cnt < n`  ★: `y <- y + x;`
+- [ ] ▲: `cnt < n`  ★: `y <- y + (x + 1);`
+- [ ] ▲: `cnt <= n` ★: `y <- y + (x - 1);`
+- [ ] ▲: `cnt > n`  ★: `y <- y + x;`
+- [ ] ▲: `cnt > n`  ★: `y <- y + (x + 1);`
+- [ ] ▲: `cnt >= n` ★: `y <- y + (x - 1);`
 
 ---
 
-## Il seguente segmento di codice deve calcolare il quoziente della divisione intera y = x / n mediante sottrazioni successive. Si indichi il completamento corretto.
+## Il seguente segmento di codice deve calcolare il quoziente della divisione intera $y = x / n$ mediante sottrazioni successive. Si indichi la sostituzione corretta delle due istruzioni contrassegnate da ▲ e ★.
 
 ```
 y <- 0;
 t <- x;
-while (  A  )
+while (  %*▲*)  )
 {
-   B
+   %*★*)
    y <- y + 1;
 }
 ```
 
-- [x] A: `t >= x`  B: `t <- t - x;`
-- [ ] A: `t > x`   B: `t <- t - x;`
-- [ ] A: `t >= x`  B: `t <- t - 1;`
-- [ ] A: `t > x`   B: `t <- t - 1;`
-- [ ] A: `t <= x`  B: `t <- t - x;`
-- [ ] A: `t <= x`  B: `t <- t - 1;`
+- [x] ▲: `t >= x`  ★: `t <- t - x;`
+- [ ] ▲: `t > x`   ★: `t <- t - x;`
+- [ ] ▲: `t >= x`  ★: `t <- t - 1;`
+- [ ] ▲: `t > x`   ★: `t <- t - 1;`
+- [ ] ▲: `t <= x`  ★: `t <- t - x;`
+- [ ] ▲: `t <= x`  ★: `t <- t - 1;`
 
 ---
 
-## Il seguente segmento di codice deve calcolare il resto della divisione intera y = x / n mediante sottrazioni successive. Si indichi il completamento corretto.
+## Il seguente segmento di codice deve calcolare il resto della divisione intera $y = x / n$ mediante sottrazioni successive. Si indichi la sostituzione corretta delle due istruzioni contrassegnate da ▲ e ★.
 
 ```
 y <- 0;
 r <- x;
-while (  A  )
+while (  %*▲*)  )
 {
-   B
+   %*★*)
 }
 ```
 
-- [x] A: `r >= x`  B: `r <- r - x;`
-- [ ] A: `r > x`   B: `r <- r - x;`
-- [ ] A: `r >= x`  B: `r <- r - 1;`
-- [ ] A: `r > x`   B: `r <- r - 1;`
-- [ ] A: `r <= x`  B: `r <- r - x;`
-- [ ] A: `r <= x`  B: `r <- r - 1;`
+- [x] ▲: `r >= x`  ★: `r <- r - x;`
+- [ ] ▲: `r > x`   ★: `r <- r - x;`
+- [ ] ▲: `r >= x`  ★: `r <- r - 1;`
+- [ ] ▲: `r > x`   ★: `r <- r - 1;`
+- [ ] ▲: `r <= x`  ★: `r <- r - x;`
+- [ ] ▲: `r <= x`  ★: `r <- r - 1;`
 

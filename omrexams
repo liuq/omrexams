@@ -83,7 +83,7 @@ def cli(ctx, debug):
 @click.option('--students', '-s', type=click.Path(exists=True, resolve_path=True), required=False)
 @click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), default=os.path.join('.', 'questions'), required=True)
 @click.option('--count', '-n', type=int, option='students', value=None, cls=OptionRequiredIf)
-@click.option('--serial', type=int, default=100)
+@click.option('--serial', type=int, default=1)
 @click.option('--output_prefix', '-o', type=click.Path(resolve_path=True), required=False, 
     help='The output prefix (i.e., the name of the pdf and json data files) [default: \'exam-{date}{{.pdf|.json}}\'')
 @click.option('--date', '-d', type=DATETIME, prompt='Enter the exam date',  
@@ -156,7 +156,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
             student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
             click.secho('Processing done, {} students found'.format(len(student_list)), fg='cyan')
             if additional > 0:                
-                student_list += [(i + 100, "Additional student") for i in range(additional)]
+                student_list += [(i, "Additional student") for i in range(additional)]
                 click.secho('Added further {} students'.format(additional), fg='cyan')
         except Exception as e:
             logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students))

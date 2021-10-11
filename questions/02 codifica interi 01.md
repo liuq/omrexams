@@ -2,7 +2,7 @@
 
 ---
 
-## Il numero $333_{10}$, se rappresentato in base 3 si scrive:
+## Il numero $333_{10}$, se rappresentato in base $3$ si scrive:
 
 - [x] $110100_{3}$
 - [ ] $111_{3}$
@@ -12,7 +12,7 @@
 
 ---
 
-## Il numero $555_{10}$, se rappresentato in base 5 si scrive:
+## Il numero $555_{10}$, se rappresentato in base $5$ si scrive:
 
 - [x] $4210_{5}$
 - [ ] $4321_{5}$
@@ -23,12 +23,11 @@
 
 ---
 
-## Il numero $444_{10}$, se rappresentato in base 4 si scrive:
+## Il numero $444_{10}$, se rappresentato in base $4$ si scrive:
 
 - [x] $12330_{4}$
 - [ ] $1230_{4}$
 - [ ] $10230_{4}$
-- [ ] $12222_{4}$
 - [ ] $1333_{4}$
 - [ ] $111_{4}$
 - [ ] $100100100_{4}$

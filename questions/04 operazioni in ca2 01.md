@@ -2,7 +2,7 @@
 
 ---
 
-## Lavorando in complemento a 2 su 16 bit, che risultato si ottiene dall'operazione $FFFF_{16}+FFFF_{16}$?
+## Lavorando in complemento a 2 su 16 bit, che risultato si ottiene dall'operazione $FFFF_{16}+FFFF_{16}$ (sono possibili più risposte)?
 
 - [ ] 0
 - [ ] $-1_{10}$
@@ -14,9 +14,8 @@
 
 ## Lavorando in complemento a 2 su 16 bit, che risultato si ottiene dall'operazione $7FFF_{16}+FFFF_{16}$?
 
-- [ ] $8000_{16}$ 
 - [ ] la seconda rappresentazione dello zero, cioè -0
-- [x] $126_{10}$
+- [ ] $126_{10}$
 - [ ] $127_{10}$
 - [ ] $128_{10}$
 - [x] $7FFE_{16}$

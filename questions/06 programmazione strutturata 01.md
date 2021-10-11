@@ -6,11 +6,11 @@
 
 ![](fig05_programmazione_strutturata_01-01.png)
 
-- [ ] traduzione 1
-- [x] traduzione 2
-- [ ] traduzione 3
-- [ ] traduzione 4
-- [ ] traduzione 5
+- [ ] traduzione ♥
+- [x] traduzione ♦
+- [ ] traduzione ◼️
+- [ ] traduzione ♣
+- [ ] traduzione ★
 - [ ] Il diagramma di flusso non è strutturato e quindi non può essere tradotto in forma testuale
 
 ---
@@ -19,10 +19,10 @@
 
 ![](fig05_programmazione_strutturata_01-02.png)
 
-- [x] traduzione 1
-- [ ] traduzione 2
-- [ ] traduzione 3
-- [ ] traduzione 4
+- [x] traduzione ♥
+- [ ] traduzione ♦
+- [ ] traduzione ◼️
+- [ ] traduzione ♣
 - [ ] Il diagramma di flusso non è strutturato e quindi non può essere tradotto in forma testuale
 
 ---
@@ -31,9 +31,9 @@
 
 ![](fig05_programmazione_strutturata_01-03.png)
 
-- [ ] traduzione 1
-- [ ] traduzione 2
-- [ ] traduzione 3
-- [x] traduzione 4
+- [ ] traduzione ♥
+- [ ] traduzione ♦
+- [ ] traduzione ◼️
+- [x] traduzione ♣
 - [ ] Il diagramma di flusso non è strutturato e quindi non può essere tradotto in forma testuale
 

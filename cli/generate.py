@@ -145,7 +145,7 @@ class Generate:
             writer = PdfFileWriter()
             a3page = None
             pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
-            with click.progressbar(length=len(pdf_files), label='Exam files',
+            with click.progressbar(length=len(pdf_files), label='Collating files',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
@@ -300,6 +300,7 @@ class Generate:
                               packages=self.config.get('packages', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
                               oneparchoices=self.oneparchoices,
+                              dyslexia=self.config.get('choices', {}).get('dyslexia', False),
                               circled=self.config.get('choices', {}).get('circled', False),
                               usesf=self.config.get('choices', {}).get('usesf', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
@@ -376,6 +377,7 @@ class Generate:
                               header=header, 
                               preamble=preamble,
                               footer=footer,
+                              packages=self.config.get('packages', {}),
                               test=True,
                               oneparchoices=self.oneparchoices,
                               circled=self.config.get('choices', {}).get('circled', False),
