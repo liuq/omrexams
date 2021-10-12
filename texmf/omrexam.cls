@@ -156,7 +156,7 @@ rectangle/.default={0.2cm}}
         node[below right, yshift=0.5cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\thefooter}};  
     \draw
         (current page header area.south east)
-        node[below right, yshift=1.7cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Va usata solo per annerire i cerchi di risposta.}}}};
+        node[below right, yshift=1.5cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Va usata solo per annerire i cerchi di risposta.}}}};
     \node [below of=WARN] {\LARGE $\Downarrow$};
     \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);

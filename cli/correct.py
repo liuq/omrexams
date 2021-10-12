@@ -201,8 +201,8 @@ class Correct:
             return [], []
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
-        p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl
-        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
+        p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl 
+        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl 
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
         # contour detection
@@ -348,7 +348,7 @@ class Correct:
         if (d > r1 + r2):
             return 0.0        
         if d < r1 - r2: # the circle whose radius is r2 is contained in the circle whose radius is r1
-            return maath.pi * r2 * r2
+            return math.pi * r2 * r2
         r1s = r1 * r1
         r2s = r2 * r2
         d1 = (r1s - r2s  + d * d) / (2.0 * d)
@@ -401,7 +401,7 @@ class Correct:
         answer_circles = sorted(answer_circles.items(), key=lambda item: item[0][1])
         # check whether questions and the expected sequence of answers match
         if len(reference_circles) != len(metadata['page_correction']):
-            raise RuntimeError("Warning: Number of questions {} and number of correct answers {} do not match".format(len(reference_circles), len(metadata['page_correction'])))
+            raise RuntimeError("Warning: Number of questions {} ({}-{}) and number of correct answers {} do not match".format(len(reference_circles), metadata['student_id'], metadata['page'], len(metadata['page_correction'])))
         # go through the questions (reference circles) and check the answers
         correction = []    
         for i, ac in enumerate(answer_circles):
@@ -424,7 +424,9 @@ class Correct:
                 c = np.array(reference_circle[:2]) + [j * xdistance * 2 * reference_radius, 0]
                 c = tuple(list(c) + [reference_radius]) 
                 # check if the phantom circle is outside the roi image or there's nothing below the circle
-                if c[0] + c[2] > binary.shape[0] or Correct.circle_filled_area(binary, c) < 0.1 * reference_area:
+                # TODO: the first check is not working anymore, consider fixing it later
+                #if c[0] + c[2] > binary.shape[0] or Correct.circle_filled_area(binary, c) < 0.1 * reference_area:
+                if Correct.circle_filled_area(binary, c) < 0.1 * reference_area:
                     break
                 phantom_circles.append(c)
             
@@ -447,6 +449,7 @@ class Correct:
                 text = "{0:.0%}".format(filled_area)
                 cv2.putText(mask, text, tuple(np.array(c[:2]) - np.array([c[2], c[2] + 2 * offset])), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, MAGENTA, 2)
+                cv2.circle(mask, c[:2], c[2], alpha(YELLOW, 0.3), -1)
                 if c[3]:
                     answers_res.add(r)
                     if r in correct_res:
@@ -459,12 +462,12 @@ class Correct:
             # check if there are missing answers on the paper-sheet
             missing_answers = correct_res - all_res
             if len(missing_answers) > 0:
-                click.secho("Warning: For question {}, the correct answer{} {} {} not printed on the sheet".format(metadata['page_correction'][i], "s" if len(missing_answers) > 1 else "", missing_answers, "were" if len(missing_answers) > 1 else "was"), fg="yellow")
+                click.secho("Warning: For question {}/({}-{}), the correct answer{} {} {} not printed on the sheet".format(i, metadata['student_id'], metadata['page'], "s" if len(missing_answers) > 1 else "", missing_answers, "were" if len(missing_answers) > 1 else "was"), fg="yellow")
                 ytop = round(reference_circle[1] - 1.3 * reference_circle[2])
                 ybottom = round(reference_circle[1] + 1.3 * reference_circle[2])
                 cv2.rectangle(mask, (0, ytop), (roi.shape[1], ybottom), RED, 7)
                 p = np.array(reference_circle[:2]) + [-reference_circle[2], -reference_circle[2] - 40]
-                cv2.putText(mask, "Missing answer(s) {}".format(missing_answers), tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, RED, 3)
+                cv2.putText(mask, "Missing {} found {}".format(missing_answers, all_res), tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, RED, 3)
             # write a text with the given answers and the correct ones close to each reference circle
             p = np.array(reference_circle[0:2]) + [-reference_circle[2], reference_circle[2] - 100]
             tmp = ("".join(sorted(a for a in answers_res)) if answers_res else "None")

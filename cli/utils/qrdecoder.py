@@ -37,7 +37,7 @@ def decode(image, highlight=False, offset=5):
             # if this is not the case, the qrcode.polygon can be inspected
             # and possibly used for rotation
             cv2.rectangle(image, (int(x - offset), int(y - offset)), (int(x + w + offset), int(y + h + offset)), GREEN, 3)
-    # extract information from the qrcodes
+    # extract information from the qrcode
     top_left_decode = decode_top_left(str(qrcodes[0].data))
     bottom_right_decode = decode_bottom_right(str(qrcodes[1].data))        
 

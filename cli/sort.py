@@ -54,9 +54,11 @@ class Sort:
                         self.tasks_queue.put((fn, p))
                     pages += pdf_file.numPages
         else:
-            for fn in self.scanned:
+            if not os.path.exists('split_tmp'):
                 click.secho('Creating directory {}'.format('split_tmp'))
                 os.mkdir('split_tmp')
+
+            for fn in self.scanned:
                 with open(fn, 'rb') as f, open(os.path.join('split_tmp', os.path.basename(fn)), 'wb') as sf:
                     pdf_file = Sort.split_pages(PdfFileReader(f))
                     merger = PdfFileMerger()
@@ -96,7 +98,7 @@ class Sort:
                     with TinyDB(self.doublecheck) as db:
                         Exam = Query()
                         table = db.table('exams')
-                        result = table.get(Exam.student_id == metadata['student_id'])
+                        result = table.get(Exam.student_id == str(metadata['student_id']))
                         if not result: 
                             raise RuntimeError("Error double checking: student {} is not present in the data file".format(metadata['student_id']))
                         answers = metadata['correct']
@@ -124,9 +126,18 @@ class Sort:
             img_buffer = np.asarray(bytearray(img.make_blob('bmp')), dtype=np.uint8)
             image = cv2.imdecode(img_buffer, cv2.IMREAD_GRAYSCALE)   
             try:
-                metadata = qrdecoder.decode(image)
+                metadata = None
+                try:
+                    # Try first without rotation
+                    metadata = qrdecoder.decode(image)
+                except RuntimeError:
+                    pass                                    
                 if metadata is None:
-                    return None
+                    # Then try rotating by 180°
+                    image = cv2.rotate(image, cv2.ROTATE_180)
+                    metadata = qrdecoder.decode(image)
+                    if metadata is None:
+                        return None
                 # perform a rotation and image cropping to the qrcodes
                 tl = metadata['top_left_rect'][0]
                 br = metadata['bottom_right_rect'][2]

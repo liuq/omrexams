@@ -12,6 +12,7 @@ import logging
 import click_log
 import sys
 import os
+import math
 
 logger = logging.getLogger("omrexams")
 click_log.basic_config(logger)
@@ -164,7 +165,8 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     else:
         click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
         click.secho('Starting serials from {}'.format(serial), fg='cyan')
-        student_list = list(map(lambda s: (s, "▢"), range(serial, serial + count)))
+        f = "{{:0{}}}".format(math.ceil(math.log10(serial + count + 1)))
+        student_list = list(map(lambda s: (f.format(s), ""), range(serial, serial + count)))
     click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 
