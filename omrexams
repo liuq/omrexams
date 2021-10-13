@@ -13,6 +13,7 @@ import click_log
 import sys
 import os
 import math
+from tinydb import TinyDB, Query
 
 logger = logging.getLogger("omrexams")
 click_log.basic_config(logger)
@@ -165,7 +166,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     else:
         click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
         click.secho('Starting serials from {}'.format(serial), fg='cyan')
-        f = "{{:0{}}}".format(math.ceil(math.log10(serial + count + 1)))
+        f = "{{:0{}}}".format(math.ceil(math.log10(serial + count)))
         student_list = list(map(lambda s: (f.format(s), ""), range(serial, serial + count)))
     click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
@@ -279,6 +280,27 @@ def moodle(ctx, questions_dir, single, penalty):
     """
     moodle_converter = MoodleConverter(questions_dir, single, penalty)
     moodle_converter.convert()
+
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--output', '-o', type=click.Path(exists=False, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
+@click.pass_context
+def report(ctx, datafile, output, yes):
+    with TinyDB(datafile) as db:
+            df = pd.DataFrame()
+            Exam = Query()
+            for exam in db.table('correction').all():
+                e = db.table('exams').get(Exam.student_id == exam['student_id'])
+                correct_answers = list(map(set, exam['correct_answers']))
+                given_answers = list(map(set, exam['given_answers']))
+                question_size = list(map(lambda q: len(q[3]), e['questions']))
+                for i in range(len(correct_answers)):
+                    marked, correct, missing, wrong = given_answers[i], correct_answers[i] & given_answers[i], correct_answers[i] - given_answers[i], given_answers[i] - correct_answers[i]
+                    df = pd.concat([df, pd.DataFrame([{ 'filename': e['questions'][i][0], 'question': e['questions'][i][1], 'correct_ratio': len(correct) / len(correct_answers[i]), 'missing_ratio': len(missing) / len(correct_answers[i]), 'wrong_ratio': len(wrong) / len(correct_answers[i]), 'options': question_size[i], 'no_correct_answers': len(correct_answers[i]) }])])                    
+            df = df.groupby(['filename', 'question']).agg({ 'correct_ratio': ['count', 'sum', 'mean', 'std'], 'missing_ratio': ['mean', 'std'], 'wrong_ratio': ['mean', 'std'], 'options': 'min', 'no_correct_answers': 'min' })
+            df.to_excel(output)
+            
 
 if __name__ == '__main__':
     cli(obj={})
