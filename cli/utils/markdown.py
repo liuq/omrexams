@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 import base64
 from itertools import chain
 
-MAX_ANSWERS = 6
+MAX_ANSWERS = 7
 logger = logging.getLogger("omrexams")
 
 class PreambleEnvironment(pylatex.base_classes.Environment):
