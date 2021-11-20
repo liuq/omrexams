@@ -91,7 +91,8 @@ def decode_top_left(data):
     else:
         correct = vigenere_decrypt(m.group('sequence'), m.group('id')).upper().split(',')
     return { 
-        'student_id': int(m.group('id')),
+        # CHECK: removed int across student_id
+        'student_id': m.group('id'),
         'date': m.group('date'),
         'correct': correct
     }

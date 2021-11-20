@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 import base64
 from itertools import chain
 
- 
+MAX_ANSWERS = 6
 logger = logging.getLogger("omrexams")
 
 class PreambleEnvironment(pylatex.base_classes.Environment):
@@ -205,6 +205,10 @@ class QuestionRenderer(LaTeXRenderer):
         if len(answers) != len(self.questions[-1]['answers']):
             print(answers, self.questions[-1]['answers'])
             raise ValueError("Answers mismatch for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
+                len(answers), len(self.questions[-1]['answers'])))
+        if len(answers) > MAX_ANSWERS:
+            print(answers, self.questions[-1]['answers'])
+            raise ValueError("Too many answers for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
                 len(answers), len(self.questions[-1]['answers'])))
         self.record_answers = False
         if self.parameters.get('test', False):

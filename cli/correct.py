@@ -56,7 +56,7 @@ class Correct:
         self.task_done = mp.Condition(self.results_mutex)
         self.results = mp.Value('i', 0, lock=self.results_mutex)
         files = 0
-        for f in glob.glob(os.path.join(self.sorted, '*.png')):
+        for f in sorted(glob.glob(os.path.join(self.sorted, '*.png'))):
             self.tasks_queue.put(f)
             files += 1
         click.secho("Correcting {} pages".format(files), fg='red', underline=True)
@@ -231,6 +231,43 @@ class Correct:
         except Exception as e:
             click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
             click.echo(str(e))
+        # TODO: currently here just to check, before becoming another method
+        # def non_max_suppression(boxes, overlap_thresh=0.8):
+        #     if len(boxes) == 0:
+        #         return []
+        #     pick = []
+        #     x1, y1, x2, y2 = boxes[:,0], boxes[:,1], boxes[:,2], boxes[:,3]
+        #     area = (x2 - x1 + 1) * (y2 - y1 + 1)
+        #     idxs = np.argsort(y2)
+        #     while len(idxs) > 0:
+        #         last = len(idxs) - 1
+        #         i = idxs[-1]
+        #         pick.append(i)
+        #         suppress = [last]
+        #         for pos in range(0, last):
+        #             j = idxs[pos]
+        #             xx1, yy1 = max(x1[i], x1[j]), max(y1[i], y1[j])
+        #             xx2, yy2 = min(x2[i], x2[j]), min(y2[i], y2[j])
+        #             w, h = max(0, xx2 - xx1 + 1), max(0, yy2 - yy1 + 1)
+        #             overlap = float(w * h) / area[j] if area[j] > 0 else 0
+        #             if overlap > overlap_thresh:
+        #                 suppress.append(pos)
+        #         idxs = np.delete(idxs, suppress)
+        #     return boxes[pick]
+                    
+        # ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
+        # scale = 300 / roi.shape[1] 
+        # tw, th = int(roi.shape[1] * scale), int(roi.shape[0] * scale)
+        # ss.setBaseImage(cv2.resize(roi, (tw, th)))
+        # ss.switchToSingleStrategy() 
+        # rects = non_max_suppression(ss.process())
+        # for i, rect in enumerate(rects):
+        #     if i < 1000:
+        #         x, y, w, h = map(lambda s: int(s / scale), rect)
+        #         x = x + p0[0]
+        #         y = y + p0[1]
+        #         cv2.rectangle(image, (x, y), (x + w, y + h), RED, 1, cv2.LINE_AA)
+
         majority, correct = self.majority_correction(filename, correction)  
         given_text = "Given answers: " + " ".join(",".join(a) for a in majority)
         correct_text = "Correct answers: " + " ".join(",".join(a) for a in correct)

@@ -54,6 +54,6 @@ class Mark:
                 e = db.table('correction').get(Exam.student_id == exam['student_id'])
                 if not e:
                     df = df.append({ 'student_id': exam['student_id'], 'total_points': 'ASS' }, ignore_index=True)
-#            df['student_id'] = df['student_id'].astype(int)
+            df['student_id'] = df['student_id'].astype(int)
             df = df.sort_values('student_id')
             df.set_index('student_id').to_excel(self.outputfile)
