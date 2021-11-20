@@ -47,7 +47,7 @@
   left=1cm, 
   right=6.5cm,
   marginparsep=0.5cm, 
-  marginparwidth=4.5cm]{geometry}
+  marginparwidth=5cm]{geometry}
 \usepackage{bophook}
 \usepackage[nolinks]{qrcode}
 \usepackage{environ}
@@ -197,10 +197,12 @@ rectangle/.default={0.2cm}}
         \pgfmathtruncatemacro{\OMR@questions@maxyposition}{max(\OMR@questions@posylist)}
         \pgfmathtruncatemacro{\OMR@questions@maxyposition}{(\OMR@questions@maxyposition + 1.5 * \OMR@Diameter)}      
 
-        % \draw [gray]
-        % (current page marginpar area.north west)
-        % rectangle 
-        % (current page marginpar area.south east);                
+        \ifthenelse{\boolean{testing}}{
+        \draw [blue, line width=2pt]
+        (current page marginpar area.north west)
+        rectangle 
+        (current page marginpar area.south east);  
+        }{}
 
   %      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
         \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@questions@minyposition)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
@@ -227,7 +229,11 @@ rectangle/.default={0.2cm}}
   \renewcommand{\choicelabel}{\circled{\sffamily\footnotesize\thechoice}}
 }
 \DeclareOption{dyslexia}{\setmainfont{OpenDyslexic}}
+\newboolean{testing}
+%\setboolean{testing}{false}
+\DeclareOption{testing}{\setboolean{testing}{true}}
 \ProcessOptions\relax
+
 
 % Check that \student and \exam have been set
 \AtBeginDocument{

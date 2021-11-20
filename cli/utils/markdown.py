@@ -208,8 +208,10 @@ class QuestionRenderer(LaTeXRenderer):
                 len(answers), len(self.questions[-1]['answers'])))
         if len(answers) > MAX_ANSWERS:
             print(answers, self.questions[-1]['answers'])
-            raise ValueError("Too many answers for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
-                len(answers), len(self.questions[-1]['answers'])))
+            #raise ValueError("Too many answers for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
+            #    len(answers), len(self.questions[-1]['answers'])))
+            click.secho("Too many answers for question \"{}\" ({})".format(self.questions[-1]['question'], 
+                len(answers)), fg="yellow")
         self.record_answers = False
         if self.parameters.get('test', False):
             answers = list(map(lambda i: answers[i] if not self.questions[-1]['answers'][i] else answers[i].replace('\\choice', '\\correctchoice'), range(len(answers))))
@@ -310,8 +312,13 @@ class QuestionRenderer(LaTeXRenderer):
         self.footnotes.update(token.footnotes)
         self.parameters['shuffle'] = False
         inner = self.render_inner(token)                
-        doc = pylatex.Document(documentclass='omrexam', 
-            inputenc=None, lmodern=False, fontenc=None, textcomp=None)
+        #doc = pylatex.Document(documentclass='omrexam', 
+        #    inputenc=None, lmodern=False, fontenc=None, textcomp=None)
+        doc = pylatex.Document('basic')
+        doc.documentclass = pylatex.Command('documentclass',
+            options=['testing'],
+            arguments=['omrexam']
+        )
         doc.preamble.append(pylatex.Package('polyglossia'))
         doc.preamble.append(pylatex.Command('setdefaultlanguage', self.parameters.get('language', '').lower()))
         for package, options in chain(self.packages.items(), self.parameters.get('packages', {}).items()):
