@@ -17,9 +17,10 @@ import logging
 from collections import Counter
 from itertools import combinations
 import img2pdf
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfFileReader, PdfFileMerger
 from tinydb import TinyDB, Query
 from shutil import copy2, rmtree
+import tempfile
 
 logger = logging.getLogger("omrexams")
 
@@ -88,27 +89,46 @@ class Correct:
                 filename = os.path.join('tmp', ".".join(filename.split(".")[:-1]) + ".jpg")
                 click.secho('\t{} {}'.format(filename, w[1]), fg='yellow')   
         # Collecting all corrected exams into a single pdf file
+        click.secho("Collecting all corrected exams into a single pdf file", fg="green")
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
-        with open(self.corrected, "wb") as f:
-            f.write(img2pdf.convert(files))
+        output_pdf = PdfFileMerger()
+        old_student_id = None
+        with click.progressbar(length=len(files), label="Merging corrections") as bar:
+            for i, filename in enumerate(files):
+                with io.BytesIO() as f:
+                    f.write(img2pdf.convert(filename))              
+                    f.seek(0)
+                    student_id = os.path.basename(filename).split("-")[0]  
+                    if student_id != old_student_id:                
+                        output_pdf.append(PdfFileReader(f), bookmark=f'Student {student_id}')
+                        old_student_id = student_id
+                    else:
+                        output_pdf.append(PdfFileReader(f))
+                bar.update(1)
+        click.secho("Writing pdf file", fg="green")
+        with open(self.corrected, 'wb') as f:
+            output_pdf.write(f)
+
         # TODO: seems not to work, to be tested (the pages with images are rendered as blank files)
         # Marking collected pdf with the student_id
-        # output_pdf = PdfFileWriter()
-        # with open(collected, 'rb') as f:
+        
+        #with open(self.corrected + '.tmp' + '.pdf', 'rb') as f:
         #     input_pdf = PdfFileReader(f)
         #     if len(files) != input_pdf.numPages:
         #         raise RuntimeError("The collected pdf file seems not to contain all the pages")
         #     for i, filename in enumerate(files):
         #         student_id = os.path.basename(filename).split("-")[0]
-        #         output_pdf.addPage(input_pdf.getPage(i))
+        #         output_pdf.append(input_pdf.getPage(i))
         #         output_pdf.addBookmark(student_id, i)
-        # with open(collected, 'wb') as f:
+        # with open(self.corrected, 'wb') as f:
         #     output_pdf.write(f)
+        # TODO: remove tmp file
         if (click.prompt("Remove temporary image files and directory tmp?", type=bool, default='y' if delete_default else 'n')):
             for filename in files:
                 os.remove(filename)
             os.rmdir('tmp')
         # Update the data file and output the corrected excel file
+        click.secho("Updating the database file", fg="green")
         data = {}
         with TinyDB("{}.tmp".format(self.data_filename)) as db1, TinyDB(self.data_filename) as db2:
             table = db1.table('correction')
@@ -168,6 +188,7 @@ class Correct:
                         if given_answer[i]:
                             question['answers'][i] += 1 
                     statistics.upsert(question, (Statistics.question_file == q[0]) & (Statistics.index == q[1]))
+        click.secho("Removing temporary files", fg="green")
         os.remove("{}.tmp".format(self.data_filename))
                         
         
@@ -202,7 +223,7 @@ class Correct:
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
         p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl 
-        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl 
+        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
         # contour detection

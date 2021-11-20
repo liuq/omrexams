@@ -252,9 +252,10 @@ def correct(ctx, sorted_dir, corrected, datafile, resolution, compression, yes):
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.option('--output', '-o', type=click.Path(exists=False, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--include_missing', '-m', type=bool, required=False, default=False, help='Include also missing exams in the report')
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def mark(ctx, datafile, output, yes):
+def mark(ctx, datafile, output, include_missing, yes):
     """
     Performs the marking of corrected exams and produces an excel file with the grading
     """
@@ -266,7 +267,7 @@ def mark(ctx, datafile, output, yes):
             sys.exit(0)
 
     marker = Mark(datafile, output)
-    marker.mark()
+    marker.mark(include_missing=include_missing)
 
 
 @cli.command()

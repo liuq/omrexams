@@ -1,5 +1,6 @@
 from tinydb import TinyDB, Query
 import pandas as pd
+import math
 
 def uniform(correct, marked, missing, wrong, size):
     if len(marked) < 1:
@@ -26,7 +27,7 @@ class Mark:
         self.datafile = datafile
         self.outputfile = outputfile
 
-    def mark(self, marking_function=custom):        
+    def mark(self, marking_function=custom, include_missing=True):        
         with TinyDB(self.datafile) as db:
             data = []
             Exam = Query()
@@ -48,12 +49,13 @@ class Mark:
                     current['question_{:02d}_wrong'.format(i + 1)] = len(wrong)
                     current['question_{:02d}_size'.format(i + 1)] = q_size
                 current['total_points'] = points
+                current['tentative_mark'] = math.ceil(30.0 * points / len(correct_answers))
                 data.append(current)
             df = pd.DataFrame.from_records(data)
-            for exam in db.table('exams').all():
-                e = db.table('correction').get(Exam.student_id == exam['student_id'])
-                if not e:
-                    df = df.append({ 'student_id': exam['student_id'], 'total_points': 'ASS' }, ignore_index=True)
-            df['student_id'] = df['student_id'].astype(int)
+            if include_missing:
+                for exam in db.table('exams').all():
+                    e = db.table('correction').get(Exam.student_id == exam['student_id'])
+                    if not e:
+                        df = df.append({ 'student_id': exam['student_id'], 'total_points': 'ASS', 'tentative_mark': 'ASS' }, ignore_index=True)
             df = df.sort_values('student_id')
             df.set_index('student_id').to_excel(self.outputfile)
