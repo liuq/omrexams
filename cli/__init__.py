@@ -3,5 +3,6 @@ from . sort import Sort
 from . correct import Correct
 from . mark import Mark
 from . moodle_converter import MoodleConverter
+from . update_corrected import UpdateCorrected
 
-__all__ = ['Generate', 'Sort', 'Correct', 'Mark', 'MoodleConverter']
+__all__ = ['Generate', 'Sort', 'Correct', 'Mark', 'MoodleConverter', 'UpdateCorrected']

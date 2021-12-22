@@ -4,7 +4,7 @@ import click
 from datetime import datetime as dt
 import dateparser as dp
 import yaml
-from cli import Generate, Sort, Correct, Mark, MoodleConverter
+from cli import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected
 import pandas as pd
 import xlrd
 import re
@@ -14,6 +14,7 @@ import sys
 import os
 import math
 from tinydb import TinyDB, Query, where
+import json
 
 logger = logging.getLogger("omrexams")
 click_log.basic_config(logger)
@@ -252,10 +253,11 @@ def correct(ctx, sorted_dir, corrected, datafile, resolution, compression, yes):
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.option('--output', '-o', type=click.Path(exists=False, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--weights', '-w', type=click.Path(exists=False, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=False)
 @click.option('--include_missing', '-m', type=bool, required=False, default=False, help='Include also missing exams in the report')
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def mark(ctx, datafile, output, include_missing, yes):
+def mark(ctx, datafile, output, weights, include_missing, yes):
     """
     Performs the marking of corrected exams and produces an excel file with the grading
     """
@@ -265,9 +267,13 @@ def mark(ctx, datafile, output, include_missing, yes):
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
-
     marker = Mark(datafile, output)
-    marker.mark(include_missing=include_missing)
+    if weights:
+        with open(weights) as f:
+            w = json.load(f)
+            marker.mark(include_missing=include_missing, weights=w)
+    else:
+        marker.mark(include_missing=include_missing)
 
 
 @cli.command()
@@ -288,6 +294,9 @@ def moodle(ctx, questions_dir, single, penalty):
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
 def report(ctx, datafile, output, yes):
+    """
+    Generates a report with the different questions and the correct/wrong/unanswered ratio
+    """
     with TinyDB(datafile) as db:
             df = pd.DataFrame()
             Exam = Query()
@@ -332,7 +341,19 @@ def force_answer(ctx, datafile, student_id, question, given_answers):
             db.table('correction').update(correction, where('student_id') == student_id)
         except IndexError:
             click.secho(f"Question {question} is not appearing in the list of given answers for student {student_id}", fg="red")
-            sys.exit(-1)           
+            sys.exit(-1)      
+
+@cli.command()
+@click.argument('question_files', type=click.Path(exists=True, file_okay=True, resolve_path=True), required=True, nargs=-1)
+@click.option('--datafile', '-d', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.option('--dry-run/--exec', type=bool, required=False, help='If set, choices are constrained to be in the same paragraph', default=True)
+@click.pass_context
+def update_corrected(ctx, question_files, datafile, dry_run):
+    """
+    Updates the set of corrected answers according to a modification of the questions (e.g., because an inversion of cases). It works only if the answers do not change (neither in order nor in their meaning) but the correct one(s) have been changed.
+    """
+    update_corrected = UpdateCorrected(question_files, datafile)
+    update_corrected.process(dry_run)
 
 if __name__ == '__main__':
     cli(obj={})

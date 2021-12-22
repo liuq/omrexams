@@ -292,17 +292,17 @@ class QuestionRenderer(LaTeXRenderer):
             else:
                 doc.preamble.append(pylatex.Package(package, options=options))
         doc.preamble.append(pylatex.Package('listings'))
-        doc.preamble.append(pylatex.Command('examname', self.parameters['exam']))
+        doc.preamble.append(pylatex.Command('examname', self.parameters.get('exam', '')))
         doc.preamble.append(pylatex.Command('student', 
             arguments=[self.parameters['student_no'], self.parameters['student_name']]))
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))
         doc.preamble.append(pylatex.Command('solution', solutions))
-        doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
-        doc.preamble.append(pylatex.Command('footer', pylatex.NoEscape(self.parameters['footer'])))
+        doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters.get('header', ''))))
+        doc.preamble.append(pylatex.Command('footer', pylatex.NoEscape(self.parameters.get('footer', ''))))
         doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
         doc.append("\n")
         with doc.create(PreambleEnvironment()):
-            doc.append(self.parameters['preamble'])
+            doc.append(self.parameters.get('preamble', ''))
         doc.append(pylatex.Command('vspace', '0.75em'))
         with doc.create(QuestionsEnvironment()):
             doc.append(inner)
@@ -331,13 +331,13 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('student', arguments=["00000", "Student Name"]))
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))
         doc.preamble.append(pylatex.Command('solution', ''))
-        doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters['header'])))
-        doc.preamble.append(pylatex.Command('footer', pylatex.NoEscape(self.parameters['footer'])))
+        doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters.get('header', ''))))
+        doc.preamble.append(pylatex.Command('footer', pylatex.NoEscape(self.parameters.get('footer', ''))))
         doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
         doc.preamble.append(pylatex.Command('printanswers'))
         doc.append("\n")
         with doc.create(PreambleEnvironment()):
-            doc.append(self.parameters['preamble'])
+            doc.append(self.parameters.get('preamble', ''))
         doc.append(pylatex.Command('vspace', '1em'))
         with doc.create(QuestionsEnvironment()):
             doc.append(inner)
