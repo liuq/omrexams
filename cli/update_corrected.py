@@ -54,9 +54,16 @@ class UpdateCorrected:
                         ref_question = new_questions[k]
                         ref_answers = code_answer(list(map(lambda p: ref_question['answers'][p], perm)))
                         if question[2] != ref_answers:
-                            click.secho(f"⚠️ For student {exam['student_id']}, {question[:2]} wrongly reports {question[2]} instead of {ref_answers}", fg='red')
+                            click.secho(f"⚠️ For student {exam['student_id']}, {question[:2]} wrongly reports {question[2]} instead of {ref_answers}", fg='red')                            
                             if not dry_run:
                                 click.secho('Updating record', fg='green')
                                 exam['questions'][i][2] = ref_answers
-                                db.table('exams').update(set('questions', exam['questions']), Exam.student_id == exam['student_id'])
+                                db.table('exams').update(set('questions', exam['questions']), Exam.student_id == exam['student_id']) 
+                        if exam['answers'][i] != ref_answers:
+                            click.secho(f"⚠️ For student {exam['student_id']}, answer {i} wrongly reports {exam['answers'][i]} instead of {ref_answers}", fg='red')
+                            if not dry_run:
+                                click.secho('Updating record', fg='green')
+                                exam['answers'][i] = ref_answers
+                                db.table('exams').update(set('answers', exam['answers']), Exam.student_id == exam['student_id'])
+                                                                                
                             

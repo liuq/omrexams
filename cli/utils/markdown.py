@@ -134,13 +134,24 @@ class QuestionRenderer(LaTeXRenderer):
     def render_lines(self, token):
         return token.lines
 
+    def render_to_plain(self, token):
+        if hasattr(token, 'children'):
+            inner = [self.render_to_plain(child) for child in token.children]
+            return ''.join(inner)
+        return token.content
+
     def render_image(self, token):
+        alt_template = r'((?:width|height|scale)=[\d\.]+\w*)'
         self.packages['graphicx'] = []
         self.packages['adjustbox'] = ['export']
         path = os.path.join(token.src)
         if not os.path.isabs(path):
             path = os.path.join(self.parameters.get('basedir'), path)
-        return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
+        alt = re.findall(alt_template, self.render_to_plain(token))
+        if alt:
+            return '\n\\includegraphics[{}]{{{}}}\n'.format(",".join(a for a in alt), path)
+        else:
+            return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
 
     def render_question_block(self, token):
         # possibly, the first question could start without a marker 

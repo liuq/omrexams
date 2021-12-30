@@ -36,12 +36,13 @@ class Correct:
     This class will operate on a directory with a set of pages and perform the correction 
     according to the information stored in the qrcodes
     """
-    def __init__(self, sorted, corrected, data_filename, resolution, compression):
+    def __init__(self, sorted, corrected, data_filename, resolution, compression, use_page_answers=False):
         self.sorted = sorted
         self.corrected = corrected
         self.data_filename = data_filename
-        self.compression = compression
         self.resolution = resolution
+        self.compression = compression
+        self.use_page_answers = use_page_answers
 
     def correct(self):
         logger.info('Creating and preparing tmp directory')
@@ -150,7 +151,7 @@ class Correct:
                 table.insert({ 'student_id': student, **data[student] })   
             db2.drop_table('statistics')
             statistics = db2.table('statistics')    
-            Statistics = Query()                       
+            Statistics = Query()       
             # check consistency of correct answers (apriori/encoded)
             for exam in db2.table('exams').all():
                 data = table.get(Correction.student_id == exam['student_id'])
@@ -226,12 +227,20 @@ class Correct:
         p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
+
+        page_answers = None
+        if self.data_filename and self.use_page_answers:
+            Exam = Query()
+            with TinyDB(self.data_filename) as db:
+                exam = db.table('exams').search(Exam.student_id == metadata['student_id'])
+                if len(exam) > 0:
+                    page_answers = exam[0]['answers'][metadata['range'][0] - 1:metadata['range'][1]]
         # contour detection
-        correction = [None] * 3
+        correction = [None] * 3    
         try:
             binary, circles, empty_circles = Correct.detect_circles_edges(roi, metadata)
             # process result        
-            correction[0], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata)
+            correction[0], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Contour')
         except Exception as e:
             click.secho("\nFailed Contour Detection for {}".format(filename), fg="yellow")
@@ -239,7 +248,7 @@ class Correct:
         # blob detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)
-            correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata)
+            correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
         except Exception as e:
             click.secho("\nFailed Blob for {}".format(filename), fg="yellow")
@@ -247,7 +256,7 @@ class Correct:
         # laplacian detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_laplacian(roi, metadata)
-            correction[2], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata)
+            correction[2], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Laplacian')
         except Exception as e:
             click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
@@ -422,7 +431,7 @@ class Correct:
             return cv2.circle(target, c[:2], c[2] + offset, color, 3)
 
     @staticmethod
-    def process_circles(roi, binary, circles, empty_circles, metadata, offset=5, xdistance=1.25):                        
+    def process_circles(roi, binary, circles, empty_circles, metadata, page_answers=None, offset=5, xdistance=1.25):                        
         mask = np.ones((*roi.shape[:2], 3), np.uint8) * 255
         # identify the reference_circles first, assuming the leftmost/topmost is the reference one
         circles = sorted(circles)
@@ -461,9 +470,15 @@ class Correct:
         if len(reference_circles) != len(metadata['page_correction']):
             raise RuntimeError("Warning: Number of questions {} ({}-{}) and number of correct answers {} do not match".format(len(reference_circles), metadata['student_id'], metadata['page'], len(metadata['page_correction'])))
         # go through the questions (reference circles) and check the answers
-        correction = []    
-        for i, ac in enumerate(answer_circles):
-            correct_res = set(metadata['page_correction'][i])
+        correction = []            
+        for i, ac in enumerate(answer_circles):  
+            # This will override the coded page corrections if provided
+            # it is needed to force correction when answers are corrected
+            # in the questions database through the update-corrected command
+            if page_answers is None:       
+                correct_res = set(metadata['page_correction'][i])
+            else:
+                correct_res = set(page_answers[i])
             all_res = set()
             answers_res = set()   
             # now sort again answer circles from the leftmost to the rightmost
