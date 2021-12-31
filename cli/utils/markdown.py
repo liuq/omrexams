@@ -13,6 +13,7 @@ import os
 import xml.etree.ElementTree as ET
 import base64
 from itertools import chain
+from enum import Enum
 
 MAX_ANSWERS = 7
 logger = logging.getLogger("omrexams")
@@ -44,6 +45,8 @@ class QuestionsEnvironment(pylatex.base_classes.Environment):
 
 # Define a custom renderer back to markdown so that it can be further processed 
 # into latex later
+           
+
 class QuestionMarker(span_token.SpanToken):
     pattern = re.compile(r"\[([ |x])\] {0,1}")
 
@@ -62,9 +65,6 @@ class Lines(span_token.SpanToken):
     def __init__(self, match):
         self.lines = r'\fillwithdottedlines{' + match.group(1) + match.group(2) + '}'
 
-class OpenQuestion(span_token.SpanToken):
-    pattern = re.compile(r"({open-question})")
-
 class LatexFormula(span_token.SpanToken):
     pattern = re.compile(r'(?<!\\)((?<!\$)\${1,2}(?!\$))(?(1)(.*?))(?<!\\)(?<!\$)\1(?!\$)')
     
@@ -73,7 +73,30 @@ class LatexFormula(span_token.SpanToken):
         self.content = match.group(2)
         
 class QuestionList(block_token.List):
+    """
+    Question Lists are regular lists with a checkbox marker, however they will be treated differently during
+    the text rendering process.
+
+    Lists with a leading '-', and '+' will be rendered as single paragraphs, whereas those starting with '*' 
+    are rendered inline (i.e., with no page break).
+
+    Ordered lists (i.e., with a leading numeric), will be rendered as single paragraphs if with a trailing '.' 
+    and inline if with a trailing ')'. Moreover, they will not be shuffled
+
+    Summary:
+
+    - [ ] paragraph
+    + [ ] paragran
+    * [ ] inline
+    1. [ ] paragraph, not shuffled
+    1) [ ] inline, not shuffled
+    """
+
     pattern = re.compile(r'(?:\d{0,9}[.)]|[+\-*]) {0,1}\[[ |x]\](?:[ \t]*$|[ \t]+)')
+
+    def __init__(self, question_list):
+       super(QuestionList, self).__init__(question_list)
+       self.leader = self.children[0].leader
 
 class QuestionBlock(block_token.BlockToken):
     """
@@ -156,7 +179,7 @@ class QuestionRenderer(LaTeXRenderer):
     def render_question_block(self, token):
         # possibly, the first question could start without a marker 
         # and could contain the heading of the section
-        self.questions.append({ 'question': "", 'answers': [], 'permutation': [] })
+        self.questions.append({ 'question': "", 'answers': [], 'permutation': [], 'type': None })
         inner = self.render_inner(token)
         return '\n\\begin{{minipage}}{{\\linewidth}}\n{inner}\n\\end{{minipage}}\n'.format(inner=inner)
 
@@ -168,7 +191,7 @@ class QuestionRenderer(LaTeXRenderer):
         if not self.parameters.get('test', False):
             if token.level > 2:
                 inner = self.render_inner(token).strip()
-                return '{inner}\n\\newline'.format(inner=inner)
+                return '\\textbf{{Q:}} {inner}\n\\newline'.format(inner=inner)
             elif token.level == 1:
                 return ''
             template = "\question\n{inner}"
@@ -206,10 +229,6 @@ class QuestionRenderer(LaTeXRenderer):
         template = " \\omrchoices{{{choiceno}}}\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
         #else:
         #    template = "\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
-        if self.parameters.get('oneparchoices', False):
-            template = template.replace('{choices}', '{oneparchoices}')
-            template = template.replace('\\begin', '\\par\n\\begin')
-            template += '\n\\vspace{{\\baselineskip}}\n'
         self.record_answers = True
         # TODO: get a random permutation, the same for both the multiple choices and the answers
         answers = ['\n\t\\choice {inner}'.format(inner=self.render_list_item(child)) for child in token.children]
@@ -224,13 +243,19 @@ class QuestionRenderer(LaTeXRenderer):
             click.secho("Too many answers for question \"{}\" ({})".format(self.questions[-1]['question'], 
                 len(answers)), fg="yellow")
         self.record_answers = False
+        # lists starting with * or numbered as 1) are treated as inline
+        if token.leader == '*' or token.leader.endswith(')'):
+            template = template.replace('{choices}', '{oneparchoices}')
+            template = template.replace('\\begin', '\\par\n\\begin')
+            template += '\n\\vspace{{\\baselineskip}}\n'    
+
         if self.parameters.get('test', False):
             answers = list(map(lambda i: answers[i] if not self.questions[-1]['answers'][i] else answers[i].replace('\\choice', '\\correctchoice'), range(len(answers))))
         if not any(self.questions[-1]['answers']):
             click.secho("Warning: question \"{}\" has no correct answer".format(self.questions[-1]['question']), fg='yellow')
             logger.warning("No correct answer for current question")
         permutation = list(range(len(answers)))
-        if self.parameters.get('shuffle', True):
+        if self.parameters.get('shuffle', True) and token.start is not None: # Numeric leader
             random.shuffle(permutation)
             self.questions[-1]['answers'] = [self.questions[-1]['answers'][permutation[i]] for i in range(len(answers))]
             answers = [answers[permutation[i]] for i in range(len(answers))]
@@ -445,7 +470,7 @@ class MoodleRenderer(BaseRenderer):
         self.questions = []
         # TODO: check parameter coherence
         self.parameters = kwargs
-        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, OpenQuestion, Lines, LatexFormula], extras))
+        super().__init__(*chain([QuestionMarker, QuestionTopic, QuestionList, QuestionBlock, Lines, LatexFormula], extras))
         
     def render_question_marker(self, token):
         if not self.record_answers:
@@ -503,7 +528,7 @@ class MoodleRenderer(BaseRenderer):
             return '{inner}\n'.format(inner=inner)
 
         self.questions[-1]['question'] = inner
-        self.questions[-1]['open'] = any(type(c) == OpenQuestion for c in token.children)  
+        self.questions[-1]['open'] = (token.level == 3)  
         return ''
 
     def render_list(self, token):
@@ -516,7 +541,7 @@ class MoodleRenderer(BaseRenderer):
     def custom_render_list_item(self, token):
         inner = self.render_inner(token)
         if inner:
-            return '- {}\n'.format(inner)
+            return '{} {}\n'.format(token.symbol, inner)
         else:
             return ""
 

@@ -13,7 +13,7 @@ logger = logging.getLogger("omrexams")
 QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
 TITLE_RE = re.compile(r"#\s+.*")
 QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
-OPEN_QUESTION_RE = re.compile(r"#{2,}\s*(.+?)(?={open-question})")
+OPEN_QUESTION_RE = re.compile(r"#{3,}\s*(.+?)")
 
 class UpdateCorrected:
 

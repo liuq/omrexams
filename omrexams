@@ -93,11 +93,10 @@ def cli(ctx, debug):
     default=lambda: dt.now().strftime("%Y-%m-%d"))
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
 @click.option('--additional', '-a', type=int, required=False, default=0, help='Number of additional exam sheets')
-@click.option('--oneparchoices', '-opc', is_flag=True, type=bool, required=False, help='If set, choices are constrained to be in the same paragraph', default=None)
 @click.option('--paper', '-p', type=click.Choice(['A4', 'A3'], case_sensitive=False), default='A4', required=False)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, oneparchoices, paper, yes):
+def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, paper, yes):
     """
     Generates the set of exams for the given amount of students (either personalized or anonymous).
     """
@@ -108,9 +107,6 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
 
     if not output_prefix:
         output_prefix = 'exam-{}'.format(date.strftime("%Y-%m-%d"))
-
-    if oneparchoices is None:
-        oneparchoices = config.get('choices', {}).get('oneparchoices', False)
 
     if additional is None and students is not None:
         additional = click.prompt("Generate a number of additional exams?", default=5)
@@ -172,17 +168,16 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
 
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 
-                         date=date, seed=seed, oneparchoices=oneparchoices, paper=paper)
+                         date=date, seed=seed, paper=paper)
     generator.process()
 
 @cli.command()
 @click.option('--config', type=click.Path(exists=True, resolve_path=True), required=True, default=os.path.join('.', 'config.yaml'))
 @click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
-@click.option('--oneparchoices', '-opc', is_flag=True, type=bool, required=False, help='If set, choices are constrained to be in the same paragraph', default=None)
 @click.option('--output', '-o', type=click.Path(resolve_path=True), default=os.path.join('.', 'exam-test.pdf'))
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def test(ctx, config, questions_dir, oneparchoices, output, yes):
+def test(ctx, config, questions_dir, output, yes):
     """
     Generates a comprehensive pdf file with all the questions.
     """
@@ -191,8 +186,6 @@ def test(ctx, config, questions_dir, oneparchoices, output, yes):
         config = yaml.load(f, Loader=yaml.Loader)
     config['basedir'] = os.path.dirname(config_file)
 
-    if oneparchoices is None:
-        oneparchoices = config.get('choices', {}).get('oneparchoices', False)
 
     if os.path.exists(output):
         if yes or click.confirm("Data output {} exists, overwrite it?".format(output), default=True):
@@ -201,7 +194,7 @@ def test(ctx, config, questions_dir, oneparchoices, output, yes):
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
 
-    generator = Generate(config, questions_dir, ".".join(output.split(".")[:-1]), test=True, oneparchoices=oneparchoices)
+    generator = Generate(config, questions_dir, ".".join(output.split(".")[:-1]), test=True)
     generator.process()
 
 @cli.command()

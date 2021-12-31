@@ -23,7 +23,7 @@ logger = logging.getLogger("omrexams")
 QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
 TITLE_RE = re.compile(r"#\s+.*")
 QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
-OPEN_QUESTION_RE = re.compile(r"#{2,}\s*(.+?)(?={open-question})")
+OPEN_QUESTION_RE = re.compile(r"#{3,}\s*(.+?)")
 
 # A4 size, portrait is 595pt x 842pt
 A4SIZE = { 'width': 595, 'height': 842 }
@@ -41,7 +41,6 @@ class Generate:
         self.questions_path = questions
         self.output_pdf_filename = "{}.pdf".format(output_prefix)
         self.test = kwargs.get('test', False)
-        self.oneparchoices = kwargs.get('oneparchoices', False)
         self.paper = kwargs.get('paper', 'A4')
         if self.paper not in ('A4', 'A3'):
             raise AttributeError('paper value should be either "A3" or "A4"')
@@ -91,6 +90,8 @@ class Generate:
             self.questions[os.path.basename(r)] = { 'content': self.load_questions(r), 'draw': rules[r] }
             self.open_questions[os.path.basename(r)] = { 'content': self.load_open_questions(r), 'draw': rules[r] }
         logger.info('Creating and preparing tmp directory')
+        if self.open_questions:
+            logger.info('There are open questions')
         if os.path.exists('tmp'):
             rmtree('tmp')
         os.mkdir('tmp')        
@@ -299,7 +300,6 @@ class Generate:
                               footer=footer,
                               packages=self.config.get('packages', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
-                              oneparchoices=self.oneparchoices,
                               dyslexia=self.config.get('choices', {}).get('dyslexia', False),
                               circled=self.config.get('choices', {}).get('circled', False),
                               usesf=self.config.get('choices', {}).get('usesf', False),
@@ -359,7 +359,6 @@ class Generate:
                               packages=self.config.get('packages', {}),
                               test=True,
                               circled=self.config.get('choices', {}).get('circled', False),
-                              oneparchoices=self.oneparchoices,
                               basedir=os.path.realpath(self.questions_path)) as renderer:
                 renderer.render(Document(current_questions))
             questions += current_questions + "\n\n"
@@ -379,7 +378,6 @@ class Generate:
                               footer=footer,
                               packages=self.config.get('packages', {}),
                               test=True,
-                              oneparchoices=self.oneparchoices,
                               circled=self.config.get('choices', {}).get('circled', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
             document = renderer.render(Document(questions)) 
