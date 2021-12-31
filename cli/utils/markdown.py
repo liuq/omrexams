@@ -188,24 +188,18 @@ class QuestionRenderer(LaTeXRenderer):
         return ' & '.join(cells) + ' \\\\\n'
     
     def render_heading(self, token):
-        if not self.parameters.get('test', False):
-            if token.level > 2:
-                inner = self.render_inner(token).strip()
-                return '\\textbf{{Q:}} {inner}\n\\newline'.format(inner=inner)
-            elif token.level == 1:
-                return ''
-            template = "\question\n{inner}"
-            inner = self.render_inner(token).strip()
-            self.questions[-1]['question'] = inner 
-            return template.format(inner=inner)  
-        else:
-            if token.level != 2:
+        if token.level == 1:
+            if self.parameters.get('test', False):
                 return super().render_heading(token)
             else:
-                template = "\question\n{inner}"
-                inner = self.render_inner(token).strip()
-                self.questions[-1]['question'] = inner                                    
-                return template.format(inner=inner)  
+                return ''
+        if token.level > 2:
+            inner = self.render_inner(token).strip()
+            return '\\textbf{{Q:}} {inner}\n\\newline'.format(inner=inner)
+        template = "\question\n{inner}"
+        inner = self.render_inner(token).strip()
+        self.questions[-1]['question'] = inner 
+        return template.format(inner=inner)  
 
     def render_list(self, token):
         self.packages['listings'] = []
@@ -255,7 +249,7 @@ class QuestionRenderer(LaTeXRenderer):
             click.secho("Warning: question \"{}\" has no correct answer".format(self.questions[-1]['question']), fg='yellow')
             logger.warning("No correct answer for current question")
         permutation = list(range(len(answers)))
-        if self.parameters.get('shuffle', True) and token.start is not None: # Numeric leader
+        if self.parameters.get('shuffle', True) and token.start is None: # Numeric leader
             random.shuffle(permutation)
             self.questions[-1]['answers'] = [self.questions[-1]['answers'][permutation[i]] for i in range(len(answers))]
             answers = [answers[permutation[i]] for i in range(len(answers))]
