@@ -8,7 +8,6 @@ click_log
 opencv-python
 opencv-contrib-python
 openpyxl
-pyzbar
 scikit-image
 tinydb
 Wand

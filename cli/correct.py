@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 from scipy.spatial import cKDTree
 import re
-from pyzbar import pyzbar
 import io
 import math
 from skimage.feature import peak_local_max
@@ -155,8 +154,11 @@ class Correct:
             # check consistency of correct answers (apriori/encoded)
             for exam in db2.table('exams').all():
                 data = table.get(Correction.student_id == exam['student_id'])
-                if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):
-                    raise RuntimeWarning("Correct answers in {} for student {} do not match with those encoded in the exam sheets".format(self.data_filename, exam['student_id']))
+                if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):                    
+                    for i, (d, e) in enumerate(zip(data['correct_answers'], exam['answers'])):
+                        if set(e) != set(d):
+                            message = f"Warning: correct answers in {self.data_filename} for student {exam['student_id']}, question {i + 1} do not match with those encoded in the exam sheets: {set(d)} in db, {set(e)} in the sheet"
+                            click.secho(message, fg="yellow")
                 elif data is None:
                     continue               
                 for i, q in enumerate(exam['questions']):
