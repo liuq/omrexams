@@ -4,7 +4,7 @@ import click
 from datetime import datetime as dt
 import dateparser as dp
 import yaml
-from cli import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected
+from cli import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected, MarkdownConverter
 import pandas as pd
 import xlrd
 import re
@@ -274,12 +274,31 @@ def mark(ctx, datafile, output, weights, include_missing, yes):
 @click.option('-s', '--single', is_flag=True, default=False, help='State whether the questions have a single correct answer (a radio button will be rendered in moodle)')
 @click.option('-p', '--penalty', type=int, help='Penalty (in percentage) to be applied to wrong answers')
 @click.pass_context
-def moodle(ctx, questions_dir, single, penalty):
+def to_moodle(ctx, questions_dir, single, penalty):
     """
     Converts the questions database in the moodle XML format
     """
     moodle_converter = MoodleConverter(questions_dir, single, penalty)
     moodle_converter.convert()
+
+
+@cli.command()
+@click.argument('moodle_file', type=click.Path(exists=True, file_okay=True, resolve_path=True, writable=True), required=True)
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), default=os.path.join('.', 'questions'), required=True)
+@click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
+@click.pass_context
+def from_moodle(ctx, moodle_file, questions_dir, yes):
+    """
+    Converts a moodle XML file into a questions database 
+    """      
+    markdown_converter = MarkdownConverter(moodle_file, questions_dir)    
+    if os.path.exists(markdown_converter.file_name):
+        if yes or click.confirm("Questions file {} exists, overwrite its content?".format(markdown_converter.file_name), default=True):
+            os.remove(markdown_converter.file_name)
+        else:
+            click.secho("Nothing done", fg='bright_yellow')
+            sys.exit(0)  
+    markdown_converter.convert()
 
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
