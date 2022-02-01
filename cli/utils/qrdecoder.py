@@ -48,7 +48,6 @@ def decode_top_left(data):
 
 def decode(image, highlight=False, offset=5):   
     def opencv_decode(image, highlight=False, offset=5):
-        original = image
         if len(image.shape) > 2:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
         ret_code, decoded_text, qrcodes, _ = cv2.QRCodeDetector().detectAndDecodeMulti(image)    
@@ -84,7 +83,7 @@ def decode(image, highlight=False, offset=5):
                 # currently assumes that the image has the right orientation 
                 # if this is not the case, the qrcode.polygon can be inspected
                 # and possibly used for rotation
-                cv2.rectangle(original, t[0] - offset, t[2] + offset, GREEN, 3)
+                cv2.rectangle(image, t[0] - offset, t[2] + offset, GREEN, 3)
         # extract information from the qrcode    
         top_left_decode = decode_top_left(decoded_text[0])
         if top_left_decode is None:
@@ -115,10 +114,9 @@ def decode(image, highlight=False, offset=5):
         return metadata
 
     def pyzbar_decode(image, highlight=False, offset=5):
-        original = image
+        if len(image.shape) > 2:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
         qrcodes = pyzbar.decode(image, symbols=[pyzbar.ZBarSymbol.QRCODE])
-        if len(qrcodes) < 2:
-           image =cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
          # Try to detect (and skip) blank images
         if len(qrcodes) < 2:
             _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
@@ -142,7 +140,7 @@ def decode(image, highlight=False, offset=5):
                 # extract the bounding box location of the qrcode and draw a green 
                 # frame around them
                 (x, y, w, h) = qrcode.rect
-                cv2.rectangle(original, (int(x - offset), int(y - offset)), (int(x + w + offset), int(y + h + offset)), GREEN, 3)
+                cv2.rectangle(image, (int(x - offset), int(y - offset)), (int(x + w + offset), int(y + h + offset)), GREEN, 3)
         # extract information from the qrcode
         top_left_decode = decode_top_left(str(qrcodes[0].data))
         bottom_right_decode = decode_bottom_right(str(qrcodes[1].data))        
