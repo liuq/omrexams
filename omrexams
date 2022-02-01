@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+import platform
+from ctypes.util import find_library
+import os
+
+# This hack is needed to take care of non-export of DYLD_LIBRARY_PATH using the env 
+if platform.system() == 'Darwin' and platform.processor() == 'arm' and not find_library('zbar'):
+    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = '/opt/homebrew/lib'
+
 import click
 from datetime import datetime as dt
 import dateparser as dp
@@ -11,10 +19,11 @@ import re
 import logging
 import click_log
 import sys
-import os
 import math
 from tinydb import TinyDB, Query, where
 import json
+
+
 
 logger = logging.getLogger("omrexams")
 click_log.basic_config(logger)
