@@ -1,0 +1,25 @@
+{
+    "files": [
+        [
+            "omrexams/gui/resources/resources.qrc",
+            "omrexams/gui/_ui"
+        ],
+        [
+            "omrexams/gui/*.ui",
+            "omrexams/gui/_ui"
+        ],
+        [
+            "omrexams/gui/**/*.ui",
+            "omrexams/gui/_ui"
+        ],
+        [
+            "omrexams/gui/**/**/*.ui",
+            "omrexams/gui/_ui"
+        ]
+    ],
+    "hooks": [],
+    "pyrcc": "pyside6-rcc",
+    "pyrcc_options": "",
+    "pyuic": "pyside6-uic",
+    "pyuic_options": "--from-imports"
+}

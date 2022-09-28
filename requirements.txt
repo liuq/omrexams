@@ -17,3 +17,6 @@ pylatex
 wheel
 mistletoe
 pypdf2
+PySide6
+pyqtdarktheme
+markdownify

@@ -12,7 +12,7 @@ import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
 from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
-from PyPDF2.pdf import PageObject
+from PyPDF2._page import PageObject
 import math
 from datetime import datetime as dt
 from tinydb import TinyDB
