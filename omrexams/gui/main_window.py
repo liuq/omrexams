@@ -11,7 +11,7 @@ import os
 from functools import partial
 import io
 from itertools import combinations
-from markdown2 import Markdown
+from markdown import Markdown
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main Window of the application."""
@@ -20,7 +20,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.markdowner = Markdown(extras=['task_list'])
+        self.markdowner = Markdown(extensions=['markdown_checklist.extension', 'md4mathjax'])
         self.debounce = QTimer()
         self.debounce.setInterval(500)
         self.debounce.setSingleShot(True)
@@ -42,5 +42,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return QCoreApplication.translate("MainWindow", txt, disambiguation, n)
 
     def update_markdown(self):
-        content = self.markdowner.convert(self.ui.plainTextEdit.toPlainText())
+        content = """<!doctype html>
+        <html>
+          <head>
+          </head>
+          <body>
+        """
+        content += self.markdowner.convert(self.ui.plainTextEdit.toPlainText())
+        content += "</body></html>"
         self.ui.widget.setHtml(content)
