@@ -1,5 +1,5 @@
 from __future__ import annotations
-from PySide6.QtCore import QCoreApplication, Signal, Slot, Qt, QObject, QEvent, QByteArray
+from PySide6.QtCore import QCoreApplication, Signal, Slot, Qt, QObject, QEvent, QByteArray, QTimer
 from PySide6 import QtWidgets
 from PySide6.QtGui import QAction, QActionGroup, QPixmap, QImage
 
@@ -11,6 +11,7 @@ import os
 from functools import partial
 import io
 from itertools import combinations
+from markdown2 import Markdown
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main Window of the application."""
@@ -19,6 +20,13 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.markdowner = Markdown(extras=['task_list'])
+        self.debounce = QTimer()
+        self.debounce.setInterval(500)
+        self.debounce.setSingleShot(True)
+        self.debounce.timeout.connect(self.update_markdown)
+
+        self.ui.plainTextEdit.textChanged.connect(self.debounce.start)
 
         # self.ui.action_quit.triggered.connect(self.close_app)
         # self.ui.action_quit.setShortcutContext(Qt.ApplicationShortcut)
@@ -32,3 +40,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # Resolved in Qt6, but it could be a tiny bit faster than tr()
     def __tr(self, txt, disambiguation=None, n=-1):
         return QCoreApplication.translate("MainWindow", txt, disambiguation, n)
+
+    def update_markdown(self):
+        content = self.markdowner.convert(self.ui.plainTextEdit.toPlainText())
+        self.ui.widget.setHtml(content)

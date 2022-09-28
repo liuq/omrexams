@@ -20,3 +20,4 @@ pypdf2
 PySide6
 pyqtdarktheme
 markdownify
+markdown2
