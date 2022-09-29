@@ -27,6 +27,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.debounce.timeout.connect(self.update_markdown)
 
         self.ui.plainTextEdit.textChanged.connect(self.debounce.start)
+        self.ui.pushButton.clicked.connect(self.ciao)
+
+    def ciao(self):
+        self.ui.widget.set_page(5)
 
         # self.ui.action_quit.triggered.connect(self.close_app)
         # self.ui.action_quit.setShortcutContext(Qt.ApplicationShortcut)

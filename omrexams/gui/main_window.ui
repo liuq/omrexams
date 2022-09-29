@@ -19,6 +19,13 @@
      <widget class="QPlainTextEdit" name="plainTextEdit"/>
     </item>
     <item>
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>Go To Page 5</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="MarkdownView" name="widget" native="true">
       <property name="minimumSize">
        <size>

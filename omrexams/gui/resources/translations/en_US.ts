@@ -8,5 +8,10 @@
         <source>MainWindow</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../../main_window.ui" line="24"/>
+        <source>Go To Page 5</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
