@@ -17,6 +17,8 @@ import math
 from datetime import datetime as dt
 from tinydb import TinyDB
 from . utils.directories import BASEDIR
+from collections import deque
+from itertools import zip_longest
 
 logger = logging.getLogger("omrexams")
 
@@ -29,6 +31,33 @@ OPEN_QUESTION_RE = re.compile(r"#{3,}\s*(.+?)")
 A4SIZE = { 'width': 595, 'height': 842 }
 # A3 size, landscape is 1190pt x 842pt
 A3SIZE = { 'width': 1190, 'height': 842 }
+
+
+def assemble_booklet(pages):
+    """assembles the booklet according to the order [-1, 0, 1, -2] and going in.
+
+    Assumes an iterable with the length a multiple of 4"""
+    pages = deque(pages)
+    assert not len(pages) % 4, 'booklet length, must be a multiple of 4'
+    while pages:
+        selection = pages.pop(), pages.popleft(), pages.popleft(), pages.pop()
+        yield from selection
+
+def grouper(iterable, n, fillvalue=None):
+    """Collect data into fixed-length chunks or blocks
+
+    grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+    https://docs.python.org/3/library/itertools.html#itertools-recipes
+    """
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+def make_book(pages, booklet_length):
+    '''Combines all the lists into one and returns the result.'''
+    assert not booklet_length % 4, 'booklet length, must be a multiple of 4'
+    for group in grouper(pages, booklet_length, fillvalue=None):
+        yield tuple(assemble_booklet(group))
+        # yield from assemble_booklet(group) # dependent on the output you want
 
 class Generate:
     """
@@ -80,7 +109,7 @@ class Generate:
         if not self.test:
             self.generate_exams()
         else:
-            self.generate_test()
+            self.generate_test()    
 
     def generate_exams(self):
         rules = self.load_rules()
@@ -123,8 +152,8 @@ class Generate:
         click.secho('Collating PDF', fg='red', underline=True)
         if self.paper == "A4":
             # This is for A4 management            
-            merger = PdfFileMerger()
-            _blank = PdfFileWriter()
+            merger = PdfFileMerger(strict=False)
+            _blank = PdfFileWriter(strict=False)
             _blank.addBlankPage(**A4SIZE)    
             blank = io.BytesIO()
             _blank.write(blank)   
@@ -134,7 +163,7 @@ class Generate:
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
                 for exam in pdf_files:
-                    pdf = PdfFileReader(open(exam, 'rb'))                
+                    pdf = PdfFileReader(open(exam, 'rb'), strict=False)  
                     merger.append(pdf)
                     if pdf.numPages % 2 == 1:
                         merger.append(blank)
@@ -143,25 +172,35 @@ class Generate:
                 merger.write(f)
         else:
             # This is for A3 management
-            writer = PdfFileWriter()
+            writer = PdfFileWriter(strict=False)
             a3page = None
             pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
-            with click.progressbar(length=len(pdf_files), label='Collating files',
+            with click.progressbar(length=len(pdf_files), label='Collating files ',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
                 for exam in pdf_files:
-                    pdf = PdfFileReader(open(exam, 'rb'))
-                    a3page = PageObject.createBlankPage(**A3SIZE)
-                    for p in range(pdf.numPages):
-                        page = pdf.getPage(p)
-                        if p % 2 == 0:
+                    pdf = PdfFileReader(open(exam, 'rb'), strict=False)
+                    a3page = PageObject.createBlankPage(**A3SIZE)                    
+                    left = True
+                    sheets = math.ceil(pdf.numPages / 4) 
+                    booklet = next(make_book(range(1, pdf.numPages + 1), sheets * 4))
+                    for p in booklet:
+                        if p is not None:
+                            page = pdf.getPage(p - 1)
+                        else:
+                            page = None
+                        if left:
                             # page left
-                            a3page.mergePage(page) 
+                            if page is not None:
+                                a3page.mergePage(page) 
+                            left = False
                         else:
                             # page right
-                            a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
-                        if p % 2 == 1 or p == pdf.getNumPages() - 1:
+                            if page is not None:
+                                a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
+                            left = True
+                        if left:
                             # add page 
                             writer.addPage(a3page)
                             a3page = PageObject.createBlankPage(**A3SIZE)  
@@ -187,7 +226,7 @@ class Generate:
             random.seed(self.seed + s)
             done = False
             try:
-                for _ in range(5):
+                for _ in range(20):
                     document, questions, answers = self.create_exam(student)
                     digits = math.ceil(math.log10(len(self.students)))
                     f = '{{:0{}d}}-{{}}-{{}}'.format(digits)
@@ -201,7 +240,7 @@ class Generate:
                     # check the generated output in terms of pages 
                     # TODO: it should be done also in terms of the qrcode, number of questions, coherence of answers
                     with open("{}.pdf".format(filename), 'rb') as f:
-                        pdf_file = PdfFileReader(f)
+                        pdf_file = PdfFileReader(f, strict=False)
                         if pdf_file.getNumPages() <= self.config['exam'].get('page_limits', 2):
                             done = True
                             break 

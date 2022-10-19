@@ -24,12 +24,18 @@ def correct_only(correct, marked, missing, wrong, size):
     else:
         return np.array([len(correct) / (len(correct) + len(missing)), 1.0])
 
+def custom_correction(correct, marked, missing, wrong, size):
+    penalty = 0.0
+    if len(marked) > (len(correct) + len(missing)):
+        penalty = 0.5 * (len(marked) - (len(correct) + len(missing)))
+    return np.array([max(0.0, len(correct) / (len(correct) + len(missing)) - penalty), 1.0])
+
 class Mark:
     def __init__(self, datafile, outputfile):
         self.datafile = datafile
         self.outputfile = outputfile
 
-    def mark(self, marking_function=correct_only, include_missing=False, weights={}):        
+    def mark(self, marking_function=custom_correction, include_missing=False, weights={}):        
         with TinyDB(self.datafile) as db:
             df = pd.DataFrame()
             Exam = Query()
@@ -55,7 +61,7 @@ class Mark:
                     current[f'{question_source[i]} question'] = e['questions'][i][1]
                 current['A total_points'] = p[0]
                 current['B tentative_mark'] = p[0] / p[1]
-                df = df.append(current, ignore_index=True)          
+                df = pd.concat([df, pd.DataFrame([current])])
             if include_missing:
                 for exam in db.table('exams').all():
                     e = db.table('correction').get(Exam.student_id == exam['student_id'])

@@ -241,7 +241,7 @@ class QuestionRenderer(LaTeXRenderer):
         if token.leader == '*' or token.leader.endswith(')'):
             template = template.replace('{choices}', '{oneparchoices}')
             template = template.replace('\\begin', '\\par\n\\begin')
-            template += '\n\\vspace{{\\baselineskip}}\n'    
+            template += '\n\\vspace{{\\baselineskip}}\n'
 
         if self.parameters.get('test', False):
             answers = list(map(lambda i: answers[i] if not self.questions[-1]['answers'][i] else answers[i].replace('\\choice', '\\correctchoice'), range(len(answers))))
@@ -335,6 +335,8 @@ class QuestionRenderer(LaTeXRenderer):
             doc.append(self.parameters.get('preamble', ''))
         doc.append(pylatex.Command('vspace', '0.75em'))
         with doc.create(QuestionsEnvironment()):
+            if self.parameters.get('dyslexia', False):
+                inner = inner.replace('{oneparchoices}', '{choices}')
             doc.append(inner)
         return doc
 

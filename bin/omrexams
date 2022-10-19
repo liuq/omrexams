@@ -136,6 +136,10 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
 
+    if not students and not count:
+        click.secho("You should provide either an excel file with the student list or the number of exams to generate", fg='red')
+        sys.exit(0)
+
     if students:
         try:    
             click.secho('Reading excel file', fg='red', underline=True)
@@ -373,6 +377,38 @@ def update_corrected(ctx, question_files, datafile, dry_run):
     """
     update_corrected = UpdateCorrected(question_files, datafile)
     update_corrected.process(dry_run)
+
+
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.argument('question_file', type=str, required=True)
+@click.argument('question', type=int, required=True)
+@click.pass_context
+def students_with_question(ctx, datafile, question_file, question):
+    """
+    Returns the ids of the students having a specific question
+    """
+    with TinyDB(datafile) as db:
+        for e in db.table('exams'):
+            for q in e['questions']:
+                if q[0] == question_file and q[1] == question:
+                    print(e['student_id'])
+                    break
+
+
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.argument('student_id', type=str, required=True)
+@click.pass_context
+def get_correction_mask(ctx, datafile, student_id):
+    """
+    Gets the correction mask for a given student
+    """
+    with TinyDB(datafile) as db:
+        Exam = Query()
+        exam = db.table('exams').get(Exam.student_id == student_id)
+        for i, q in enumerate(exam['questions']):
+            print(i + 1, q[2])
 
 @cli.command()
 @click.pass_context

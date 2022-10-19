@@ -91,7 +91,7 @@ class Correct:
         # Collecting all corrected exams into a single pdf file
         click.secho("Collecting all corrected exams into a single pdf file", fg="green")
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
-        output_pdf = PdfFileMerger()
+        output_pdf = PdfFileMerger(strict=False)
         old_student_id = None
         with click.progressbar(length=len(files), label="Merging corrections") as bar:
             for i, filename in enumerate(files):
@@ -100,10 +100,10 @@ class Correct:
                     f.seek(0)
                     student_id = os.path.basename(filename).split("-")[0]  
                     if student_id != old_student_id:                
-                        output_pdf.append(PdfFileReader(f), bookmark=f'Student {student_id}')
+                        output_pdf.append(PdfFileReader(f, strict=False), outline_item=f'Student {student_id}')
                         old_student_id = student_id
                     else:
-                        output_pdf.append(PdfFileReader(f))
+                        output_pdf.append(PdfFileReader(f, strict=False))
                 bar.update(1)
         click.secho("Writing pdf file", fg="green")
         with open(self.corrected, 'wb') as f:
@@ -113,7 +113,7 @@ class Correct:
         # Marking collected pdf with the student_id
         
         #with open(self.corrected + '.tmp' + '.pdf', 'rb') as f:
-        #     input_pdf = PdfFileReader(f)
+        #     input_pdf = PdfFileReader(f, strict=False)
         #     if len(files) != input_pdf.numPages:
         #         raise RuntimeError("The collected pdf file seems not to contain all the pages")
         #     for i, filename in enumerate(files):
