@@ -348,6 +348,11 @@ def force_answer(ctx, datafile, student_id, question, given_answers):
         Exam = Query()
         exam = db.table('exams').get(Exam.student_id == student_id)
         correction = db.table('correction').get(Exam.student_id == student_id)
+        if not correction:
+            # table = db.table('correction')
+            # table.insert({ 'student_id': student_id, 'given_answers': [""] * len(exam['answers']), 'correct_answers': exam['answers'] })
+            # correction = db.table('correction').get(Exam.student_id == student_id)
+            correction = { 'student_id': student_id, 'given_answers': [""] * len(exam['answers']), 'correct_answers': exam['answers'] }
         try:
             given = correction['given_answers'][question - 1]
             new_given = list(given_answers.upper())
@@ -355,14 +360,14 @@ def force_answer(ctx, datafile, student_id, question, given_answers):
                 click.secho(f"The current and the updated given answers for question {question} and student {student_id} are equal {set(given)}, nothing to do", fg="yellow")
                 sys.exit(0)
             new_given_order = map(lambda l: ord(l) - ord('A'), new_given)
-            question_size = len(exam['questions'][question -1][3])
+            question_size = len(exam['questions'][question - 1][3])
             if any(o not in range(question_size) for o in new_given_order):
                 click.secho(f"Question {question} for student {student_id} admits answers from 'A' to {chr(question_size - 1 + ord('A'))} but given {set(new_given)}", fg="red")
                 sys.exit(-1)
             click.secho(f"Updating question {question} for student {student_id} with answers {set(new_given)} instead of {set(given)}", fg="green")
             correction['given_answers'][question - 1] = new_given
-            db.table('correction').update(correction, where('student_id') == student_id)
-        except IndexError:
+            db.table('correction').upsert(correction, where('student_id') == student_id)
+        except IndexError as e:
             click.secho(f"Question {question} is not appearing in the list of given answers for student {student_id}", fg="red")
             sys.exit(-1)      
 

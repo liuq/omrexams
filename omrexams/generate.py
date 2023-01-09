@@ -153,7 +153,7 @@ class Generate:
         if self.paper == "A4":
             # This is for A4 management            
             merger = PdfFileMerger(strict=False)
-            _blank = PdfFileWriter(strict=False)
+            _blank = PdfFileWriter()
             _blank.addBlankPage(**A4SIZE)    
             blank = io.BytesIO()
             _blank.write(blank)   
@@ -172,7 +172,7 @@ class Generate:
                 merger.write(f)
         else:
             # This is for A3 management
-            writer = PdfFileWriter(strict=False)
+            writer = PdfFileWriter()
             a3page = None
             pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
             with click.progressbar(length=len(pdf_files), label='Collating files ',

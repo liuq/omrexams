@@ -226,7 +226,7 @@ class Correct:
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
         p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl 
-        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl
+        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl 
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
 

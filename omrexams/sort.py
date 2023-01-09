@@ -42,7 +42,8 @@ class Sort:
         self.tasks_queue = mp.JoinableQueue()
         self.results_mutex = mp.RLock()
         self.task_done = mp.Condition(self.results_mutex)
-        self.results = mp.Value('i', 0, lock=self.results_mutex)
+        self.results = mp.Value('i', 0, lock=self.results_mutex)   
+        self.page_leftovers = mp.Queue()
 
         pages = 0
 
@@ -78,12 +79,20 @@ class Sort:
             pool.close()
             prev = 0
             while not self.tasks_queue.empty():
-                self.results_mutex.acquire()
-                self.task_done.wait_for(lambda: prev <= self.results.value)
-                bar.update(self.results.value - prev)
-                prev = self.results.value
-                self.results_mutex.release()
-        if paper == "A3":
+                with self.results_mutex:
+                    self.task_done.wait_for(lambda: prev <= self.results.value)
+                    bar.update(self.results.value - prev)
+                    prev = self.results.value
+        with self.results_mutex:
+            if not self.page_leftovers.empty():
+                click.secho('There are page leftovers, merging them', fg='red', err=True)
+                dst_pdf = PdfFileMerger()
+                while not self.page_leftovers.empty():                    
+                    p = PdfFileReader(io.BytesIO(self.page_leftovers.get()))
+                    dst_pdf.append(p)
+                with open('leftovers.pdf', 'wb') as f:
+                    dst_pdf.write(f)
+        if paper == "A3":           
             rmtree("split_tmp")
         click.secho('Finished', fg='red', underline=True)
 
@@ -107,16 +116,16 @@ class Sort:
             except Exception as e:
                 print("\n", str(e))
             finally:
-                self.results_mutex.acquire()
-                self.results.value += 1
-                self.task_done.notify()
-                self.results_mutex.release()
-                self.tasks_queue.task_done()
+                with self.results_mutex:
+                    self.results.value += 1
+                    self.task_done.notify()
+                    self.tasks_queue.task_done()
 
     def process(self, filename, page):
         dst_pdf = PdfFileWriter()
         with open(filename, 'rb') as f:
-            dst_pdf.addPage(PdfFileReader(f).getPage(page))
+            current_page = PdfFileReader(f).getPage(page)
+            dst_pdf.addPage(current_page)
             pdf_bytes = io.BytesIO()
             dst_pdf.write(pdf_bytes)
             pdf_bytes.seek(0)
@@ -152,7 +161,10 @@ class Sort:
                 # the image could be flipped, therefore here we restore the right qrcode order
                 cv2.imwrite(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), image)
                 return metadata
-            except Exception as e:
+            except Exception as e:        
+                with self.results_mutex:
+                    pdf_bytes.seek(0)                    
+                    self.page_leftovers.put(pdf_bytes.getvalue())        
                 raise RuntimeError("Error processing file {}, page {} \n{}".format(filename, page + 1, str(e)))        
             
     @staticmethod
