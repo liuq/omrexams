@@ -5,7 +5,10 @@ from . crypt import vigenere_decrypt
 import math
 from . colors import *
 from . image_utils import order_points
-from pyzbar import pyzbar
+try:
+    from pyzbar import pyzbar
+except:
+    pass
 from ctypes.util import find_library
 
 def decode_bottom_right(data):
