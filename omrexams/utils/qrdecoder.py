@@ -167,8 +167,8 @@ def decode(image, highlight=False, offset=5):
 
         return metadata        
     
-    if find_library('zbar'):
-        return pyzbar_decode(image, highlight, offset)
-    else:
-        return opencv_decode(image, highlight, offset)
+    # if find_library('zbar'):
+    #     return pyzbar_decode(image, highlight, offset)
+    # else:
+    return opencv_decode(image, highlight, offset)
 
