@@ -5,10 +5,6 @@ from . crypt import vigenere_decrypt
 import math
 from . colors import *
 from . image_utils import order_points
-try:
-    from pyzbar import pyzbar
-except:
-    pass
 from ctypes.util import find_library
 
 def decode_bottom_right(data):
@@ -167,8 +163,16 @@ def decode(image, highlight=False, offset=5):
 
         return metadata        
     
-    # if find_library('zbar'):
-    #     return pyzbar_decode(image, highlight, offset)
-    # else:
-    return opencv_decode(image, highlight, offset)
+    zbar_found = False
+    try:
+        from pyzbar import pyzbar
+        if find_library('zbar'):
+            zbar_found = True
+    except:
+        pass
+    
+    if zbar_found:
+        return pyzbar_decode(image, highlight, offset)
+    else:
+        return opencv_decode(image, highlight, offset)
 
