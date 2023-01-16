@@ -12,7 +12,7 @@ import click
 from datetime import datetime as dt
 import dateparser as dp
 import yaml
-from omrexams import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected, MarkdownConverter, __version__, main_ui
+from omrexams import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected, MarkdownConverter, __version__ #, main_ui
 import pandas as pd
 import xlrd
 import re
