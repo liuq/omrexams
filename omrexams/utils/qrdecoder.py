@@ -1,7 +1,7 @@
 import re
 import numpy as np
 import cv2
-from . crypt import vigenere_decrypt
+from . crypt import binary_decrypt
 import math
 from . colors import *
 from . image_utils import order_points
@@ -33,10 +33,10 @@ def decode_top_left(data):
     # check if the correct sequence is encoded or in clear
     if not m.group('sequence'):
         correct = []
-    elif ',' in m.group('sequence'):
-        correct = m.group('sequence').split(',')
+    elif m.group('sequence').startswith('0x'):
+        correct = binary_decrypt(m.group('sequence').lstrip('0x'), m.group('id')).upper().split(',')
     else:
-        correct = vigenere_decrypt(m.group('sequence'), m.group('id')).upper().split(',')
+        correct = m.group('sequence').split(',')
     return { 
         # CHECK: removed int across student_id
         'student_id': m.group('id'),

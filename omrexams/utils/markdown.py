@@ -5,7 +5,7 @@ from mistletoe.base_renderer import BaseRenderer
 from mistletoe.html_renderer import HTMLRenderer
 from mistletoe.latex_renderer import LaTeXRenderer
 import random
-from . crypt import vigenere_encrypt
+from . crypt import binary_encrypt
 import re
 import logging
 import click
@@ -295,7 +295,8 @@ class QuestionRenderer(LaTeXRenderer):
             solutions.append(current)
         # encryption of the solution is the default option
         if self.parameters.get('encrypt', True): 
-            solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
+            solutions = f"0x{binary_encrypt(','.join(solutions), self.parameters['student_no']):x}"
+#            solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
         else:
             solutions = ','.join(solutions)        
         options = []

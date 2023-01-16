@@ -32,7 +32,6 @@ A4SIZE = { 'width': 595, 'height': 842 }
 # A3 size, landscape is 1190pt x 842pt
 A3SIZE = { 'width': 1190, 'height': 842 }
 
-
 def assemble_booklet(pages):
     """assembles the booklet according to the order [-1, 0, 1, -2] and going in.
 
