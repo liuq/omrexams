@@ -27,20 +27,21 @@ def decode_bottom_right(data):
                }
 
 def decode_top_left(data):
-    m = re.search(r'(?P<id>\d+),(?P<date>\d+/\d+/\d+),\[(?P<sequence>[^\]]+)\]', data)
+    m = re.search(r'(?P<id>\d+),(?P<sequence>.+)', data)
     if not m:
         return None
     # check if the correct sequence is encoded or in clear
+    allowed_in_clear = ("".join(chr(i + ord('a')) for i in range(8)) + ",").upper()
     if not m.group('sequence'):
         correct = []
-    elif m.group('sequence').startswith('0x'):
-        correct = binary_decrypt(m.group('sequence').lstrip('0x'), m.group('id')).upper().split(',')
-    else:
+    elif all(c.upper() in allowed_in_clear for c in m.group('sequence')):
         correct = m.group('sequence').split(',')
+    else:
+        correct = list(c.upper() for c in binary_decrypt(m.group('sequence'), m.group('id')))
+
     return { 
         # CHECK: removed int across student_id
         'student_id': m.group('id'),
-        'date': m.group('date'),
         'correct': correct
     }
 

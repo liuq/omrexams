@@ -9,4 +9,4 @@ from . markdown_converter import MarkdownConverter
 from . update_corrected import UpdateCorrected
 #from . gui.__main__ import main_ui
 
-__all__ = ['Generate', 'Sort', 'Correct', 'Mark', 'MoodleConverter', 'MarkdownConverter', 'UpdateCorrected' #, 'main_ui']
+__all__ = ['Generate', 'Sort', 'Correct', 'Mark', 'MoodleConverter', 'MarkdownConverter', 'UpdateCorrected'] #, 'main_ui']

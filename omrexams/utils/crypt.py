@@ -1,5 +1,6 @@
 from itertools import cycle
 from string import ascii_lowercase
+from binascii import a2b_base64, b2a_base64
 
 def caesar_shift(text, places):
     def substitute(char):
@@ -52,8 +53,8 @@ def binary_encrypt(solutions, key):
         key = str(key)
     # transform the key in sequence of bytes (taking only the least significant byte)
     mask = (1 << 8) - 1
-    key_generator = cycle((map(lambda c: ord(c) & mask, key)))
-    questions = 0b0    
+    key_generator = cycle(ord(c) & mask for c in key)
+    questions = 0b0  
     for i, text in enumerate(solutions):
         q = 0b0
         for c in text:
@@ -63,27 +64,27 @@ def binary_encrypt(solutions, key):
         # xor encryption
         q = q ^ next(key_generator)
         questions = (questions << 8) | q
-    return questions
+    return b2a_base64(questions.to_bytes(len(solutions), 'little'), newline=False)
 
 def binary_decrypt(solutions, key):
-    assert type(solutions) is int, "Only binary numbers can be decrypted"
+    assert type(solutions) is str or type(solutions) is bytes, "Only strings or byte strings can be decrypted"
+    solutions = int.from_bytes(a2b_base64(solutions), 'little')
     # 8 bit 11...1 mask
     mask = (1 << 8) - 1
     if type(key) is not str:
         key = str(key)
     # transform the key in sequence of bytes (taking only the least significant byte)
-    key_generator = cycle((map(lambda c: ord(c) & mask, key)))
+    key_generator = cycle(ord(c) & mask for c in key)
     # extract solutions, the order is reversed
-    tmp_solutions = []
-    while solutions: # NOTE: it is assumed at least one correct answer per question
-        current = solutions & mask
-        tmp_solutions.append(current)
+    tmp = []
+    while solutions:
+        current = solutions & mask 
+        tmp.insert(0, current)
         solutions = solutions >> 8
-    # decrypt, in the reversed order
-    for i in reversed(range(len(tmp_solutions))):
-        tmp_solutions[i] ^= next(key_generator)    
     questions = []
-    for current in reversed(tmp_solutions):
+    for current in tmp:
+        # decrypt
+        current = current ^ next(key_generator)
         q = ""
         extract, digit = 1, 0
         while digit < 8:
@@ -93,6 +94,5 @@ def binary_decrypt(solutions, key):
             digit = digit + 1
         questions.append(q)       
     return questions
-
 
 

@@ -162,7 +162,7 @@ rectangle/.default={0.2cm}}
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thedate,[\thesolution]}};          
+        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thesolution}};          
     \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
