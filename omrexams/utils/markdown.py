@@ -295,7 +295,7 @@ class QuestionRenderer(LaTeXRenderer):
             solutions.append(current)
         # encryption of the solution is the default option
         if self.parameters.get('encrypt', True): 
-            solutions = binary_encrypt(solutions, self.parameters['student_no']).decode('ascii')
+            solutions = f"0x{binary_encrypt(solutions, self.parameters['student_no']):x}"
 #            solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
         else:
             solutions = ','.join(solutions)        
