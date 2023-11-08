@@ -63,7 +63,8 @@
   escapeinside={\%*}{*)},
   inputencoding=utf8
 }
-\usepackage{fontspec}
+%\usepackage{fontspec}
+\usepackage{mathspec}
 
 \CorrectChoiceEmphasis{\bfseries\boldmath\color{red}}
 
@@ -228,7 +229,7 @@ rectangle/.default={0.2cm}}
 \DeclareOption{circled}{
   \renewcommand{\choicelabel}{\circled{\sffamily\footnotesize\thechoice}}
 }
-\DeclareOption{dyslexia}{\setmainfont{OpenDyslexic}}
+\DeclareOption{dyslexia}{\setallmainfonts{OpenDyslexic}\setmonofont{OpenDyslexicMono}\setsansfont{OpenDyslexic}}
 \newboolean{testing}
 %\setboolean{testing}{false}
 \DeclareOption{testing}{\setboolean{testing}{true}}
