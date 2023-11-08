@@ -64,7 +64,7 @@ def binary_encrypt(solutions, key):
         # xor encryption
         q = q ^ next(key_generator)
         questions = (questions << 8) | q
-    return b2a_base64(questions.to_bytes(len(solutions), 'little'), newline=False)
+    return b2a_base64(questions.to_bytes(len(solutions), 'little'), newline=False).decode('ascii')
 
 def binary_decrypt(solutions, key):
     assert type(solutions) is str or type(solutions) is bytes, "Only strings or byte strings can be decrypted"

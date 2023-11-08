@@ -220,6 +220,9 @@ class Correct:
         offset = 5
         image = cv2.imread(filename)
         metadata = qrdecoder.decode(image, True)
+        if metadata.get('rotated', False):
+            image = cv2.rotate(image, cv2.ROTATE_180)
+
         if metadata['range'] == (0, 0): # no question and markers in current page
             self.write(filename, image)
             return [], []

@@ -74,14 +74,14 @@ class LatexFormula(span_token.SpanToken):
         
 class QuestionList(block_token.List):
     """
-    Question Lists are regular lists with a checkbox marker, however they will be treated differently during
-    the text rendering process.
+    Question Lists are regular lists with a checkbox marker, however they will be treated differently 
+    during the text rendering process.
 
-    Lists with a leading '-', and '+' will be rendered as single paragraphs, whereas those starting with '*' 
-    are rendered inline (i.e., with no page break).
+    Lists with a leading '-', and '+' will be rendered as single paragraphs, whereas those starting 
+    with '*' are rendered inline (i.e., with no page break).
 
-    Ordered lists (i.e., with a leading numeric), will be rendered as single paragraphs if with a trailing '.' 
-    and inline if with a trailing ')'. Moreover, they will not be shuffled
+    Ordered lists (i.e., with a leading numeric), will be rendered as single paragraphs if with 
+    a trailing '.' and inline if with a trailing ')'. Moreover, they will not be shuffled.
 
     Summary:
 
@@ -100,7 +100,8 @@ class QuestionList(block_token.List):
 
 class QuestionBlock(block_token.BlockToken):
     """
-    Question Block is identified by a horizontal rule with at least 3 elements at the very beginning of the line
+    Question Block is identified by a horizontal rule with at least 3 elements at the 
+    very beginning of the line
     """
     pattern = re.compile(r'^(?:-{3,})\s*$')
 
@@ -295,7 +296,7 @@ class QuestionRenderer(LaTeXRenderer):
             solutions.append(current)
         # encryption of the solution is the default option
         if self.parameters.get('encrypt', True): 
-            solutions = f"0x{binary_encrypt(solutions, self.parameters['student_no']):x}"
+            solutions = f"{binary_encrypt(solutions, self.parameters['student_no'])}"
 #            solutions = vigenere_encrypt(','.join(solutions), self.parameters['student_no'])
         else:
             solutions = ','.join(solutions)        

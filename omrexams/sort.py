@@ -138,15 +138,13 @@ class Sort:
                 metadata = None
                 try:
                     # Try first without rotation
-                    metadata = qrdecoder.decode(image)
+                    metadata = qrdecoder.decode(image)                    
                 except RuntimeError:
                     pass                                    
                 if metadata is None:
-                    # Then try rotating by 180°
+                    return None                    
+                if metadata.get('rotated', False):
                     image = cv2.rotate(image, cv2.ROTATE_180)
-                    metadata = qrdecoder.decode(image)
-                    if metadata is None:
-                        return None
                 # perform a rotation and image cropping to the qrcodes
                 tl = metadata['top_left_rect'][0]
                 br = metadata['bottom_right_rect'][2]

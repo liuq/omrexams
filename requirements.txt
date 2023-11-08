@@ -15,7 +15,7 @@ img2pdf
 pyyaml
 pylatex
 wheel
-mistletoe
+mistletoe==0.9.0
 pypdf2
 PySide6
 pyqtdarktheme
