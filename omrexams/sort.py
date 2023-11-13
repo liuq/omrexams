@@ -135,12 +135,7 @@ class Sort:
             img_buffer = np.asarray(bytearray(img.make_blob('bmp')), dtype=np.uint8)
             image = cv2.imdecode(img_buffer, cv2.IMREAD_GRAYSCALE)   
             try:
-                metadata = None
-                try:
-                    # Try first without rotation
-                    metadata = qrdecoder.decode(image)                    
-                except RuntimeError:
-                    pass                                    
+                metadata = qrdecoder.decode(image)                    
                 if metadata is None:
                     return None                    
                 if metadata.get('rotated', False):

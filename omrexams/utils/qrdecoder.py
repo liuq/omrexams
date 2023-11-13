@@ -8,8 +8,11 @@ from . image_utils import order_points
 from ctypes.util import find_library
 import logging
 import click
+import sys
 
 use_zbar = False
+TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
+BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
 
 try:
     from pyzbar import pyzbar
@@ -18,8 +21,15 @@ try:
 except:
     pass
 
+def check_rotation(data):
+    if re.search(TOP_LEFT_REGEX, data[0]) and re.search(BOTTOM_RIGHT_REGEX, data[1]):
+        return False
+    if re.search(BOTTOM_RIGHT_REGEX, data[0]) and re.search(TOP_LEFT_REGEX, data[1]):
+        return True
+    raise RuntimeError(f"Not meaningful qrcode cotntent {data}")
+
 def decode_bottom_right(data):
-        m = re.search(r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$', data)
+        m = re.search(BOTTOM_RIGHT_REGEX, data)
         if not m:
             return None
             
@@ -38,7 +48,7 @@ def decode_bottom_right(data):
                }
 
 def decode_top_left(data):
-    m = re.search(r'^(?P<id>\d+),(?P<sequence>.+)$', data)
+    m = re.search(TOP_LEFT_REGEX, data)
     if not m:
         return None
     # check if the correct sequence is encoded or in clear
@@ -77,6 +87,9 @@ def decode(image, highlight=False, offset=5):
 
         if qrcodes.shape[0] < 2:
             raise RuntimeError(f"Each page should have at least two qrcodes, found {len(qrcodes)}")
+        if qrcodes.shape[0] == 4:
+            click.secho("Found 4 qrcodes in page, probably it is an A3 printed exam, therefore you should use --paper a3 in sorting", color="red")
+            raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
         if qrcodes.shape[0] > 2:
             raise RuntimeError(f"Found more than two qrcodes {len(qrcodes)}")     
             
@@ -98,22 +111,16 @@ def decode(image, highlight=False, offset=5):
         if decoded_text is None and qrcodes is None:
             # Empty page detected
             return None
+        
+        # decide for rotation
+        rotated = check_rotation(decoded_text)
+        if rotated:
+            image = cv2.rotate(image, cv2.ROTATE_180)
+            decoded_text, qrcodes = search_qrcodes_opencv(image)
 
         # extract information from the qrcode    
         top_left_decode = decode_top_left(decoded_text[0])
-        bottom_right_decode = decode_bottom_right(decoded_text[1])    
-        rotated = False    
-        if top_left_decode is None or bottom_right_decode is None:            
-            # Try a 180deg rotation
-            image = cv2.rotate(image, cv2.ROTATE_180)
-            decoded_text, qrcodes = search_qrcodes(image)
-            top_left_decode = decode_top_left(decoded_text[0])
-            bottom_right_decode = decode_bottom_right(decoded_text[1]) 
-            rotated = True
-        if top_left_decode is None:
-            raise ValueError(f"Cannot properly decode top left qrcode content: {decoded_text[0]}")         
-        if bottom_right_decode is None:
-            raise ValueError(f"Cannot properly decode bottom right qrcode content: {decoded_text[1]}")            
+        bottom_right_decode = decode_bottom_right(decoded_text[1])                     
         
         t = order_points(np.array([q for qrcode in qrcodes for q in qrcode]))
         tl = t[0].astype('int')
@@ -173,22 +180,23 @@ def decode(image, highlight=False, offset=5):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)         
 
         qrcodes = search_qrcodes_pyzbar(image)
+        if len(qrcodes) < 2:
+            raise RuntimeError("Each page should have at least two qrcodes, found {}".format(len(qrcodes)))
+        if len(qrcodes) == 4:
+            click.secho("Found 4 qrcodes in page, probably it is an A3 printed exam, therefore you should use --paper a3 in sorting", color="red")
+            raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
+        if len(qrcodes) > 2:
+            raise RuntimeError("Found more than two qrcodes {}".format(qrcodes))
+
       
-        # extract information from the qrcode
-        top_left_decode = decode_top_left(qrcodes[0].data.decode('ascii'))
-        bottom_right_decode = decode_bottom_right(qrcodes[1].data.decode('ascii'))        
-        rotated = False    
-        if top_left_decode is None or bottom_right_decode is None:            
-            # Try a 180deg rotation
+        rotated = check_rotation(list(map(lambda x: x.data.decode('ascii'), qrcodes)))
+        if rotated:
             image = cv2.rotate(image, cv2.ROTATE_180)
             qrcodes = search_qrcodes_pyzbar(image)
-            top_left_decode = decode_top_left(qrcodes[0].data.decode('ascii'))
-            bottom_right_decode = decode_bottom_right(qrcodes[1].data.decode('ascii'))
-            rotated = True
-        if top_left_decode is None:
-            raise ValueError(f"Cannot properly decode top left qrcode content: {qrcodes[0].data}")         
-        if bottom_right_decode is None:
-            raise ValueError(f"Cannot properly decode bottom right qrcode content: {qrcodes[1].data}")     
+
+        # extract information from the qrcode
+        top_left_decode = decode_top_left(qrcodes[0].data.decode('ascii'))
+        bottom_right_decode = decode_bottom_right(qrcodes[1].data.decode('ascii'))           
 
         tl = np.array(qrcodes[0].rect[:2])
         br = np.array(qrcodes[1].rect[:2]) + np.array(qrcodes[1].rect[2:])

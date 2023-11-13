@@ -6,7 +6,7 @@ def uniform(correct, marked, missing, wrong, size):
     if len(marked) == 0:
         return np.array([0.0, 1.0])
     else:
-        return np.array([-len(wrong) / (size - 1) + len(correct), 1.0])
+        return np.array([-len(wrong) / (size - len(correct) - len(missing) - 1) + len(correct), 1.0])
 
 def weighted_custom(correct, marked, missing, wrong, size):
     if len(marked) == 0:
@@ -26,8 +26,8 @@ def correct_only(correct, marked, missing, wrong, size):
 
 def custom_correction(correct, marked, missing, wrong, size):
     penalty = 0.0
-    if len(marked) > (len(correct) + len(missing)):
-        penalty = 0.5 * (len(marked) - (len(correct) + len(missing)))
+    if len(marked) > (len(correct) + len(missing)) and len(correct) + len(missing) > 1:
+        penalty = 0.5 * (len(wrong) / (len(correct) + len(missing) - 1))
     return np.array([max(0.0, len(correct) / (len(correct) + len(missing)) - penalty), 1.0])
 
 class Mark:
@@ -46,7 +46,7 @@ class Mark:
                 correct_answers = list(map(set, exam['correct_answers']))
                 given_answers = list(map(set, exam['given_answers']))
                 p = np.array([0.0, 0.0])
-                current = { 'student_id': exam['student_id'] }
+                current = pd.DataFrame([{ 'student_id': exam['student_id'] }])
                 if len(correct_answers) != len(given_answers):
                     raise RuntimeWarning("It seems that something went wrong, the number of correct answers and given answers do not match for student {}".format(exam['student_id']))
                 for i in range(len(correct_answers)):
@@ -54,14 +54,15 @@ class Mark:
                     q_size = question_size[i]                        
                     c = marking_function(correct, marked, missing, wrong, q_size) 
                     p += c * weights.get(question_source[i], 1.0)
-                    current[f'{question_source[i]} correct'] = len(correct)
-                    current[f'{question_source[i]} missing'] = len(missing)
-                    current[f'{question_source[i]} wrong'] = len(wrong)
-                    current[f'{question_source[i]} size'] = q_size
-                    current[f'{question_source[i]} question'] = e['questions'][i][1]
+                    current[f'{question_source[i]} A correct'] = len(correct)
+                    current[f'{question_source[i]} B missing'] = len(missing)
+                    current[f'{question_source[i]} C wrong'] = len(wrong)
+                    current[f'{question_source[i]} D size'] = q_size
+                    current[f'{question_source[i]} E question'] = e['questions'][i][1]
+                current = current[sorted(current.columns)]
                 current['A total_points'] = p[0]
                 current['B tentative_mark'] = p[0] / p[1]
-                df = pd.concat([df, pd.DataFrame([current])])
+                df = pd.concat([df, current])
             if include_missing:
                 for exam in db.table('exams').all():
                     e = db.table('correction').get(Exam.student_id == exam['student_id'])

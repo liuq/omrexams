@@ -202,8 +202,10 @@ class Correct:
                 break
             try:
                 detected_answers, correct_answers = self.process(filename)
-                if correct_answers: # probably no question in current file                
-                    student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
+                if correct_answers: # probably no question in current file           
+                    *student, page = ".".join(os.path.basename(filename).split(".")[:-1]).split("-")
+                    # this is due because of old-style matriculation numbers
+                    student = "-".join(student)
                     self.results_mutex.acquire()
                     self.append_correction(student, page, list(map(list, detected_answers)), list(map(list, correct_answers)))
                     self.results_mutex.release()
