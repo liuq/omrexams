@@ -16,12 +16,15 @@ import logging
 from collections import Counter
 from itertools import combinations
 import img2pdf
-from PyPDF2 import PdfFileReader, PdfFileMerger
+from PyPDF2 import PdfReader, PdfFileMerger
 from tinydb import TinyDB, Query
 from shutil import copy2, rmtree
 import tempfile
+import inflect
 
 logger = logging.getLogger("omrexams")
+
+p = inflect.engine()
 
 def decode_answers(answers, permutation):
     res = []
@@ -48,7 +51,7 @@ class Correct:
         if os.path.exists('tmp'):
             rmtree('tmp')
         os.mkdir('tmp')
-        with TinyDB("{}.tmp".format(self.data_filename)) as db:
+        with TinyDB(f"{self.data_filename}.tmp") as db:
             if 'correction' in db.tables():
                 db.drop_table('correction')
         self.tasks_queue = mp.JoinableQueue()
@@ -60,7 +63,7 @@ class Correct:
         for f in sorted(glob.glob(os.path.join(self.sorted, '*.png'))):
             self.tasks_queue.put(f)
             files += 1
-        click.secho("Correcting {} pages".format(files), fg='red', underline=True)
+        click.secho(f"Correcting {files} pages", fg='red', underline=True)
         with click.progressbar(length=files, label='Correcting',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
@@ -87,7 +90,7 @@ class Correct:
             for w in watch:
                 filename = os.path.basename(w[0])
                 filename = os.path.join('tmp', ".".join(filename.split(".")[:-1]) + ".jpg")
-                click.secho('\t{} {}'.format(filename, w[1]), fg='yellow')   
+                click.secho(f'\t{filename} {w[1]}', fg='yellow')   
         # Collecting all corrected exams into a single pdf file
         click.secho("Collecting all corrected exams into a single pdf file", fg="green")
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
@@ -100,10 +103,10 @@ class Correct:
                     f.seek(0)
                     student_id = os.path.basename(filename).split("-")[0]  
                     if student_id != old_student_id:                
-                        output_pdf.append(PdfFileReader(f, strict=False), outline_item=f'Student {student_id}')
+                        output_pdf.append(PdfReader(f, strict=False), outline_item=f'Student {student_id}')
                         old_student_id = student_id
                     else:
-                        output_pdf.append(PdfFileReader(f, strict=False))
+                        output_pdf.append(PdfReader(f, strict=False))
                 bar.update(1)
         click.secho("Writing pdf file", fg="green")
         with open(self.corrected, 'wb') as f:
@@ -113,7 +116,7 @@ class Correct:
         # Marking collected pdf with the student_id
         
         #with open(self.corrected + '.tmp' + '.pdf', 'rb') as f:
-        #     input_pdf = PdfFileReader(f, strict=False)
+        #     input_pdf = PdfReader(f, strict=False)
         #     if len(files) != input_pdf.numPages:
         #         raise RuntimeError("The collected pdf file seems not to contain all the pages")
         #     for i, filename in enumerate(files):
@@ -130,7 +133,7 @@ class Correct:
         # Update the data file and output the corrected excel file
         click.secho("Updating the database file", fg="green")
         data = {}
-        with TinyDB("{}.tmp".format(self.data_filename)) as db1, TinyDB(self.data_filename) as db2:
+        with TinyDB(f"{self.data_filename}.tmp") as db1, TinyDB(self.data_filename) as db2:
             table = db1.table('correction')
             students = set()
             for item in table.all():
@@ -192,7 +195,7 @@ class Correct:
                             question['answers'][i] += 1 
                     statistics.upsert(question, (Statistics.question_file == q[0]) & (Statistics.index == q[1]))
         click.secho("Removing temporary files", fg="green")
-        os.remove("{}.tmp".format(self.data_filename))
+        os.remove(f"{self.data_filename}.tmp")
                         
         
     def worker_main(self):    
@@ -210,7 +213,7 @@ class Correct:
                     self.append_correction(student, page, list(map(list, detected_answers)), list(map(list, correct_answers)))
                     self.results_mutex.release()
             except Exception as e:
-                click.secho("\nIn file {}\n".format(filename) + str(e), fg="yellow")
+                click.secho(f"\nIn file {filename}\n" + str(e), fg="yellow")
             finally:
                 self.results_mutex.acquire()
                 self.results.value += 1
@@ -250,7 +253,7 @@ class Correct:
             correction[0], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Contour')
         except Exception as e:
-            click.secho("\nFailed Contour Detection for {}".format(filename), fg="yellow")
+            click.secho(f"\nFailed Contour Detection for {filename}", fg="yellow")
             click.echo(str(e))
         # blob detection
         try:
@@ -258,7 +261,7 @@ class Correct:
             correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
         except Exception as e:
-            click.secho("\nFailed Blob for {}".format(filename), fg="yellow")
+            click.secho(f"\nFailed Blob for {filename}", fg="yellow")
             click.echo(str(e))
         # laplacian detection
         try:
@@ -266,7 +269,7 @@ class Correct:
             correction[2], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Laplacian')
         except Exception as e:
-            click.secho("Failed Laplacian for {}".format(filename), fg="yellow")
+            click.secho(f"Failed Laplacian for {filename}", fg="yellow")
             click.echo(str(e))
         # TODO: currently here just to check, before becoming another method
         # def non_max_suppression(boxes, overlap_thresh=0.8):
@@ -306,8 +309,8 @@ class Correct:
         #         cv2.rectangle(image, (x, y), (x + w, y + h), RED, 1, cv2.LINE_AA)
 
         majority, correct = self.majority_correction(filename, correction)  
-        given_text = "Given answers: " + " ".join(",".join(a) for a in majority)
-        correct_text = "Correct answers: " + " ".join(",".join(a) for a in correct)
+        given_text = f"Given answers: {' '.join(','.join(a) for a in majority)}"
+        correct_text = f"Correct answers: {' '.join(','.join(a) for a in correct)}"
         (width, height), _ =  cv2.getTextSize(given_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 3)
         cv2.putText(image, given_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - 4 * height), cv2.FONT_HERSHEY_SIMPLEX, 1, MAGENTA, 3)
         cv2.putText(image, correct_text, (metadata['bottom_right'][0] // 4, metadata['bottom_right'][1] - height), cv2.FONT_HERSHEY_SIMPLEX, 1, BLUE, 3)
@@ -355,7 +358,7 @@ class Correct:
 
 
     def append_correction(self, student, page, detected_answers, correct_answers):
-        with TinyDB("{}.tmp".format(self.data_filename)) as db:
+        with TinyDB(f"{self.data_filename}.tmp") as db:
             table = db.table('correction')
             data = { 
                 "student_id": student, 
@@ -453,7 +456,7 @@ class Correct:
         for c in reference_circles:
             Correct.highlight_circle(mask, c, CYAN)
             filled_area = Correct.circle_filled_area(binary, c) / reference_area
-            #text = "{0:.0%}".format(filled_area)
+            #text = f"{filled_area:.0%}"
             #cv2.putText(mask, text, tuple(np.array(c[:2]) - np.array([c[2], c[2] + 2 * offset])), 
             #            cv2.FONT_HERSHEY_SIMPLEX, 0.8, CYAN, 3)
         # maintain the information as a mapping between the reference circle and all the
@@ -475,7 +478,7 @@ class Correct:
         answer_circles = sorted(answer_circles.items(), key=lambda item: item[0][1])
         # check whether questions and the expected sequence of answers match
         if len(reference_circles) != len(metadata['page_correction']):
-            raise RuntimeError("Warning: Number of questions {} ({}-{}) and number of correct answers {} do not match".format(len(reference_circles), metadata['student_id'], metadata['page'], len(metadata['page_correction'])))
+            raise RuntimeError(f"Warning: Number of questions {len(reference_circles)} ({metadata['student_id']}-{metadata['page']}) and number of correct answers {len(metadata['page_correction'])} do not match")
         # go through the questions (reference circles) and check the answers
         correction = []            
         for i, ac in enumerate(answer_circles):  
@@ -526,7 +529,7 @@ class Correct:
                 r = chr(j + ord('A'))
                 all_res.add(r)
                 filled_area = Correct.circle_filled_area(binary, c) / reference_area
-                text = "{0:.0%}".format(filled_area)
+                text = f"{filled_area:0>4.0%}"
                 cv2.putText(mask, text, tuple(np.array(c[:2]) - np.array([c[2], c[2] + 2 * offset])), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, MAGENTA, 2)
                 cv2.circle(mask, c[:2], c[2], alpha(YELLOW, 0.3), -1)
@@ -542,12 +545,12 @@ class Correct:
             # check if there are missing answers on the paper-sheet
             missing_answers = correct_res - all_res
             if len(missing_answers) > 0:
-                click.secho("Warning: For question {}/({}-{}), the correct answer{} {} {} not printed on the sheet".format(i, metadata['student_id'], metadata['page'], "s" if len(missing_answers) > 1 else "", missing_answers, "were" if len(missing_answers) > 1 else "was"), fg="yellow")
+                click.secho(f"Warning: For question {i}/({metadata['student_id']}-{metadata['page']}), the correct {p.plural('answer', len(missing_answers))} {missing_answers} {p.plural_verb('was', len(missing_answers))} not printed on the sheet", fg="yellow")
                 ytop = round(reference_circle[1] - 1.3 * reference_circle[2])
                 ybottom = round(reference_circle[1] + 1.3 * reference_circle[2])
                 cv2.rectangle(mask, (0, ytop), (roi.shape[1], ybottom), RED, 7)
                 p = np.array(reference_circle[:2]) + [-reference_circle[2], -reference_circle[2] - 40]
-                cv2.putText(mask, "Missing {} found {}".format(missing_answers, all_res), tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, RED, 3)
+                cv2.putText(mask, f"Missing {missing_answers} found {all_res}", tuple(p), cv2.FONT_HERSHEY_SIMPLEX, 1, RED, 3)
             # write a text with the given answers and the correct ones close to each reference circle
             p = np.array(reference_circle[0:2]) + [-reference_circle[2], reference_circle[2] - 100]
             tmp = ("".join(sorted(a for a in answers_res)) if answers_res else "None")
@@ -669,4 +672,3 @@ class Correct:
         binary += cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)[1]    
         
         return binary, circles, []
-        

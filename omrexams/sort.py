@@ -1,4 +1,4 @@
-from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger
+from PyPDF2 import PdfReader, PdfWriter, PdfFileMerger
 from . utils import qrdecoder
 from wand.image import Image
 from wand.color import Color
@@ -31,10 +31,10 @@ class Sort:
 
     def sort(self, resolution, paper="A4"):
         if not os.path.exists(self.sorted):
-            click.secho('Creating directory {}'.format(self.sorted))
+            click.secho(f'Creating directory {self.sorted}')
             os.mkdir(self.sorted)
         else: # clean previous content
-            click.secho('Cleaning directory {}'.format(self.sorted))
+            click.secho(f'Cleaning directory {self.sorted}')
             for f in glob.glob(os.path.join(self.sorted, '*')):
                 os.remove(f)
         self.resolution = resolution
@@ -50,18 +50,18 @@ class Sort:
         if paper == "A4":
             for fn in self.scanned:
                 with open(fn, 'rb') as f:
-                    pdf_file = PdfFileReader(f)
+                    pdf_file = PdfReader(f)
                     for p in range(pdf_file.numPages):
                         self.tasks_queue.put((fn, p))
                     pages += pdf_file.numPages
         else:
             if not os.path.exists('split_tmp'):
-                click.secho('Creating directory {}'.format('split_tmp'))
+                click.secho(f'Creating directory {"split_tmp"}')
                 os.mkdir('split_tmp')
 
             for fn in self.scanned:
                 with open(fn, 'rb') as f, open(os.path.join('split_tmp', os.path.basename(fn)), 'wb') as sf:
-                    pdf_file = Sort.split_pages(PdfFileReader(f))
+                    pdf_file = Sort.split_pages(PdfReader(f))
                     merger = PdfFileMerger()
                     merger.append(pdf_file)
                     merger.write(sf)
@@ -88,7 +88,7 @@ class Sort:
                 click.secho('There are page leftovers, merging them', fg='red', err=True)
                 dst_pdf = PdfFileMerger()
                 while not self.page_leftovers.empty():                    
-                    p = PdfFileReader(io.BytesIO(self.page_leftovers.get()))
+                    p = PdfReader(io.BytesIO(self.page_leftovers.get()))
                     dst_pdf.append(p)
                 with open('leftovers.pdf', 'wb') as f:
                     dst_pdf.write(f)
@@ -109,10 +109,10 @@ class Sort:
                         table = db.table('exams')
                         result = table.get(Exam.student_id == str(metadata['student_id']))
                         if not result: 
-                            raise RuntimeError("Error double checking: student {} is not present in the data file".format(metadata['student_id']))
+                            raise RuntimeError(f"Error double checking: student {metadata['student_id']} is not present in the data file")
                         answers = metadata['correct']
                         if result['answers'] != answers:                    
-                            raise RuntimeError("Expected correct answers for student {} do not match\ncoded: {}/{}\nexpected: {}".format(metadata['student_id'], answers, metadata['correct'], result[0]['answers']))
+                            raise RuntimeError(f"Expected correct answers for student {metadata['student_id']} do not match\ncoded: {answers}/{metadata['correct']}\nexpected: {result[0]['answers']}")
             except Exception as e:
                 print("\n", str(e))
             finally:
@@ -122,9 +122,9 @@ class Sort:
                     self.tasks_queue.task_done()
 
     def process(self, filename, page):
-        dst_pdf = PdfFileWriter()
+        dst_pdf = PdfWriter()
         with open(filename, 'rb') as f:
-            current_page = PdfFileReader(f).getPage(page)
+            current_page = PdfReader(f).getPage(page)
             dst_pdf.addPage(current_page)
             pdf_bytes = io.BytesIO()
             dst_pdf.write(pdf_bytes)
@@ -152,17 +152,17 @@ class Sort:
                 image = cv2.warpAffine(image, rotation, (cols, rows), borderValue=WHITE)
 
                 # the image could be flipped, therefore here we restore the right qrcode order
-                cv2.imwrite(os.path.join(self.sorted, '{}-{}.png'.format(metadata['student_id'], metadata['page'])), image)
+                cv2.imwrite(os.path.join(self.sorted, f'{metadata["student_id"]}-{metadata["page"]}.png'), image)
                 return metadata
             except Exception as e:        
                 with self.results_mutex:
                     pdf_bytes.seek(0)                    
                     self.page_leftovers.put(pdf_bytes.getvalue())        
-                raise RuntimeError("Error processing file {}, page {} \n{}".format(filename, page + 1, str(e)))        
+                raise RuntimeError(f"Error processing file {filename}, page {page + 1} \n{str(e)}")        
             
     @staticmethod
     def split_pages(reader):
-        writer = PdfFileWriter()
+        writer = PdfWriter()
 
         for i in range(reader.numPages):
             p = copy.copy(reader.getPage(i))
@@ -205,5 +205,4 @@ class Sort:
         buf = io.BytesIO()
         writer.write(buf)
         buf.seek(0)
-        return PdfFileReader(buf)
-                
+        return PdfReader(buf)

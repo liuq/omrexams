@@ -41,13 +41,11 @@ class Datetime(click.ParamType):
             return value
 
         if not isinstance(value, str):
-            self.fail('The provided date is not a string "{datetime_str}'.format(
-                datetime_str=value), param, ctx)
+            self.fail(f'The provided date is not a string "{value}', param, ctx)
 
         result = dp.parse(value)
         if result is None:
-            self.fail('Could not parse datetime string "{datetime_str}"'.format(
-                datetime_str=value), param, ctx)
+            self.fail(f'Could not parse datetime string "{value}"', param, ctx)
         return result
 
 class OptionRequiredIf(click.Option):
@@ -70,7 +68,7 @@ class OptionRequiredIf(click.Option):
     def full_process_value(self, ctx, value):
         value = super(OptionRequiredIf, self).full_process_value(ctx, value)
         if value is None and ctx.params[self._option] == self._value:
-            msg = 'Required if --{}={}'.format(self._option, self._value)
+            msg = f'Required if --{self._option}={self._value}'
             raise click.MissingParameter(ctx=ctx, param=self, message=msg)
         return value
 
@@ -113,7 +111,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     config['basedir'] = os.path.dirname(config_file)
 
     if not output_prefix:
-        output_prefix = 'exam-{}'.format(date.strftime("%Y-%m-%d"))
+        output_prefix = f'exam-{date.strftime("%Y-%m-%d")}'
 
     if additional is None and students is not None:
         additional = click.prompt("Generate a number of additional exams?", default=5)
@@ -122,16 +120,16 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         paper = config.get('paper', 'A4')
     paper = paper.upper()    
 
-    if os.path.exists("{}.pdf".format(output_prefix)):
-        if yes or click.confirm("Data output {}.pdf exists, overwrite it?".format(output_prefix), default=True):
-            os.remove("{}.pdf".format(output_prefix))
+    if os.path.exists(f"{output_prefix}.pdf"):
+        if yes or click.confirm(f"Data output {output_prefix}.pdf exists, overwrite it?", default=True):
+            os.remove(f"{output_prefix}.pdf")
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
     
-    if os.path.exists("{}.json".format(output_prefix)):
-        if yes or click.confirm("Data output {}.json exists, overwrite it?".format(output_prefix), default=True):
-            os.remove("{}.json".format(output_prefix))
+    if os.path.exists(f"{output_prefix}.json"):
+        if yes or click.confirm(f"Data output {output_prefix}.json exists, overwrite it?", default=True):
+            os.remove(f"{output_prefix}.json")
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
@@ -148,7 +146,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
             if 'data_marker' in config['excel']:
                 marker = config['excel']['data_marker'].get('skip_until')
                 column = config['excel'].get('on_column', 0)
-                click.secho('Searching for data marker "{} in column {}"'.format(marker, column), fg='cyan')
+                click.secho(f'Searching for data marker "{marker} in column {column}"', fg='cyan')
                 wb = xlrd.open_workbook(students)
                 sheet = wb.sheet_by_index(0)
                 for i in range(sheet.nrows):
@@ -158,25 +156,25 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                         skip = i + 1
                         break
             if skip > 0:
-                click.secho('Skipping {} rows'.format(skip), fg='cyan')
+                click.secho(f'Skipping {skip} rows', fg='cyan')
             student_list = pd.read_excel(students, skiprows=skip)
             fields = config['excel']['fields']
             student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
             student_list.reset_index(inplace=True)
             student_list = [tuple(r) for r in student_list[[fields.get('id'), fields.get('fullname', 'Full Name')]].to_records(index=False)] 
-            click.secho('Processing done, {} students found'.format(len(student_list)), fg='cyan')
+            click.secho(f'Processing done, {len(student_list)} students found', fg='cyan')
             if additional > 0:                
                 student_list += [(i, "Additional student") for i in range(additional)]
-                click.secho('Added further {} students'.format(additional), fg='cyan')
+                click.secho(f'Added further {additional} students', fg='cyan')
         except Exception as e:
-            logger.error("While reading the students excel file {filename}: {}".format(str(e), filename=students))
+            logger.error(f"While reading the students excel file {students}: {str(e)}")
             sys.exit(-1)
     else:
-        click.secho('Creating anonymous exams for {} students'.format(count), fg='red', underline=True)
-        click.secho('Starting serials from {}'.format(serial), fg='cyan')
-        f = "{{:0{}}}".format(math.ceil(math.log10(serial + count)))
+        click.secho(f'Creating anonymous exams for {count} students', fg='red', underline=True)
+        click.secho(f'Starting serials from {serial}', fg='cyan')
+        f = f"{{:0{math.ceil(math.log10(serial + count))}}}"
         student_list = list(map(lambda s: (f.format(s), ""), range(serial, serial + count)))
-    click.secho('Seed used for the random generator {}'.format(seed), fg='magenta')
+        click.secho(f'Seed used for the random generator {seed}', fg='magenta')
 
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 
                          date=date, seed=seed, paper=paper)
@@ -199,7 +197,7 @@ def test(ctx, config, questions_dir, output, yes):
 
 
     if os.path.exists(output):
-        if yes or click.confirm("Data output {} exists, overwrite it?".format(output), default=True):
+        if yes or click.confirm(f"Data output {output} exists, overwrite it?", default=True):
             os.remove(output)
         else:
             click.secho("Nothing done", fg='bright_yellow')
@@ -221,7 +219,7 @@ def sort(ctx, scanned, sorted_dir, datafile, resolution, paper, yes):
     Sorts a set of pdf scanned documents into a series of png images, one for each sheet.
     """
     if os.path.exists(sorted_dir):
-        if yes or click.confirm("Sorted directory {} exists, overwrite its content?".format(sorted_dir), default=True):
+        if yes or click.confirm(f"Sorted directory {sorted_dir} exists, overwrite its content?", default=True):
             pass
         else:
             click.secho("Nothing done", fg='bright_yellow')
@@ -245,7 +243,7 @@ def correct(ctx, sorted_dir, corrected, datafile, resolution, compression, yes):
     """
 
     if os.path.exists(corrected):
-        if yes or click.confirm("Corrected file {} exists, overwrite its content?".format(corrected), default=True):
+        if yes or click.confirm(f"Corrected file {corrected} exists, overwrite its content?", default=True):
             pass
         else:
             click.secho("Nothing done", fg='bright_yellow')
@@ -266,7 +264,7 @@ def mark(ctx, datafile, output, weights, include_missing, yes):
     Performs the marking of corrected exams and produces an excel file with the grading
     """
     if os.path.exists(output):
-        if yes or click.confirm("Marking file {} exists, overwrite its content?".format(output), default=True):
+        if yes or click.confirm(f"Marking file {output} exists, overwrite its content?", default=True):
             pass
         else:
             click.secho("Nothing done", fg='bright_yellow')
@@ -304,7 +302,7 @@ def from_moodle(ctx, moodle_file, questions_dir, yes):
     """      
     markdown_converter = MarkdownConverter(moodle_file, questions_dir)    
     if os.path.exists(markdown_converter.file_name):
-        if yes or click.confirm("Questions file {} exists, overwrite its content?".format(markdown_converter.file_name), default=True):
+        if yes or click.confirm(f"Questions file {markdown_converter.file_name} exists, overwrite its content?", default=True):
             os.remove(markdown_converter.file_name)
         else:
             click.secho("Nothing done", fg='bright_yellow')

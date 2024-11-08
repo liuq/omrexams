@@ -22,3 +22,4 @@ pyqtdarktheme
 markdownify
 markdown
 markdown-checklists
+inflect

@@ -12,7 +12,7 @@ import sys
 
 use_zbar = False
 TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
-BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
+BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<y0>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
 
 try:
     from pyzbar import pyzbar
@@ -168,9 +168,12 @@ def decode(image, highlight=False, offset=5):
             qrcodes = pyzbar.decode(binary, symbols=[pyzbar.ZBarSymbol.QRCODE])
 
         if len(qrcodes) < 2:
-            raise RuntimeError("Each page should have at least two qrcodes, found {}".format(len(qrcodes)))
+            raise RuntimeError(f"Each page should have at least two qrcodes, found {len(qrcodes)}")
+        if len(qrcodes) == 4:
+            click.secho("Found 4 qrcodes in page, probably it is an A3 printed exam, therefore you should use --paper a3 in sorting", color="red")
+            raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
         if len(qrcodes) > 2:
-            raise RuntimeError("Found more than two qrcodes {}".format(qrcodes))
+            raise RuntimeError(f"Found more than two qrcodes {qrcodes}")
         qrcodes.sort(key=lambda b: b.rect[0])
 
         return qrcodes
@@ -181,12 +184,12 @@ def decode(image, highlight=False, offset=5):
 
         qrcodes = search_qrcodes_pyzbar(image)
         if len(qrcodes) < 2:
-            raise RuntimeError("Each page should have at least two qrcodes, found {}".format(len(qrcodes)))
+            raise RuntimeError(f"Each page should have at least two qrcodes, found {len(qrcodes)}")
         if len(qrcodes) == 4:
             click.secho("Found 4 qrcodes in page, probably it is an A3 printed exam, therefore you should use --paper a3 in sorting", color="red")
             raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
         if len(qrcodes) > 2:
-            raise RuntimeError("Found more than two qrcodes {}".format(qrcodes))
+            raise RuntimeError(f"Found more than two qrcodes {qrcodes}")
 
       
         rotated = check_rotation(list(map(lambda x: x.data.decode('ascii'), qrcodes)))

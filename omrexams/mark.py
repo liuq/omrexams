@@ -48,17 +48,21 @@ class Mark:
                 p = np.array([0.0, 0.0])
                 current = pd.DataFrame([{ 'student_id': exam['student_id'] }])
                 if len(correct_answers) != len(given_answers):
-                    raise RuntimeWarning("It seems that something went wrong, the number of correct answers and given answers do not match for student {}".format(exam['student_id']))
+                    raise RuntimeWarning(f"It seems that something went wrong, the number of correct answers and given answers do not match for student {exam['student_id']}")
                 for i in range(len(correct_answers)):
                     marked, correct, missing, wrong = given_answers[i], correct_answers[i] & given_answers[i], correct_answers[i] - given_answers[i], given_answers[i] - correct_answers[i]
                     q_size = question_size[i]                        
                     c = marking_function(correct, marked, missing, wrong, q_size) 
                     p += c * weights.get(question_source[i], 1.0)
-                    current[f'{question_source[i]} A correct'] = len(correct)
-                    current[f'{question_source[i]} B missing'] = len(missing)
-                    current[f'{question_source[i]} C wrong'] = len(wrong)
-                    current[f'{question_source[i]} D size'] = q_size
-                    current[f'{question_source[i]} E question'] = e['questions'][i][1]
+                    n = 1
+                    while f'{question_source[i]}_{n:02d} A correct' in current.columns:
+                        n += 1
+                    source = f'{question_source[i]}_{n:02d}'                       
+                    current[f'{source} A correct'] = len(correct)
+                    current[f'{source} B missing'] = len(missing)
+                    current[f'{source} C wrong'] = len(wrong)
+                    current[f'{source} D size'] = q_size
+                    current[f'{source} E question'] = e['questions'][i][1]
                 current = current[sorted(current.columns)]
                 current['A total_points'] = p[0]
                 current['B tentative_mark'] = p[0] / p[1]

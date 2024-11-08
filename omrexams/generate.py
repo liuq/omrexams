@@ -11,7 +11,7 @@ from shutil import copy2, rmtree
 import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
-from PyPDF2 import PdfFileReader, PdfFileMerger, PdfFileWriter
+from PyPDF2 import PdfReader, PdfFileMerger, PdfWriter
 from PyPDF2._page import PageObject
 import math
 from datetime import datetime as dt
@@ -26,6 +26,7 @@ QUESTION_MARKER_RE = re.compile(r'-{3,}\s*\n')
 TITLE_RE = re.compile(r"#\s+.*")
 QUESTION_RE = re.compile(r"##\s*(.+?)(?={topic:#|\n)({topic:#[\w-]+})?")
 OPEN_QUESTION_RE = re.compile(r"#{3,}\s*(.+?)")
+TOPIC_RE = re.compile(r"##\s*.*{topic:(#[\w-]+)}")
 
 # A4 size, portrait is 595pt x 842pt
 A4SIZE = { 'width': 595, 'height': 842 }
@@ -67,14 +68,14 @@ class Generate:
     def __init__(self, config, questions, output_prefix, **kwargs):
         self.config = config
         self.questions_path = questions
-        self.output_pdf_filename = "{}.pdf".format(output_prefix)
+        self.output_pdf_filename = f"{output_prefix}.pdf"
         self.test = kwargs.get('test', False)
         self.paper = kwargs.get('paper', 'A4')
         if self.paper not in ('A4', 'A3'):
             raise AttributeError('paper value should be either "A3" or "A4"')
         # TODO: emit logging if these parameters are not set
         if not self.test:
-            self.output_list_filename = "{}.json".format(output_prefix)
+            self.output_list_filename = f"{output_prefix}.json"
             self.students = kwargs.get('students', [])
             self.exam_date = kwargs.get('date', dt.now())
             self.topics = {}   
@@ -104,6 +105,14 @@ class Generate:
             questions = list(filter(lambda q: OPEN_QUESTION_RE.match(q), QUESTION_MARKER_RE.split(f.read())))
             return questions
     
+    def load_topics(self, filename):
+        with open(filename, 'r') as f:            
+            questions_with_topics = filter(lambda q: TOPIC_RE.match(q), QUESTION_MARKER_RE.split(f.read()))
+            topics = set()
+            for q in questions_with_topics:
+                topics.add(TOPIC_RE.match(q).group(1))
+            return topics
+    
     def process(self):
         if not self.test:
             self.generate_exams()
@@ -123,9 +132,9 @@ class Generate:
         if os.path.exists('tmp'):
             rmtree('tmp')
         os.mkdir('tmp')        
-        click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
+        click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
         copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
-        click.secho('Generating {} exams (this may take a while)'.format(len(self.students)), fg='red', underline=True)
+        click.secho(f'Generating {len(self.students)} exams (this may take a while)', fg='red', underline=True)
         with click.progressbar(length=len(self.students), label='Generating exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
@@ -152,7 +161,7 @@ class Generate:
         if self.paper == "A4":
             # This is for A4 management            
             merger = PdfFileMerger(strict=False)
-            _blank = PdfFileWriter()
+            _blank = PdfWriter()
             _blank.addBlankPage(**A4SIZE)    
             blank = io.BytesIO()
             _blank.write(blank)   
@@ -162,7 +171,7 @@ class Generate:
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
                 for exam in pdf_files:
-                    pdf = PdfFileReader(open(exam, 'rb'), strict=False)  
+                    pdf = PdfReader(open(exam, 'rb'), strict=False)  
                     merger.append(pdf)
                     if pdf.numPages % 2 == 1:
                         merger.append(blank)
@@ -171,7 +180,7 @@ class Generate:
                 merger.write(f)
         else:
             # This is for A3 management
-            writer = PdfFileWriter()
+            writer = PdfWriter()
             a3page = None
             pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
             with click.progressbar(length=len(pdf_files), label='Collating files ',
@@ -179,7 +188,7 @@ class Generate:
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
                 for exam in pdf_files:
-                    pdf = PdfFileReader(open(exam, 'rb'), strict=False)
+                    pdf = PdfReader(open(exam, 'rb'), strict=False)
                     a3page = PageObject.createBlankPage(**A3SIZE)                    
                     left = True
                     sheets = math.ceil(pdf.numPages / 4) 
@@ -217,7 +226,7 @@ class Generate:
             task, student = self.tasks_queue.get()
             if task is None:
                 break
-            logger.info("Started processing student {} {}".format(*student))
+            logger.info(f'Started processing student {student[0]} {student[1]}')
             if type(student[0]) == str:
                 s = ord(student[0][-1])
             else:
@@ -228,24 +237,24 @@ class Generate:
                 for _ in range(20):
                     document, questions, answers = self.create_exam(student)
                     digits = math.ceil(math.log10(len(self.students)))
-                    f = '{{:0{}d}}-{{}}-{{}}'.format(digits)
-                    filename = os.path.join('tmp', f.format(task, student[0], student[1].replace(" ", "_")))
+                    f = f'{{:0{digits}d}}-{{}}-{{}}'
+                    filename = os.path.join('tmp', f"{task:0{digits}d}-{student[0]}-{student[1].replace(' ', '_')}")
                     document.generate_pdf(filepath=filename, 
                                         compiler='latexmk', 
                                         compiler_args=['-xelatex'])
                     # get rid of the xdv file, if any
-                    if os.path.exists("{}.xdv".format(filename)):
-                        os.remove("{}.xdv".format(filename))
+                    if os.path.exists(f"{filename}.xdv"):
+                        os.remove(f"{filename}.xdv")
                     # check the generated output in terms of pages 
                     # TODO: it should be done also in terms of the qrcode, number of questions, coherence of answers
-                    with open("{}.pdf".format(filename), 'rb') as f:
-                        pdf_file = PdfFileReader(f, strict=False)
-                        if pdf_file.getNumPages() <= self.config['exam'].get('page_limits', 2):
+                    with open(f"{filename}.pdf", 'rb') as f:
+                        pdf_file = PdfReader(f, strict=False)
+                        if len(pdf_file.pages) <= self.config['exam'].get('page_limits', 2):
                             done = True
                             break 
                 if not done:
-                    click.secho("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student), fg='red', blink=True)
-                    logger.warning("Couldn't get an exam with at most {} pages for student {} {}".format(self.config['exam'].get('page_limits', 2), *student))
+                    click.secho(f"Couldn't get an exam with at most {self.config['exam'].get('page_limits', 2)} pages for student {student[0]} {student[1]}", fg='red', blink=True)
+                    logger.warning(f"Couldn't get an exam with at most {self.config['exam'].get('page_limits', 2)} pages for student {student[0]} {student[1]}")
             except Exception as e:
                 raise e
                 print(e)
@@ -273,14 +282,14 @@ class Generate:
                 topic_mutually_exclusive = [t]
                 q = re.search(QUESTION_RE, t[0])
                 if not q:
-                    raise RuntimeError("Apparently, question \"{}\" in filename {} has no text".format(t[0], filename))                
+                    raise RuntimeError(f"Apparently, question \"{t[0]}\" in filename {filename} has no text")                
                 q_id = q.group(2).strip() if q.group(2) else None
                 q = q.group(1).strip().lower()
                 j = 0
                 while j < len(candidate_questions):
                     cq = re.search(QUESTION_RE, candidate_questions[j][0])
                     if not cq:
-                        raise RuntimeError("Apparently, question \"{}\" in filename {} has no text".format(topic['content'][j], filename))
+                        raise RuntimeError(f"Apparently, question \"{topic['content'][j]}\" in filename {filename} has no text")
                     cq_id = cq.group(2).strip() if cq.group(2) else None
                     if q == cq.group(1).strip().lower() or (q_id is not None and  q_id == cq_id):
                         topic_mutually_exclusive.append(candidate_questions.pop(j))                        
@@ -299,7 +308,7 @@ class Generate:
                     if answers[i]:
                         current += chr(ord('A') + i)
                 return current
-        logger.info("Creating exam {} {}".format(*student)) 
+        logger.info(f'Creating exam {student[0]} {student[1]}') 
         # randomly select a given number of questions from each file
         # however, avoid to select more than once the questions with the same text
         questions = self.draw_questions(self.questions.items())        
@@ -367,6 +376,11 @@ class Generate:
 
     def generate_test(self):
         rules = self.load_rules()
+        self.topics = {}
+        for r in sorted(rules.keys()):
+            self.topics[os.path.basename(r)] = self.load_topics(r)
+        for n, t in self.topics.items():
+            click.secho(f"Topics of {n} {len(t)}")
         if self.config.get('header'):
             with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
                 header = renderer.render(Document(self.config.get('header')))
@@ -385,7 +399,7 @@ class Generate:
 
         questions = ""
         for r in sorted(rules.keys()):
-            click.secho('Testing {}'.format(os.path.basename(r)), fg='cyan')
+            click.secho(f'Testing {os.path.basename(r)}', fg='cyan')
             with open(r, 'r') as f:
                 current_questions = f.read()
             with QuestionRenderer(language=self.config['exam'].get('language'), 
@@ -404,7 +418,7 @@ class Generate:
         logger.info('Creating and preparing tmp directory')
         if not os.path.exists('tmp'):
            os.mkdir('tmp')
-        click.secho('Copying {} to tmp'.format(os.path.join('texmf', 'omrexam.cls')), fg='yellow')
+        click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
         copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=dt.now(), 
@@ -424,6 +438,6 @@ class Generate:
         document.generate_pdf(filepath=os.path.join("tmp", filename), 
                               compiler='latexmk', 
                               compiler_args=['-xelatex'])
-        copy2(os.path.join('tmp',  "{}.pdf".format(filename)), '.')
-        
-        
+        copy2(os.path.join('tmp',  f"{filename}.pdf"), '.')
+
+

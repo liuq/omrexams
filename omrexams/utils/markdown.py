@@ -142,7 +142,7 @@ class QuestionRenderer(LaTeXRenderer):
         
     def render_question_marker(self, token):
         if not self.record_answers:
-            raise ValueError("Probably a misplaced question marker has been used (i.e., a list not starting with it) for question \"{}\"".format(self.questions[-1]['question']))
+            raise ValueError(f"Probably a misplaced question marker has been used (i.e., a list not starting with it) for question \"{self.questions[-1]['question']}\"")
         if token.marker != ' ':
             self.questions[-1]['answers'].append(True)
         else:
@@ -153,7 +153,7 @@ class QuestionRenderer(LaTeXRenderer):
         if not self.parameters.get('test', False):
             return ''
         else:
-            return '\\fbox{' + token.id + '}'
+            return f'\\fbox{{\\texttt{{{token.id}}}}}'
     
     def render_lines(self, token):
         return token.lines
@@ -165,7 +165,7 @@ class QuestionRenderer(LaTeXRenderer):
         return token.content
 
     def render_image(self, token):
-        alt_template = r'((?:width|height|scale)=[\d\.]+\w*)'
+        alt_template = r'((?:width|height|scale)=\d+\.?\d*\w*)'
         self.packages['graphicx'] = []
         self.packages['adjustbox'] = ['export']
         path = os.path.join(token.src)
@@ -173,16 +173,16 @@ class QuestionRenderer(LaTeXRenderer):
             path = os.path.join(self.parameters.get('basedir'), path)
         alt = re.findall(alt_template, self.render_to_plain(token))
         if alt:
-            return '\n\\includegraphics[{}]{{{}}}\n'.format(",".join(a for a in alt), path)
+            return f'\n\\includegraphics[{",".join(a for a in alt)}]{{{path}}}\n'
         else:
-            return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
+            return f'\n\\includegraphics[max width=\\linewidth]{{{path}}}\n'
 
     def render_question_block(self, token):
         # possibly, the first question could start without a marker 
         # and could contain the heading of the section
         self.questions.append({ 'question': "", 'answers': [], 'permutation': [], 'type': None })
         inner = self.render_inner(token)
-        return '\n\\begin{{minipage}}{{\\linewidth}}\n{inner}\n\\end{{minipage}}\n'.format(inner=inner)
+        return f'\n\\begin{{minipage}}{{\\linewidth}}\n{inner}\n\\end{{minipage}}\n'
 
     def render_table_row(self, token):
         cells = [self.render(child) for child in token.children]
@@ -196,7 +196,7 @@ class QuestionRenderer(LaTeXRenderer):
                 return ''
         if token.level > 2:
             inner = self.render_inner(token).strip()
-            return '\\textbf{{Q:}} {inner}\n\\newline'.format(inner=inner)
+            return f'\\textbf{{Q:}} {inner}\n\\newline'
         template = "\question\n{inner}"
         inner = self.render_inner(token).strip()
         self.questions[-1]['question'] = inner 
@@ -215,7 +215,7 @@ class QuestionRenderer(LaTeXRenderer):
     def custom_render_list_item(self, token):
         inner = self.render_inner(token)
         if inner:
-            return '\t\\item {}\n'.format(inner)
+            return f'\t\\item {inner}\n'
         else:
             return ""
 
@@ -226,17 +226,13 @@ class QuestionRenderer(LaTeXRenderer):
         #    template = "\n\\begin{{choices}}\n{inner}\n\\end{{choices}}\n"
         self.record_answers = True
         # TODO: get a random permutation, the same for both the multiple choices and the answers
-        answers = ['\n\t\\choice {inner}'.format(inner=self.render_list_item(child)) for child in token.children]
+        answers = [f'\n\t\\choice {self.render_list_item(child)}' for child in token.children]
         if len(answers) != len(self.questions[-1]['answers']):
             print(answers, self.questions[-1]['answers'])
-            raise ValueError("Answers mismatch for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
-                len(answers), len(self.questions[-1]['answers'])))
+            raise ValueError(f"Answers mismatch for question \"{self.questions[-1]['question']}\" ({len(answers)}/{len(self.questions[-1]['answers'])})")
         if len(answers) > MAX_ANSWERS:
             print(answers, self.questions[-1]['answers'])
-            #raise ValueError("Too many answers for question \"{}\" ({}/{})".format(self.questions[-1]['question'], 
-            #    len(answers), len(self.questions[-1]['answers'])))
-            click.secho("Too many answers for question \"{}\" ({})".format(self.questions[-1]['question'], 
-                len(answers)), fg="yellow")
+            click.secho(f'Too many answers for question "{self.questions[-1]["question"]}" ({len(answers)})', fg="yellow")
         self.record_answers = False
         # lists starting with * or numbered as 1) are treated as inline
         if token.leader == '*' or token.leader.endswith(')'):
@@ -247,7 +243,7 @@ class QuestionRenderer(LaTeXRenderer):
         if self.parameters.get('test', False):
             answers = list(map(lambda i: answers[i] if not self.questions[-1]['answers'][i] else answers[i].replace('\\choice', '\\correctchoice'), range(len(answers))))
         if not any(self.questions[-1]['answers']):
-            click.secho("Warning: question \"{}\" has no correct answer".format(self.questions[-1]['question']), fg='yellow')
+            click.secho(f"Warning: question \"{self.questions[-1]['question']}\" has no correct answer", fg='yellow')
             logger.warning("No correct answer for current question")
         permutation = list(range(len(answers)))
         if self.parameters.get('shuffle', True) and token.start is None: # Numeric leader
@@ -264,8 +260,10 @@ class QuestionRenderer(LaTeXRenderer):
                     '{}'
                     '\\end{{lstlisting}}\n')
         inner = self.render_raw_text(token.children[0], False)
-        if token.language:
-            return template.format(inner, language="[language={}]".format(token.language))
+        if token.language and token.language != "latex-inline":
+            return template.format(inner, language=f"[language={token.language}]")
+        elif token.language == "latex-inline":
+            return f"\n{inner}\n"
         else:
             return template.format(inner, language="")
     
@@ -407,7 +405,7 @@ class DocumentStripRenderer(LaTeXRenderer):
         path = os.path.join(token.src)
         if not os.path.isabs(path):
             path = os.path.join(self.parameters.get('basedir'), path)
-        return '\n\\includegraphics[max width=\\linewidth]{{{}}}\n'.format(path)
+        return f'\n\\includegraphics[max width=\\linewidth]{{{path}}}\n'
 
 """
 Provides MathJax support for rendering Markdown with LaTeX to html.
@@ -440,7 +438,7 @@ class CheckmarkRenderer(HTMLRenderer, LaTeXRenderer):
         """
         if token.content.startswith('$$'):
             return self.render_raw_text(token)
-        return '${}$'.format(self.render_raw_text(token))
+        return f'${self.render_raw_text(token)}$'
 
     def render_document(self, token):
         """
@@ -472,7 +470,7 @@ class MoodleRenderer(BaseRenderer):
         
     def render_question_marker(self, token):
         if not self.record_answers:
-            raise ValueError("Probably a misplaced question marker has been used (i.e., a list not starting with it) for question \"{}\"".format(self.questions[-1]['question']))
+            raise ValueError(f"Probably a misplaced question marker has been used (i.e., a list not starting with it) for question \"{self.questions[-1]['question']}\"")
         if token.marker != ' ':
             self.questions[-1]['answers'].append(True)
         else:
@@ -523,7 +521,7 @@ class MoodleRenderer(BaseRenderer):
             return ''        
         inner = self.render_inner(token).strip()
         if token.level > 2:  
-            return '{inner}\n'.format(inner=inner)
+            return f'{inner}\n'
 
         self.questions[-1]['question'] = inner
         self.questions[-1]['open'] = (token.level == 3)  
@@ -539,7 +537,7 @@ class MoodleRenderer(BaseRenderer):
     def custom_render_list_item(self, token):
         inner = self.render_inner(token)
         if inner:
-            return '{} {}\n'.format(token.symbol, inner)
+            return f'{token.symbol} {inner}\n'
         else:
             return ""
 
@@ -548,7 +546,7 @@ class MoodleRenderer(BaseRenderer):
         answers = [self.render_list_item(child) for child in token.children]
         self.record_answers = False
         if not any(self.questions[-1]['answers']):
-            click.secho("Warning: question \"{}\" has no correct answer".format(self.questions[-1]['question']), fg='yellow')
+            click.secho(f"Warning: question \"{self.questions[-1]['question']}\" has no correct answer", fg='yellow')
             logger.warning("No correct answer for current question")
         inner = ''.join(answers)
         return inner
@@ -576,7 +574,7 @@ class MoodleRenderer(BaseRenderer):
             q = ET.Element('question', type='multichoice')
             name = ET.Element('name')
             _ = ET.SubElement(name, 'text')
-            _.text = "{:02d} {}".format(id, (question['question'][:30] + '...') if len(question['question']) > 33 else question['question'])
+            _.text = f"{id:02d} {(question['question'][:30] + '...') if len(question['question']) > 33 else question['question']}"
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
@@ -626,7 +624,7 @@ class MoodleRenderer(BaseRenderer):
             q = ET.Element('question', type='essay')
             name = ET.Element('name')
             _ = ET.SubElement(name, 'text')
-            _.text = "{:02d} {}".format(id, (question['question'][:30] + '...') if len(question['question']) > 33 else question['question'])
+            _.text = f"{id:02d} {(question['question'][:30] + '...') if len(question['question']) > 33 else question['question']}"
             q.append(name)
             qtext = ET.Element('questiontext', format='markdown')
             _ = ET.SubElement(qtext, 'text')
