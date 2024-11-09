@@ -16,7 +16,7 @@ pyyaml
 pylatex
 wheel
 mistletoe==0.9.0
-pypdf2
+pypdf
 PySide6
 pyqtdarktheme
 markdownify

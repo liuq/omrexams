@@ -1,4 +1,4 @@
-from PyPDF2 import PdfReader, PdfWriter, PdfFileMerger
+from pypdf import PdfReader, PdfWriter
 from . utils import qrdecoder
 from wand.image import Image
 from wand.color import Color
@@ -51,9 +51,9 @@ class Sort:
             for fn in self.scanned:
                 with open(fn, 'rb') as f:
                     pdf_file = PdfReader(f)
-                    for p in range(pdf_file.numPages):
+                    for p in range(len(pdf_file.pages)):
                         self.tasks_queue.put((fn, p))
-                    pages += pdf_file.numPages
+                    pages += len(pdf_file.pages)
         else:
             if not os.path.exists('split_tmp'):
                 click.secho(f'Creating directory {"split_tmp"}')
@@ -62,12 +62,12 @@ class Sort:
             for fn in self.scanned:
                 with open(fn, 'rb') as f, open(os.path.join('split_tmp', os.path.basename(fn)), 'wb') as sf:
                     pdf_file = Sort.split_pages(PdfReader(f))
-                    merger = PdfFileMerger()
+                    merger = PdfWriter()
                     merger.append(pdf_file)
                     merger.write(sf)
-                    for p in range(pdf_file.numPages):
+                    for p in range(len(pdf_file.pages)):
                         self.tasks_queue.put((os.path.join('split_tmp', os.path.basename(fn)), p))
-                    pages += pdf_file.numPages            
+                    pages += len(pdf_file.pages)
 
         with click.progressbar(length=pages, label='Dispatching scanned exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
@@ -86,7 +86,7 @@ class Sort:
         with self.results_mutex:
             if not self.page_leftovers.empty():
                 click.secho('There are page leftovers, merging them', fg='red', err=True)
-                dst_pdf = PdfFileMerger()
+                dst_pdf = PdfWriter()
                 while not self.page_leftovers.empty():                    
                     p = PdfReader(io.BytesIO(self.page_leftovers.get()))
                     dst_pdf.append(p)
@@ -124,8 +124,8 @@ class Sort:
     def process(self, filename, page):
         dst_pdf = PdfWriter()
         with open(filename, 'rb') as f:
-            current_page = PdfReader(f).getPage(page)
-            dst_pdf.addPage(current_page)
+            current_page = PdfReader(f).pages[page]
+            dst_pdf.add_page(current_page)
             pdf_bytes = io.BytesIO()
             dst_pdf.write(pdf_bytes)
             pdf_bytes.seek(0)
@@ -164,43 +164,43 @@ class Sort:
     def split_pages(reader):
         writer = PdfWriter()
 
-        for i in range(reader.numPages):
-            p = copy.copy(reader.getPage(i))
-            q = copy.copy(reader.getPage(i))
+        for i in range(len(reader.pages)):
+            p = copy.copy(reader.pages[i])
+            q = copy.copy(reader.pages[i])
 
-            p.mediaBox = copy.copy(p.cropBox)
-            q.mediaBox = copy.copy(p.cropBox)
+            p.mediabox = copy.copy(p.cropbox)
+            q.mediabox = copy.copy(p.cropbox)
 
-            x1, x2 = tuple(map(math.floor, p.mediaBox.lowerLeft))
-            x3, x4 = tuple(map(math.floor, p.mediaBox.upperRight))
+            x1, x2 = tuple(map(math.floor, p.mediabox.lower_left))
+            x3, x4 = tuple(map(math.floor, p.mediabox.upper_right))
 
             if x3 - x1 > x4 - x2:
                 # horizontal
                 m = x1 + math.floor((x3 - x1) / 2)
-                q.mediaBox.upperRight = (m, x4)
-                q.mediaBox.lowerLeft = (x1, x2)
+                q.mediabox.upper_right = (m, x4)
+                q.mediabox.lower_left = (x1, x2)
 
-                p.mediaBox.upperRight = (x3, x4)
-                p.mediaBox.lowerLeft = (m, x2)
+                p.mediabox.upper_right = (x3, x4)
+                p.mediabox.lower_left = (m, x2)
             else:
                 # vertical
                 m = x2 + math.floor((x4 - x2) / 2)
-                p.mediaBox.upperRight = (x3, x4)
-                p.mediaBox.lowerLeft = (x1, m)
+                p.mediabox.upper_right = (x3, x4)
+                p.mediabox.lower_left = (x1, m)
 
-                q.mediaBox.upperRight = (x3, m)
-                q.mediaBox.lowerLeft = (x1, x2)
+                q.mediabox.upper_right = (x3, m)
+                q.mediabox.lower_left = (x1, x2)
 
-            p.artBox = p.mediaBox
-            p.bleedBox = p.mediaBox
-            p.cropBox = p.mediaBox
+            p.artbox = p.mediabox
+            p.bleedbox = p.mediabox
+            p.cropbox = p.mediabox
 
-            q.artBox = q.mediaBox
-            q.bleedBox = q.mediaBox
-            q.cropBox = q.mediaBox
+            q.artbox = q.mediabox
+            q.bleedbox = q.mediabox
+            q.cropbox = q.mediabox
 
-            writer.addPage(q)
-            writer.addPage(p)
+            writer.add_page(q)
+            writer.add_page(p)
 
         buf = io.BytesIO()
         writer.write(buf)

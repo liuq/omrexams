@@ -71,7 +71,7 @@
 \newcommand\Warning{%
  \makebox[1.4em][c]{%
  \makebox[0pt][c]{\raisebox{.1em}{\small!}}%
- \makebox[0pt][c]{\color{red}\Large$\bigtriangleup$}}}%
+ \makebox[0pt][c]{\Large$\bigtriangleup$}}}%
 
 \newunicodechar{⚠}{\Warning}
 \newunicodechar{◼}{$\blacksquare$}
@@ -157,7 +157,7 @@ rectangle/.default={0.2cm}}
         node[below right, yshift=0.5cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\thefooter}};  
     \draw
         (current page header area.south east)
-        node[below right, yshift=1.5cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=yellow!50!white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Va usata solo per annerire i cerchi di risposta.}}}};
+        node[below right, yshift=1.5cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=red!80!white, text=white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Usa solo per indicare le risposte definitive.}}}};
 %    \node [below of=WARN] {$\Downarrow$};
     \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
@@ -221,13 +221,13 @@ rectangle/.default={0.2cm}}
   }{}
 } 
 
-\newcommand*\circled[1]{\tikz[baseline=(char.base)]{%
+\newcommand*\blacksquared[1]{\tikz[baseline=(char.base)]{%
 \node[anchor=text, shape=circle, draw, inner sep=0.2pt, minimum size=1.2em] (char) {#1};}}
 \renewcommand{\questionlabel}{\textbf{{\thequestion}.}}
 \renewcommand{\choicelabel}{\textbf{\sffamily\thechoice})}
 
 \DeclareOption{circled}{
-  \renewcommand{\choicelabel}{\circled{\sffamily\footnotesize\thechoice}}
+  \renewcommand{\choicelabel}{\blacksquared{\sffamily\footnotesize\thechoice}}
 }
 \DeclareOption{dyslexia}{\setallmainfonts{OpenDyslexic}\setmonofont{OpenDyslexicMono}\setsansfont{OpenDyslexic}}
 \newboolean{testing}
@@ -313,5 +313,6 @@ rectangle/.default={0.2cm}}
 % FIXME: only for testing (in order to prevent transparent background), it shoudl be removed later
 %\usepackage{xcolor}
 %\pagecolor[HTML]{FEFEFE}
+\newfontfamily\monaco{Monaco}
 
 \endinput

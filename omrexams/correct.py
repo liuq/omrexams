@@ -16,7 +16,7 @@ import logging
 from collections import Counter
 from itertools import combinations
 import img2pdf
-from PyPDF2 import PdfReader, PdfFileMerger
+from pypdf import PdfReader, PdfWriter
 from tinydb import TinyDB, Query
 from shutil import copy2, rmtree
 import tempfile
@@ -94,7 +94,7 @@ class Correct:
         # Collecting all corrected exams into a single pdf file
         click.secho("Collecting all corrected exams into a single pdf file", fg="green")
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
-        output_pdf = PdfFileMerger(strict=False)
+        output_pdf = PdfWriter()
         old_student_id = None
         with click.progressbar(length=len(files), label="Merging corrections") as bar:
             for i, filename in enumerate(files):
@@ -117,11 +117,11 @@ class Correct:
         
         #with open(self.corrected + '.tmp' + '.pdf', 'rb') as f:
         #     input_pdf = PdfReader(f, strict=False)
-        #     if len(files) != input_pdf.numPages:
+        #     if len(files) != len(input_pdf.pages):
         #         raise RuntimeError("The collected pdf file seems not to contain all the pages")
         #     for i, filename in enumerate(files):
         #         student_id = os.path.basename(filename).split("-")[0]
-        #         output_pdf.append(input_pdf.getPage(i))
+        #         output_pdf.append(input_pdf.pages[i])
         #         output_pdf.addBookmark(student_id, i)
         # with open(self.corrected, 'wb') as f:
         #     output_pdf.write(f)

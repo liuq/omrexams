@@ -11,14 +11,15 @@ from shutil import copy2, rmtree
 import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
-from PyPDF2 import PdfReader, PdfFileMerger, PdfWriter
-from PyPDF2._page import PageObject
+from pypdf import PdfReader, PdfMerger, PdfWriter, Transformation
+from pypdf._page import PageObject
 import math
 from datetime import datetime as dt
 from tinydb import TinyDB
 from . utils.directories import BASEDIR
 from collections import deque
 from itertools import zip_longest
+import hashlib
 
 logger = logging.getLogger("omrexams")
 
@@ -173,7 +174,7 @@ class Generate:
                 for exam in pdf_files:
                     pdf = PdfReader(open(exam, 'rb'), strict=False)  
                     merger.append(pdf)
-                    if pdf.numPages % 2 == 1:
+                    if len(pdf.pages) % 2 == 1:
                         merger.append(blank)
                     bar.update(1)
             with open(self.output_pdf_filename, 'wb') as f:
@@ -189,29 +190,30 @@ class Generate:
                                empty_char=' ', show_pos=True) as bar:
                 for exam in pdf_files:
                     pdf = PdfReader(open(exam, 'rb'), strict=False)
-                    a3page = PageObject.createBlankPage(**A3SIZE)                    
+                    a3page = PageObject.create_blank_page(**A3SIZE)                    
                     left = True
-                    sheets = math.ceil(pdf.numPages / 4) 
-                    booklet = next(make_book(range(1, pdf.numPages + 1), sheets * 4))
+                    sheets = math.ceil(len(pdf.pages) / 4) 
+                    booklet = next(make_book(range(1, len(pdf.pages) + 1), sheets * 4))
                     for p in booklet:
                         if p is not None:
-                            page = pdf.getPage(p - 1)
+                            page = pdf.pages[p - 1]
                         else:
                             page = None
                         if left:
                             # page left
                             if page is not None:
-                                a3page.mergePage(page) 
+                                a3page.merge_page(page) 
                             left = False
                         else:
                             # page right
                             if page is not None:
-                                a3page.mergeRotatedScaledTranslatedPage(page, 0, 1, A3SIZE['width'] / 2, 0, expand=False) 
+                                transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
+                                a3page.merge_transformed_page(page, transformation, expand=False) 
                             left = True
                         if left:
                             # add page 
-                            writer.addPage(a3page)
-                            a3page = PageObject.createBlankPage(**A3SIZE)  
+                            writer.add_page(a3page)
+                            a3page = PageObject.create_blank_page(**A3SIZE)  
                     bar.update(1)
             with open(self.output_pdf_filename, 'wb') as f:
                 writer.write(f)
@@ -227,10 +229,12 @@ class Generate:
             if task is None:
                 break
             logger.info(f'Started processing student {student[0]} {student[1]}')
-            if type(student[0]) == str:
-                s = ord(student[0][-1])
-            else:
-                s = student[0]
+            try:
+                s = int(student[0])
+            except:
+                # To capture strange matriculation numbers
+                hashed_result = hashlib.md5(student[0].encode()).hexdigest()
+                s = ord(hashed_result[0])
             random.seed(self.seed + s)
             done = False
             try:
@@ -251,10 +255,10 @@ class Generate:
                         pdf_file = PdfReader(f, strict=False)
                         if len(pdf_file.pages) <= self.config['exam'].get('page_limits', 2):
                             done = True
-                            break 
+                            break                     
                 if not done:
                     click.secho(f"Couldn't get an exam with at most {self.config['exam'].get('page_limits', 2)} pages for student {student[0]} {student[1]}", fg='red', blink=True)
-                    logger.warning(f"Couldn't get an exam with at most {self.config['exam'].get('page_limits', 2)} pages for student {student[0]} {student[1]}")
+                    logger.warning(f"Couldn't get an exam with at most {self.config['exam'].get('page_limits', 2)} pages for student {student[0]} {student[1]}")                        
             except Exception as e:
                 raise e
                 print(e)

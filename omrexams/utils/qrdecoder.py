@@ -12,7 +12,7 @@ import sys
 
 use_zbar = False
 TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
-BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<y0>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
+BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
 
 try:
     from pyzbar import pyzbar

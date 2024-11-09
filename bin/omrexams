@@ -182,7 +182,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
 
 @cli.command()
 @click.option('--config', type=click.Path(exists=True, resolve_path=True), required=True, default=os.path.join('.', 'config.yaml'))
-@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument('questions_dir', type=click.Path(exists=True, file_okay=False, resolve_path=True), default=os.path.join('.', 'questions'))
 @click.option('--output', '-o', type=click.Path(resolve_path=True), default=os.path.join('.', 'exam-test.pdf'))
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
