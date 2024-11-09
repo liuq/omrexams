@@ -45,9 +45,9 @@
   headheight=2.25cm, 
   bottom=3.5cm, 
   left=1cm, 
-  right=6.5cm,
+  right=6.25cm, % 1cm + 0.5cm + 4.75cm
   marginparsep=0.5cm, 
-  marginparwidth=5cm]{geometry}
+  marginparwidth=4.75cm]{geometry}
 \usepackage{bophook}
 \usepackage[nolinks]{qrcode}
 \usepackage{environ}
@@ -61,7 +61,11 @@
 \usepackage{listings}
 \lstset{
   escapeinside={\%*}{*)},
-  inputencoding=utf8
+  inputencoding=utf8,
+  basicstyle=\ttfamily\scriptsize,
+  tabsize=1,columns=fullflexible,
+  aboveskip=5pt,
+  belowskip=0pt
 }
 %\usepackage{fontspec}
 \usepackage{mathspec}
@@ -151,19 +155,19 @@ rectangle/.default={0.2cm}}
     % All distances/sizes are expressed in points
     \draw
         (current page header area.north west)
-        node[below right, xshift=2.1cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
+        node[below right, xshift=2.6cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
     \draw
         (current page footer area.south west)
         node[below right, yshift=0.5cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\thefooter}};  
     \draw
         (current page header area.south east)
-        node[below right, yshift=1.5cm, xshift=0.3cm, text width=\marginparwidth + 2em, rounded rectangle, fill=red!80!white, text=white] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{\textbf{Non scrivere in quest'area! \newline Usa solo per indicare le risposte definitive.}}}};
+        node[below right, yshift=1.2cm, text width=1.15\marginparwidth, rounded corners, thick, draw=black] (WARN) {\small \Warning~ \parbox{\marginparwidth}{\textsf{Non scrivere in quest'area! \newline Usa solo per indicare le risposte definitive.}}};
 %    \node [below of=WARN] {$\Downarrow$};
     \draw [color=black, densely dotted, transform canvas={xshift=-0.4cm}] (current page marginpar area.north west) -- (current page marginpar area.south west);
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm,level=Q]{\thematriculationno,\thesolution}};          
+        node[below right, text width=2.5cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2.5cm,level=H]{\thematriculationno,\thesolution}};          
     \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
@@ -186,9 +190,7 @@ rectangle/.default={0.2cm}}
         \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
         \draw 
           (current page.south east)
-          node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
-          \qrcode[height=2cm,level=Q]]{\OMR@Sizes,\thepage,0-0}%
-          };
+          node[above left, text width=2.5cm, xshift=-1cm, yshift=1cm] {\qrcode[height=2.5cm,level=H]{\OMR@Sizes,\thepage,0-0}};
       }
       {
         \pgfmathsetmacro\OMR@questions@currentpage@start{int(max(0, min(\OMR@questions@pagelist)))}
@@ -209,8 +211,8 @@ rectangle/.default={0.2cm}}
         \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@questions@minyposition)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
         \draw 
           (current page.south east)
-          node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
-          \qrcode[height=2cm,level=Q]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
+          node[above left, text width=2.5cm, xshift=-1cm, yshift=1cm] {%         
+          \qrcode[height=2.5cm,level=H]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
           };
       }
     }

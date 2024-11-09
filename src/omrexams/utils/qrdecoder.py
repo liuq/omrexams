@@ -26,7 +26,7 @@ def check_rotation(data):
         return False
     if re.search(BOTTOM_RIGHT_REGEX, data[0]) and re.search(TOP_LEFT_REGEX, data[1]):
         return True
-    raise RuntimeError(f"Not meaningful qrcode cotntent {data}")
+    raise RuntimeError(f"Not meaningful qrcode content {data}")
 
 def decode_bottom_right(data):
         m = re.search(BOTTOM_RIGHT_REGEX, data)
@@ -74,7 +74,7 @@ def decode(image, highlight=False, offset=5):
         if not ret_code or qrcodes.shape[0] < 2:
             _retval, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
             if cv2.countNonZero(binary) >= (image.shape[0] * image.shape[1]) * 0.99: # Blank image
-                return None, None
+                return None, None        
         # adaptively change threshold to detect the qrcode
         t = 255
         while t > 0 and (not ret_code or qrcodes.shape[0] < 2 or not all(d for d in decoded_text)):
@@ -226,10 +226,34 @@ def decode(image, highlight=False, offset=5):
         if metadata['range'][0] is not None and metadata['range'][1] is not None:
             metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
 
-        return metadata        
-    
+        return metadata            
+
     if use_zbar:
-        return pyzbar_decode(image, highlight, offset)
+        try:
+            return pyzbar_decode(image, highlight, offset)
+        except:
+            pass
+        # Fallback 1: enhance constrast
+        # TODO: probably the contrast enhancing could be beneficial also for 
+        #       the marker detection phase, also it can be used only if needed
+        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe_image = clahe.apply(gray_img)
+        try:
+            return pyzbar_decode(clahe_image, highlight, offset)
+        except:
+            pass
+        # Fallback 2: try with the other decoder
+        return opencv_decode(clahe_image, highlight, offset)
     else:
-        return opencv_decode(image, highlight, offset)
+        try:
+            return opencv_decode(image, highlight, offset)
+        except:
+            pass
+        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        clahe_image = clahe.apply(gray_img)
+        return opencv_decode(clahe_image, highlight, offset)
+
+        
 

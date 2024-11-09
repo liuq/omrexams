@@ -96,7 +96,10 @@ class Correct:
         files = sorted(glob.glob(os.path.join('tmp', "*.jpg")))
         output_pdf = PdfWriter()
         old_student_id = None
-        with click.progressbar(length=len(files), label="Merging corrections") as bar:
+        with click.progressbar(length=len(files), label="Merging corrections",
+                               bar_template='%(label)s |%(bar)s| %(info)s',
+                               fill_char=click.style(u'█', fg='cyan'),
+                               empty_char=' ', show_pos=True) as bar:
             for i, filename in enumerate(files):
                 with io.BytesIO() as f:
                     f.write(img2pdf.convert(filename))              
