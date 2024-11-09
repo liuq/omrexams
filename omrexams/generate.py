@@ -11,7 +11,7 @@ from shutil import copy2, rmtree
 import multiprocessing as mp
 from functools import partial
 from . utils.markdown import QuestionRenderer, DocumentStripRenderer, Document
-from pypdf import PdfReader, PdfMerger, PdfWriter, Transformation
+from pypdf import PdfReader, PdfWriter, Transformation
 from pypdf._page import PageObject
 import math
 from datetime import datetime as dt
@@ -135,6 +135,9 @@ class Generate:
         os.mkdir('tmp')        
         click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
         copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
+        click.secho(f'Copying fonts to tmp', fg='yellow')
+        for file_path in glob.glob(os.path.join(BASEDIR, 'texmf', 'OpenDyslexic*.*')):
+            copy2(file_path, 'tmp')
         click.secho(f'Generating {len(self.students)} exams (this may take a while)', fg='red', underline=True)
         with click.progressbar(length=len(self.students), label='Generating exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
@@ -161,9 +164,9 @@ class Generate:
         click.secho('Collating PDF', fg='red', underline=True)
         if self.paper == "A4":
             # This is for A4 management            
-            merger = PdfFileMerger(strict=False)
+            merger = PdfWriter()
             _blank = PdfWriter()
-            _blank.addBlankPage(**A4SIZE)    
+            _blank.add_blank_page(**A4SIZE)    
             blank = io.BytesIO()
             _blank.write(blank)   
             pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
@@ -424,6 +427,9 @@ class Generate:
            os.mkdir('tmp')
         click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
         copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
+        click.secho(f'Copying fonts to tmp', fg='yellow')
+        for file_path in glob.glob(os.path.join(BASEDIR, 'texmf', 'OpenDyslexic*.*')):
+            copy2(file_path, 'tmp')
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=dt.now(), 
                               exam=self.config['exam'].get('name'), 

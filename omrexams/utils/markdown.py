@@ -197,7 +197,7 @@ class QuestionRenderer(LaTeXRenderer):
         if token.level > 2:
             inner = self.render_inner(token).strip()
             return f'\\textbf{{Q:}} {inner}\n\\newline'
-        template = "\question\n{inner}"
+        template = "\\question\n{inner}"
         inner = self.render_inner(token).strip()
         self.questions[-1]['question'] = inner 
         return template.format(inner=inner)  

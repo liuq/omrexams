@@ -19,7 +19,7 @@
 
 \NeedsTeXFormat{LaTeX2e}
 
-\ProvidesClass{omrexams}[2019/02/07 OMR Exam Class v1.0] % Class information printed in the log during every compilation
+\ProvidesClass{omrexam}[2019/02/07 OMR Exam Class v1.0] % Class information printed in the log during every compilation
 
 \ProcessOptions\relax % Process class options
 
@@ -163,7 +163,7 @@ rectangle/.default={0.2cm}}
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
         (current page.north west)
-        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm]{\thematriculationno,\thesolution}};          
+        node[below right, text width=2cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2cm,level=Q]{\thematriculationno,\thesolution}};          
     \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
@@ -187,7 +187,7 @@ rectangle/.default={0.2cm}}
         \draw 
           (current page.south east)
           node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
-          \qrcode[height=2cm]{\OMR@Sizes,\thepage,0-0}%
+          \qrcode[height=2cm,level=Q]]{\OMR@Sizes,\thepage,0-0}%
           };
       }
       {
@@ -210,7 +210,7 @@ rectangle/.default={0.2cm}}
         \draw 
           (current page.south east)
           node[above left, text width=2cm, xshift=-1cm, yshift=1cm] {%         
-          \qrcode[height=2cm]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
+          \qrcode[height=2cm,level=Q]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
           };
       }
     }
