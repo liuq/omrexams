@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "pyqt_distutils", "sphinx"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omrexams"
+version = "0.1.1"  # Adjust as per _version in omrexams/__init__.py
+description = "Exam generator and Optical Marker Recognition"
+authors = [
+    {name = "Luca Di Gaspero", email = "luca.digaspero@uniud.it"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["OMR", "Exams", "Image Processing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Software Development :: Libraries :: Application Frameworks"
+]
+
+dependencies = [
+    "click",
+    "dateparser",
+    "datetime",
+    "pandas",
+    "scipy",
+    "xlrd",
+    "click_log",
+    "opencv-python",
+    "opencv-contrib-python",
+    "openpyxl",
+    "scikit-image",
+    "tinydb",
+    "Wand",
+    "img2pdf",
+    "pyyaml",
+    "pylatex",
+    "wheel",
+    "mistletoe==0.9.0",
+    "pypdf",
+    "PySide6",
+    "pyqtdarktheme",
+    "markdownify",
+    "markdown",
+    "markdown-checklists",
+    "inflect"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",          # For testing
+    "pytest-asyncio>=0.15",  # For asynchronous tests
+    "black>=22.0",           # For code formatting
+    "flake8>=3.9.0",         # For linting
+    "mypy>=0.910",           # For static type checking
+    "vulture>=2.3",          # For detecting unused code
+    "pipreqs>=0.4.10",        # For generating requirements from imports
+    "pyqt-distutils",
+    "PyInstaller",
+    "Sphinx",
+    "sphinx_rtd_theme"
+]
+
+[project.scripts]
+omrexams = "omrexams.cli:main_cli"
+
+[project.entry-points.scripts]
+omrexams= "omrexams.cli:main_cli"
+
+[project.urls]
+Homepage = "https://iolab.uniud.it"
+
+[tool.setuptools.packages.find]
+where = ["src"]  # or "" if omrexams is in the root
+include = ["omrexams*"]
+
+

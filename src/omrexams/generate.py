@@ -20,6 +20,7 @@ from . utils.directories import BASEDIR
 from collections import deque
 from itertools import zip_longest
 import hashlib
+import importlib.resources as pkg_resources
 
 logger = logging.getLogger("omrexams")
 
@@ -133,11 +134,10 @@ class Generate:
         if os.path.exists('tmp'):
             rmtree('tmp')
         os.mkdir('tmp')        
-        click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
-        copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
-        click.secho(f'Copying fonts to tmp', fg='yellow')
-        for file_path in glob.glob(os.path.join(BASEDIR, 'texmf', 'OpenDyslexic*.*')):
-            copy2(file_path, 'tmp')
+        with pkg_resources.path("omrexams.texmf", "omrexam.cls") as template_path:
+            # Copy the file to the temporary directory
+            click.secho(f'Copying omrexam.cls to tmp', fg='yellow')
+            copy2(template_path, 'tmp')
         click.secho(f'Generating {len(self.students)} exams (this may take a while)', fg='red', underline=True)
         with click.progressbar(length=len(self.students), label='Generating exams',
                                bar_template='%(label)s |%(bar)s| %(info)s',
@@ -241,7 +241,7 @@ class Generate:
             random.seed(self.seed + s)
             done = False
             try:
-                for _ in range(20):
+                for _ in range(50):
                     document, questions, answers = self.create_exam(student)
                     digits = math.ceil(math.log10(len(self.students)))
                     f = f'{{:0{digits}d}}-{{}}-{{}}'
@@ -425,11 +425,10 @@ class Generate:
         logger.info('Creating and preparing tmp directory')
         if not os.path.exists('tmp'):
            os.mkdir('tmp')
-        click.secho(f'Copying {os.path.join("texmf", "omrexam.cls")} to tmp', fg='yellow')
-        copy2(os.path.join(BASEDIR, 'texmf', 'omrexam.cls'), 'tmp')
-        click.secho(f'Copying fonts to tmp', fg='yellow')
-        for file_path in glob.glob(os.path.join(BASEDIR, 'texmf', 'OpenDyslexic*.*')):
-            copy2(file_path, 'tmp')
+        with pkg_resources.path("omrexams.texmf", "omrexam.cls") as template_path:
+            # Copy the file to the temporary directory
+            click.secho(f'Copying omrexam.cls to tmp', fg='yellow')
+            copy2(template_path, 'tmp')
         with QuestionRenderer(language=self.config['exam'].get('language'), 
                               date=dt.now(), 
                               exam=self.config['exam'].get('name'), 

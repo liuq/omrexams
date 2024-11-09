@@ -418,5 +418,8 @@ def get_correction_mask(ctx, datafile, student_id):
 # def gui(ctx):
 #     main_ui()
 
-if __name__ == '__main__':
+def main_cli():
     cli(obj={})
+
+if __name__ == '__main__':
+    main_cli()
