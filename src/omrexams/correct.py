@@ -21,6 +21,7 @@ from tinydb import TinyDB, Query
 from shutil import copy2, rmtree
 import tempfile
 import inflect
+import traceback
 
 logger = logging.getLogger("omrexams")
 
@@ -259,13 +260,14 @@ class Correct:
             click.secho(f"\nFailed Contour Detection for {filename}", fg="yellow")
             click.echo(str(e))
         # blob detection
-        try:
-            binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)
-            correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
-            image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
-        except Exception as e:
-            click.secho(f"\nFailed Blob for {filename}", fg="yellow")
-            click.echo(str(e))
+        # TODO: temporarily disabled, seems to have some troubles that need further investigation
+        # try:
+        #     binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)
+        #     correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
+        #     image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
+        # except Exception as e:
+        #     click.secho(f"\nFailed Blob for {filename}", fg="yellow")
+        #     click.echo(str(e))
         # laplacian detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_laplacian(roi, metadata)
@@ -274,6 +276,16 @@ class Correct:
         except Exception as e:
             click.secho(f"Failed Laplacian for {filename}", fg="yellow")
             click.echo(str(e))
+         # hough detection
+        try:
+            binary, circles, empty_circles = Correct.detect_circles_hough(roi, metadata)
+            correction[2], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
+            image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Hough')
+        except Exception as e:
+            click.secho(f"Failed Hough for {filename}", fg="yellow")
+            click.echo(f"{e}")
+#            click.echo(f"{traceback.format_exc()}")
+
         # TODO: currently here just to check, before becoming another method
         # def non_max_suppression(boxes, overlap_thresh=0.8):
         #     if len(boxes) == 0:
@@ -388,6 +400,7 @@ class Correct:
 
     @staticmethod
     def detect_circles_edges(roi, metadata, area_threshold=0.45):    
+
         # in order to detect the contours in the roi, a blur and an adaptive thresholding is used
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) > 2 else roi
         gray = cv2.GaussianBlur(gray, (5, 5), 2)
@@ -481,7 +494,7 @@ class Correct:
         answer_circles = sorted(answer_circles.items(), key=lambda item: item[0][1])
         # check whether questions and the expected sequence of answers match
         if len(reference_circles) != len(metadata['page_correction']):
-            raise RuntimeError(f"Warning: Number of questions {len(reference_circles)} ({metadata['student_id']}-{metadata['page']}) and number of correct answers {len(metadata['page_correction'])} do not match")
+            raise RuntimeError(f"Warning: Number of detected answers {len(reference_circles)} ({metadata['student_id']}-{metadata['page']}) and number of answers {len(metadata['page_correction'])} do not match (debugging: radius {reference_radius:.02f})")
         # go through the questions (reference circles) and check the answers
         correction = []            
         for i, ac in enumerate(answer_circles):  
@@ -565,14 +578,12 @@ class Correct:
     @staticmethod
     def detect_circles_blob(roi, metadata):
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) > 2 else roi
-        gray = cv2.GaussianBlur(gray, (11, 11), 2)
+        gray = cv2.GaussianBlur(gray, (9, 9), 2)
         
         params = cv2.SimpleBlobDetector_Params()
-        #matrix = metadata['matrix']
         scaling = metadata['scaling']
-        #bubble_radius = min(matrix.transform_distance(metadata['size'], metadata['size'])) / 2.0
         bubble_radius = np.max(np.dot(metadata['size'], scaling) / 2.0)
-        params.minDistBetweenBlobs = bubble_radius * 2.0 
+        params.minDistBetweenBlobs = bubble_radius * 2.0
         #params.filterByColor = False
         #blobColor = 0 
 
@@ -599,7 +610,10 @@ class Correct:
         
         detector = cv2.SimpleBlobDetector_create(params)
         keypoints = detector.detect(gray)
-        circles = list(map(lambda k: (int(k.pt[0]), int(k.pt[1]), int(bubble_radius)), keypoints))
+        if keypoints is not None:
+            circles = list(map(lambda k: (int(k.pt[0]), int(k.pt[1]), int(bubble_radius)), keypoints))
+        else:
+            circles = []
         binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                                     cv2.THRESH_BINARY_INV, 11, 2)
         binary += cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)[1]
@@ -675,3 +689,44 @@ class Correct:
         binary += cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)[1]    
         
         return binary, circles, []
+
+    @staticmethod
+    def detect_circles_hough(roi, metadata):
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) > 2 else roi
+        gray = cv2.GaussianBlur(gray, (9, 9), 2)
+
+        scaling = metadata['scaling']
+        bubble_radius = np.max(np.dot(metadata['size'], scaling) / 2.0)
+
+        # Set parameters for Hough Circle Transform
+        min_radius = int(bubble_radius * 0.8)
+        max_radius = int(bubble_radius * 1.2)
+
+        # Apply Hough Circle Transform
+        candidates = cv2.HoughCircles(
+            gray,
+            cv2.HOUGH_GRADIENT,
+            dp=1.2,  # Inverse ratio of accumulator resolution to image resolution
+            minDist=bubble_radius * 2.0,  # Minimum distance between circle centers
+            param1=100,  # Higher threshold for Canny edge detection
+            param2=30,   # Accumulator threshold for circle centers
+            minRadius=min_radius,
+            maxRadius=max_radius
+        )
+
+        candidates = list(map(tuple, np.round(candidates[0, :]).astype("int")))
+
+        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                    cv2.THRESH_BINARY_INV, 11, 2)
+        binary += cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)[1]
+
+
+        bubble_area = bubble_radius * bubble_radius * math.pi
+        circles, empty_circles = [], []
+        for c in candidates:
+            if Correct.circle_filled_area(binary, c) >= 0.7 * bubble_area:
+                circles.append(c)
+            else:
+                empty_circles.append(c)
+        
+        return binary, circles, empty_circles

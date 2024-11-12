@@ -235,7 +235,7 @@ def decode(image, highlight=False, offset=5):
             pass
         # Fallback 1: enhance constrast
         # TODO: probably the contrast enhancing could be beneficial also for 
-        #       the marker detection phase, also it can be used only if needed
+        #       the marker detection phase
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         clahe_image = clahe.apply(gray_img)
