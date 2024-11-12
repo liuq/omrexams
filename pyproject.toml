@@ -47,7 +47,8 @@ dependencies = [
     "markdown",
     "markdown-checklists",
     "inflect",
-    "pyzbar"
+    "pyzbar",
+    "tabulate"
 ]
 
 [project.optional-dependencies]

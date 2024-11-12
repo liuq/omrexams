@@ -164,7 +164,7 @@ class Correct:
                 if data is not None and any(set(d) != set(e) for d, e in zip(data['correct_answers'], exam['answers'])):                    
                     for i, (d, e) in enumerate(zip(data['correct_answers'], exam['answers'])):
                         if set(e) != set(d):
-                            message = f"Warning: correct answers in {self.data_filename} for student {exam['student_id']}, question {i + 1} do not match with those encoded in the exam sheets: {set(d)} in db, {set(e)} in the sheet"
+                            message = f"Warning: correct answers in {self.data_filename} for student {exam['student_id']}, question {i + 1} do not match with those encoded in the exam sheets: {set(d)} in the sheet, {set(e)} in db"
                             click.secho(message, fg="yellow")
                 elif data is None:
                     continue               
@@ -237,8 +237,15 @@ class Correct:
             return [], []
         tl, br = metadata['top_left'], metadata['bottom_right']
         # prepare roi
-        p0 = np.dot(metadata['p0'], metadata['scaling']).astype(int) + tl 
-        p1 = np.dot(metadata['p1'], metadata['scaling']).astype(int) + tl 
+        p0 = np.round(np.dot(metadata['p0'], metadata['scaling'])).astype(int) + tl 
+        p1 = np.round(np.dot(metadata['p1'], metadata['scaling'])).astype(int) + tl        
+        roi_width = p1[0] - p0[0]
+        roi_height = p1[1] - p0[1]
+        # this fix was needed since sometimes the roi was too close to objects and some detector did not work
+        expand_x = int(roi_width * 0.05 / 2)
+        expand_y = 0 #int(roi_height * 0.05 / 2)
+        p0 = np.array([max(0, p0[0] - expand_x), max(0, p0[1] - expand_y)])
+        p1 =  np.array([min(image.shape[1], p1[0] + expand_x), min(image.shape[0], p1[1] + expand_y)])
         roi = image[p0[1]:p1[1], p0[0]:p1[0]] 
         cv2.rectangle(image, tuple(map(int, p0 - offset)), tuple(map(int, p1 + offset)), BLUE, 3)        
 
@@ -250,7 +257,7 @@ class Correct:
                 if len(exam) > 0:
                     page_answers = exam[0]['answers'][metadata['range'][0] - 1:metadata['range'][1]]
         # contour detection
-        correction = [None] * 3    
+        correction = [None] * 4    
         try:
             binary, circles, empty_circles = Correct.detect_circles_edges(roi, metadata)
             # process result        
@@ -261,13 +268,13 @@ class Correct:
             click.echo(str(e))
         # blob detection
         # TODO: temporarily disabled, seems to have some troubles that need further investigation
-        # try:
-        #     binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)
-        #     correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
-        #     image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
-        # except Exception as e:
-        #     click.secho(f"\nFailed Blob for {filename}", fg="yellow")
-        #     click.echo(str(e))
+        try:
+            binary, circles, empty_circles = Correct.detect_circles_blob(roi, metadata)            
+            correction[1], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)            
+            image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Blob')
+        except Exception as e:
+            click.secho(f"\nFailed Blob for {filename}", fg="yellow")
+            click.echo(f"{e}")
         # laplacian detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_laplacian(roi, metadata)
@@ -276,10 +283,10 @@ class Correct:
         except Exception as e:
             click.secho(f"Failed Laplacian for {filename}", fg="yellow")
             click.echo(str(e))
-         # hough detection
+        # hough detection
         try:
             binary, circles, empty_circles = Correct.detect_circles_hough(roi, metadata)
-            correction[2], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
+            correction[3], mask = Correct.process_circles(roi, binary, circles, empty_circles, metadata, page_answers)
             image = Correct.add_superimposed(image, mask, roi, p0, p1, 'Hough')
         except Exception as e:
             click.secho(f"Failed Hough for {filename}", fg="yellow")
@@ -348,7 +355,7 @@ class Correct:
                     counter[a] += 1
             tmp = []
             for a in counter:
-                if counter[a] > len(correction) / 2:
+                if counter[a] >= len(correction) / 2:
                     tmp.append(a)
             if all(c1[i] != c2[i] for c1, c2 in combinations(correction, 2)):
                 self.watch_queue.put((filename, i))

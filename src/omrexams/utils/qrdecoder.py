@@ -180,7 +180,7 @@ def decode(image, highlight=False, offset=5):
 
     def pyzbar_decode(image, highlight=False, offset=5):                        
         if len(image.shape) > 2:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)         
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)                 
 
         qrcodes = search_qrcodes_pyzbar(image)
         if len(qrcodes) < 2:
@@ -190,7 +190,6 @@ def decode(image, highlight=False, offset=5):
             raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
         if len(qrcodes) > 2:
             raise RuntimeError(f"Found more than two qrcodes {qrcodes}")
-
       
         rotated = check_rotation(list(map(lambda x: x.data.decode('ascii'), qrcodes)))
         if rotated:
@@ -233,18 +232,19 @@ def decode(image, highlight=False, offset=5):
             return pyzbar_decode(image, highlight, offset)
         except:
             pass
-        # Fallback 1: enhance constrast
-        # TODO: probably the contrast enhancing could be beneficial also for 
-        #       the marker detection phase
-        gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        clahe_image = clahe.apply(gray_img)
+        # Fallback 1: generate an adaptive binary image
+        binary = cv2.adaptiveThreshold(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        cv2.convertScaleAbs(binary, alpha=1.5, beta=50)
         try:
-            return pyzbar_decode(clahe_image, highlight, offset)
+            return pyzbar_decode(binary, highlight, offset)
         except:
             pass
         # Fallback 2: try with the other decoder
-        return opencv_decode(clahe_image, highlight, offset)
+        try:
+            return opencv_decode(binary, highlight, offset)
+        except:
+            # Save the image that could not be decoded
+            raise RuntimeError("Failed to decode QR codes")
     else:
         try:
             return opencv_decode(image, highlight, offset)

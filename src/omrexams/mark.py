@@ -1,6 +1,7 @@
 from tinydb import TinyDB, Query
 import pandas as pd
 import numpy as np
+import click
 
 def uniform(correct, marked, missing, wrong, size):
     if len(marked) == 0:
@@ -26,8 +27,8 @@ def correct_only(correct, marked, missing, wrong, size):
 
 def custom_correction(correct, marked, missing, wrong, size):
     penalty = 0.0
-    if len(marked) > (len(correct) + len(missing)) and len(correct) + len(missing) > 1:
-        penalty = 0.5 * (len(wrong) / (len(correct) + len(missing) - 1))
+    if len(marked) > (len(correct) + len(missing)):
+        penalty = (len(wrong) / (size - len(correct) - 1))
     return np.array([max(0.0, len(correct) / (len(correct) + len(missing)) - penalty), 1.0])
 
 class Mark:
@@ -41,6 +42,8 @@ class Mark:
             Exam = Query()
             for exam in db.table('correction').all():
                 e = db.table('exams').get(Exam.student_id == exam['student_id'])
+                if e is None:
+                    click.secho(f"Student {exam['student_id']} not present in the exams table", fg="yellow")
                 question_size = list(map(lambda q: len(q[3]), e['questions']))
                 question_source = list(map(lambda q: q[0], e['questions']))
                 correct_answers = list(map(set, exam['correct_answers']))

@@ -22,6 +22,9 @@ import sys
 import math
 from tinydb import TinyDB, Query, where
 import json
+from .mark import custom_correction
+import numpy as np
+from tabulate import tabulate
 
 logger = logging.getLogger("omrexams")
 click_log.basic_config(logger)
@@ -381,7 +384,6 @@ def update_corrected(ctx, question_files, datafile, dry_run):
     update_corrected = UpdateCorrected(question_files, datafile)
     update_corrected.process(dry_run)
 
-
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.argument('question_file', type=str, required=True)
@@ -398,7 +400,6 @@ def students_with_question(ctx, datafile, question_file, question):
                     print(e['student_id'])
                     break
 
-
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.argument('student_id', type=str, required=True)
@@ -413,10 +414,33 @@ def get_correction_mask(ctx, datafile, student_id):
         for i, q in enumerate(exam['questions']):
             print(i + 1, q[2])
 
-# @cli.command()
-# @click.pass_context
-# def gui(ctx):
-#     main_ui()
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.argument('student_id', type=str, required=True)
+@click.pass_context
+def get_answers(ctx, datafile, student_id):
+    """
+    Gets the answers for a given student
+    """
+    with TinyDB(datafile) as db:
+        Exam = Query()
+        Correction = Query()
+        exam = db.table('exams').get(Exam.student_id == student_id)    
+        correction = db.table('correction').get(Correction.student_id == student_id)  
+        p = np.array([0.0, 0.0])
+        for i, (q, reference_correct, given) in enumerate(zip(exam['questions'], correction['correct_answers'], correction['given_answers'])): 
+            q_size = len(q[3])
+            marked, correct, missing, wrong = set(given), set(reference_correct) & set(given), set(reference_correct) - set(given), set(given) - set(reference_correct)
+            c = custom_correction(correct, marked, missing, wrong, q_size) 
+            p += c 
+        table = []
+        for i, (q, reference_correct, given) in enumerate(zip(exam['questions'], correction['correct_answers'], correction['given_answers'])): 
+            q_size = len(q[3])
+            marked, correct, missing, wrong = set(given), set(reference_correct) & set(given), set(reference_correct) - set(given), set(given) - set(reference_correct)
+            c = custom_correction(correct, marked, missing, wrong, q_size) 
+            table.append([i + 1, q[0], c, set(reference_correct), marked, correct, missing, wrong])
+        print(tabulate(table, headers=["Question", "File", "Marking", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="simple_grid"))
+
 
 def main_cli():
     cli(obj={})
