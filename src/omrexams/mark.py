@@ -47,6 +47,12 @@ class Mark:
                 question_size = list(map(lambda q: len(q[3]), e['questions']))
                 question_source = list(map(lambda q: q[0], e['questions']))
                 correct_answers = list(map(set, exam['correct_answers']))
+                # Check if the correct_answers in q[2] are the same, if not it might
+                # mean that an update-corrected has been performed
+                questions_correct_answers = list(map(lambda q: set(q[2]), e['questions']))
+                if correct_answers != questions_correct_answers:
+                    click.secho(f"Warning: correct answers in the db for student {exam['student_id']} do not match with those on the sheet, if you performed an update-corrected ignore this warning", fg="yellow")
+                    correct_answers = questions_correct_answers
                 given_answers = list(map(set, exam['given_answers']))
                 p = np.array([0.0, 0.0])
                 current = pd.DataFrame([{ 'student_id': exam['student_id'] }])

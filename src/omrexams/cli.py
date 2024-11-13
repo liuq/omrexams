@@ -370,7 +370,38 @@ def force_answer(ctx, datafile, student_id, question, given_answers):
             db.table('correction').upsert(correction, where('student_id') == student_id)
         except IndexError as e:
             click.secho(f"Question {question} is not appearing in the list of given answers for student {student_id}", fg="red")
-            sys.exit(-1)      
+            sys.exit(-1)   
+
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.argument('student_id', type=str, required=True)
+@click.pass_context
+def force_answers(ctx, datafile, student_id):
+    """
+    Forces the given answers for student_id. It prompts the answers for each question. The answers should be expressed as a string without spaces, e.g. AEF
+    """
+    with TinyDB(datafile) as db:
+        Exam = Query()
+        exam = db.table('exams').get(Exam.student_id == student_id)
+        correction = db.table('correction').get(Exam.student_id == student_id)
+        if not correction:
+            correction = { 'student_id': student_id, 'given_answers': [""] * len(exam['answers']), 'correct_answers': exam['answers'] }
+        for i, (q, reference_correct, given) in enumerate(zip(exam['questions'], correction['correct_answers'], correction['given_answers'])): 
+            click.secho(f"Question {i + 1} from {q[0]}/{q[1]}; stored answer {given}", fg="cyan")
+            given_answers = click.prompt("Enter the updated value (format single string, e.g., AC): ", type=str, default="".join(sorted(given)))
+            #given = correction['given_answers'][question - 1]
+            new_given = list(given_answers.upper())
+            if (set(given) == set(new_given)):
+                click.secho(f"The current and the updated given answers for question {i + 1} and student {student_id} are equal {set(given)}, nothing to do", fg="yellow")
+                continue
+            new_given_order = map(lambda l: ord(l) - ord('A'), new_given)
+            question_size = len(q[3])
+            if any(o not in range(question_size) for o in new_given_order):
+                click.secho(f"Question {i + 1} for student {student_id} admits answers from 'A' to {chr(question_size - 1 + ord('A'))} but given {set(new_given)}", fg="red")
+                sys.exit(-1)
+            click.secho(f"Updating question {i + 1} for student {student_id} with answers {set(new_given)} instead of {set(given)}", fg="green")
+            correction['given_answers'][i] = new_given
+            db.table('correction').upsert(correction, where('student_id') == student_id)
 
 @cli.command()
 @click.argument('question_files', type=click.Path(exists=True, file_okay=True, resolve_path=True), required=True, nargs=-1)
@@ -417,8 +448,10 @@ def get_correction_mask(ctx, datafile, student_id):
 @cli.command()
 @click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
 @click.argument('student_id', type=str, required=True)
+@click.option('--markdown', is_flag=True, help='Output the result in markdown format')
+@click.option('--excel', type=click.Path(resolve_path=True, writable=True), help='Output the result in an excel file')
 @click.pass_context
-def get_answers(ctx, datafile, student_id):
+def get_answers(ctx, datafile, student_id, markdown, excel):
     """
     Gets the answers for a given student
     """
@@ -428,19 +461,59 @@ def get_answers(ctx, datafile, student_id):
         exam = db.table('exams').get(Exam.student_id == student_id)    
         correction = db.table('correction').get(Correction.student_id == student_id)  
         p = np.array([0.0, 0.0])
-        for i, (q, reference_correct, given) in enumerate(zip(exam['questions'], correction['correct_answers'], correction['given_answers'])): 
-            q_size = len(q[3])
-            marked, correct, missing, wrong = set(given), set(reference_correct) & set(given), set(reference_correct) - set(given), set(given) - set(reference_correct)
-            c = custom_correction(correct, marked, missing, wrong, q_size) 
-            p += c 
         table = []
         for i, (q, reference_correct, given) in enumerate(zip(exam['questions'], correction['correct_answers'], correction['given_answers'])): 
             q_size = len(q[3])
             marked, correct, missing, wrong = set(given), set(reference_correct) & set(given), set(reference_correct) - set(given), set(given) - set(reference_correct)
             c = custom_correction(correct, marked, missing, wrong, q_size) 
             table.append([i + 1, q[0], c, set(reference_correct), marked, correct, missing, wrong])
-        print(tabulate(table, headers=["Question", "File", "Marking", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="simple_grid"))
+        
+        if markdown:
+            print(tabulate(table, headers=["Question", "File", "Marking", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="pipe"))
+        elif excel:
+            df = pd.DataFrame(table, columns=["Question", "File", "Marking", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"])
+            df.to_excel(excel, index=False)
+        else:
+            print(tabulate(table, headers=["Question", "File", "Marking", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="simple_grid"))
 
+@cli.command()
+@click.argument('datafile', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
+@click.argument('question_file', type=str, required=True)
+@click.argument('question', type=int, required=True)
+@click.option('--markdown', is_flag=True, help='Output the result in markdown format')
+@click.option('--excel', type=click.Path(resolve_path=True, writable=True), help='Output the result in an excel file')
+@click.pass_context
+def review_question(ctx, datafile, question_file, question, markdown, excel):
+    """
+    Returns the ids of the students having a specific question
+    """
+    with TinyDB(datafile) as db:
+        students = []
+        for e in db.table('exams'):
+            for i, q in enumerate(e['questions']):
+                if q[0] == question_file and q[1] == question:
+                    students.append((e['student_id'], i))
+                    break
+        table = []
+        for student_id, i in students:
+            Exam, Correction = Query(), Query()
+            exam = db.table('exams').get(Exam.student_id == student_id)    
+            correction = db.table('correction').get(Correction.student_id == student_id) 
+            if correction is None:
+                continue
+            q, given =  exam['questions'][i], correction['given_answers'][i]
+            q_size = len(q[3])
+            reference_correct = set(q[2])
+            marked, correct, missing, wrong = set(given), set(reference_correct) & set(given), set(reference_correct) - set(given), set(given) - set(reference_correct)
+            table.append([student_id, i + 1, (q[0], q[1]), set(reference_correct), marked, correct, missing, wrong])
+        
+        if markdown:
+            print(tabulate(table, headers=["Student ID", "Question", "File", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="pipe"))
+        elif excel:
+            df = pd.DataFrame(table, columns=["Student ID", "Question", "File", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"])
+            df.to_excel(excel, index=False)
+        else:
+            print(tabulate(table, headers=["Student ID", "Question", "File", "Correct Ref", "Marked", "Correct", "Missing", "Wrong"], tablefmt="simple_grid"))
 
 def main_cli():
     cli(obj={})
