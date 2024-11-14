@@ -10,14 +10,20 @@ import logging
 import click
 import sys
 
-use_zbar = False
-TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
-BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),(?P<y0>\d+)\)-\((?P<x1>\d+),(?P<y1>\d+)\)/\((?P<width>\d+),(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
 
+TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
+BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),\s*(?P<y0>\d+)\)-\((?P<x1>\d+),\s*(?P<y1>\d+)\)/\((?P<width>\d+),\s*(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),\s*(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
+
+available_libraries = ['openCV']
+try:
+    import zxingcpp
+    available_libraries.append('zxingcpp')
+except:
+    pass
 try:
     from pyzbar import pyzbar
     if find_library('zbar'):
-        use_zbar = True
+        available_libraries.append('pyzbar')
 except:
     pass
 
@@ -226,34 +232,84 @@ def decode(image, highlight=False, offset=5):
             metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
 
         return metadata            
+    
+    def search_qrcodes_zxing(image, highlight=False, offset=5):
+        return zxingcpp.read_barcodes(image)
 
-    if use_zbar:
+    def zxing_decode(image, highlight=False, offset=5):
+        if len(image.shape) > 2:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)                 
+
+        qrcodes = search_qrcodes_zxing(image)
+        if len(qrcodes) < 2:
+            raise RuntimeError(f"Each page should have at least two qrcodes, found {len(qrcodes)}")
+        if len(qrcodes) == 4:
+            click.secho("Found 4 qrcodes in page, probably it is an A3 printed exam, therefore you should use --paper a3 in sorting", color="red")
+            raise RuntimeError("Found 4 qrcodes, probably you should use --paper a3 in sorting")
+        if len(qrcodes) > 2:
+            raise RuntimeError(f"Found more than two qrcodes {qrcodes}")
+      
+        rotated = check_rotation(list(map(lambda x: x.text, qrcodes)))
+        if rotated:
+            image = cv2.rotate(image, cv2.ROTATE_180)
+            qrcodes = search_qrcodes_zxing(image)
+
+        # extract information from the qrcode
+        top_left_decode = decode_top_left(qrcodes[0].text)
+        bottom_right_decode = decode_bottom_right(qrcodes[1].text)    
+
+        tl = np.array([qrcodes[0].position.top_left.x, qrcodes[0].position.top_left.y])
+        br = np.array([qrcodes[1].position.bottom_right.x, qrcodes[1].position.bottom_right.y])
+
+        if highlight:
+            for qrcode in qrcodes:
+                # extract the bounding box location of the qrcode and draw a green 
+                # frame around them
+                (x, y, w, h) = qrcode.rect
+                cv2.rectangle(image, (int(x - offset), int(y - offset)), (int(x + w + offset), int(y + h + offset)), GREEN, 3)
+
+        metadata = { 
+            **top_left_decode,
+            **bottom_right_decode,
+            'top_left': tl,
+            'bottom_right': br,
+            'top_left_rect': np.array([[qrcodes[0].position.top_left.x, qrcodes[0].position.top_left.y], [qrcodes[0].position.top_right.x, qrcodes[0].position.top_right.y], [qrcodes[0].position.bottom_left.x, qrcodes[0].position.bottom_left.y], [qrcodes[0].position.bottom_right.x, qrcodes[0].position.bottom_right.y]]),
+            'bottom_right_rect': np.array([[qrcodes[1].position.top_left.x, qrcodes[1].position.top_left.y], [qrcodes[1].position.top_right.x, qrcodes[1].position.top_right.y], [qrcodes[1].position.bottom_left.x, qrcodes[1].position.bottom_left.y], [qrcodes[1].position.bottom_right.x, qrcodes[1].position.bottom_right.y]]),
+            'rotated': rotated
+        }
+        s = image[tl[1]:br[1], tl[0]:br[0]].shape
+        scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
+        metadata['scaling'] = scaling
+        if metadata['range'][0] is not None and metadata['range'][1] is not None:
+            metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
+
+        return metadata     
+
+    # Go in order of performance
+    if 'zxingcpp' in available_libraries:
+        try:
+            return zxing_decode(image, highlight, offset)
+        except:
+            pass
+    if 'pyzbar' in available_libraries:
         try:
             return pyzbar_decode(image, highlight, offset)
         except:
             pass
-        # Fallback 1: generate an adaptive binary image
-        binary = cv2.adaptiveThreshold(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-        cv2.convertScaleAbs(binary, alpha=1.5, beta=50)
-        try:
-            return pyzbar_decode(binary, highlight, offset)
-        except:
-            pass
-        # Fallback 2: try with the other decoder
-        try:
-            return opencv_decode(binary, highlight, offset)
-        except:
-            # Save the image that could not be decoded
-            raise RuntimeError("Failed to decode QR codes")
-    else:
+    if 'opencv' in available_libraries:
         try:
             return opencv_decode(image, highlight, offset)
         except:
             pass
+    # FALLBACK
+    if len(image.shape) > 2:
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        clahe_image = clahe.apply(gray_img)
-        return opencv_decode(clahe_image, highlight, offset)
+    else:
+        gray_img = image
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe_image = clahe.apply(gray_img)
+    return opencv_decode(clahe_image, highlight, offset)
+
 
         
 

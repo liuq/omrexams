@@ -248,7 +248,7 @@ class Generate:
                     filename = os.path.join('tmp', f"{task:0{digits}d}-{student[0]}-{student[1].replace(' ', '_')}")
                     document.generate_pdf(filepath=filename, 
                                         compiler='latexmk', 
-                                        compiler_args=['-xelatex'])
+                                        compiler_args=['-xelatex', '-shell-escape'])
                     # get rid of the xdv file, if any
                     if os.path.exists(f"{filename}.xdv"):
                         os.remove(f"{filename}.xdv")

@@ -23,7 +23,7 @@
 
 \ProcessOptions\relax % Process class options
 
-\LoadClass[a4paper,10pt,oneside]{exam} % Load the primary class with set options
+\LoadClass[a4paper,10pt,oneside,pstricks]{exam} % Load the primary class with set options
 
 %\@ifundefined{classtoggle} % Check that the \classtoggle has been defined, i.e. one of the two required class options above has been specified
 %{\ClassError{example}{You have not used one of the required options}{You must specify one of the class options defined in the template file.}} % If one of the options has not been specified, quit with an error to that effect
@@ -40,16 +40,41 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{decorations.markings}
 \usepackage{amsmath, amssymb}
+\usepackage{expl3}
+
+% to compute the geometry
+\newlength{\OMR@BarcodeWidth}
+\newlength{\OMR@BarcodeHeight}
+\setlength{\OMR@BarcodeWidth}{2.5cm}
+\setlength{\OMR@BarcodeHeight}{2.5cm}
+
+\newlength{\OMR@topmargindim}
+\newlength{\OMR@bottommargindim}
+\newlength{\OMR@headheightdim}
+\setlength{\OMR@topmargindim}{\dimexpr \OMR@BarcodeHeight + 1.5cm\relax}
+\setlength{\OMR@headheightdim}{\dimexpr \OMR@BarcodeHeight \relax}
+\setlength{\OMR@bottommargindim}{\dimexpr \OMR@BarcodeHeight + 1.5cm\relax}
+
+\newlength{\OMR@marginleftdim}
+\newlength{\OMR@marginrightdim}
+\newlength{\OMR@marginparwidthdim}
+\newlength{\OMR@marginparsepdim}
+\setlength{\OMR@marginleftdim}{1cm}
+\setlength{\OMR@marginparwidthdim}{4.75cm}
+\setlength{\OMR@marginparsepdim}{0.5cm}
+\setlength{\OMR@marginrightdim}{\dimexpr \OMR@marginparwidthdim + \OMR@marginleftdim + \OMR@marginparsepdim\relax}
+
 \usepackage[a4paper, 
-  top=3.75cm, 
-  headheight=2.25cm, 
-  bottom=3.5cm, 
-  left=1cm, 
-  right=6.25cm, % 1cm + 0.5cm + 4.75cm
-  marginparsep=0.5cm, 
-  marginparwidth=4.75cm]{geometry}
+  top=\OMR@topmargindim, 
+  headheight=\OMR@headheightdim, 
+  bottom=\OMR@bottommargindim, 
+  left=\OMR@marginleftdim, 
+  right=\OMR@marginrightdim, 
+  marginparsep=\OMR@marginparsepdim, 
+  marginparwidth=\OMR@marginparwidthdim
+]{geometry}
 \usepackage{bophook}
-\usepackage[nolinks]{qrcode}
+%\usepackage[nolinks]{qrcode}
 \usepackage{environ}
 \usepackage{xifthen}
 \usepackage[ocr-b]{ocr}
@@ -69,6 +94,16 @@
 }
 %\usepackage{fontspec}
 \usepackage{mathspec}
+% don't move the following usepackages from here because it clashes with the definition of clipbox somewhere else
+%\usepackage{pstricks-add}
+\usepackage{pst-barcode}
+
+% needed for conversions to barcode unit of measurement
+\ExplSyntaxOn
+\newcommand{\OMR@lengthtoinches}[1]{%
+  \fp_eval:n { \dim_to_fp:n {#1} / \dim_to_fp:n {1in} } % Perform the conversion and format as a number
+}
+\ExplSyntaxOff
 
 \CorrectChoiceEmphasis{\bfseries\boldmath\color{red}}
 
@@ -102,7 +137,7 @@ rectangle/.default={0.2cm}}
 \newboolean{examname@defined}
 \DeclareRobustCommand{\theexam}{\ClassError{omrexam}{No \noexpand\examname given}{You should provide a \noexpand\examname{<Exam Name>} command in the document preamble}}
 \DeclareRobustCommand{\examname}[1]{\renewcommand\theexam{#1}\setboolean{examname@defined}{true}}
-% In case there is no solution, the qrcode is used only as a reference marker
+% In case there is no solution, the barcode is used only as a reference marker
 \newcommand\thesolution{None}
 \DeclareRobustCommand{\solution}[1]{\renewcommand\thesolution{#1}}
 % In case there is no header
@@ -139,7 +174,7 @@ rectangle/.default={0.2cm}}
     
     \ExtractCoordinates{TL.north west}{\CroppedPage@TopLeft@XCoord}{\CroppedPage@TopLeft@YCoord};
     \ExtractCoordinates{BR.south east}{\CroppedPage@BottomRight@XCoord}{\CroppedPage@BottomRight@YCoord};
-    % The distance between the corner of the top left QRCode and the bottom right QRCode expressed in pt
+    % The distance between the corner of the top left barcode and the bottom right barcode expressed in pt
     \pgfmathtruncatemacro{\QR@Width}{\CroppedPage@BottomRight@XCoord - \CroppedPage@TopLeft@XCoord};
     \pgfmathtruncatemacro{\QR@Height}{\CroppedPage@TopLeft@YCoord - \CroppedPage@BottomRight@YCoord};
 
@@ -155,7 +190,7 @@ rectangle/.default={0.2cm}}
     % All distances/sizes are expressed in points
     \draw
         (current page header area.north west)
-        node[below right, xshift=2.6cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\theheader}};  
+        node[below right, xshift=\OMR@BarcodeWidth + 2mm] {\parbox{\textwidth}{\theheader}};  
     \draw
         (current page footer area.south west)
         node[below right, yshift=0.5cm] {\parbox{\textwidth + \marginparwidth - 1.5cm}{\thefooter}};  
@@ -167,7 +202,13 @@ rectangle/.default={0.2cm}}
     \draw [color=black, densely dotted, transform canvas={xshift=0.5cm}] (current page marginpar area.north east) -- (current page marginpar area.south east);
     \draw 
         (current page.north west)
-        node[below right, text width=2.5cm, xshift=1cm, yshift=-1cm] {\qrcode[height=2.5cm,level=H]{\thematriculationno,\thesolution}};          
+        node[below right, text width=\OMR@BarcodeWidth, xshift=1cm, yshift=-1cm]%
+%        {\qrcode[height=\OMR@BarcodeHeight,level=H]{\thematriculationno,\thesolution}};          
+        {
+          \begin{pspicture}(\OMR@BarcodeWidth,\OMR@BarcodeHeight)
+            \psbarcode{\thematriculationno,\thesolution}{width=\OMR@lengthtoinches{\OMR@BarcodeWidth} height=\OMR@lengthtoinches{\OMR@BarcodeHeight}}{qrcode}
+          \end{pspicture}
+        };
     \draw
         (current page.north east)
         node[below left, rectangle, draw, fill=black, xshift=-1cm, yshift=-1cm, minimum size=0.5*\OMR@Size] {~};
@@ -187,10 +228,16 @@ rectangle/.default={0.2cm}}
       };    
       \ifthenelse{\equal{\OMR@questions@pagelist}{}}%
       {
-        \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
+        \def\OMR@Sizes{(\OMR@TopLeft@XCoord,\OMR@TopLeft@YCoord)-(\OMR@TopLeft@XCoord,\OMR@TopLeft@YCoord)/(\QR@Width,\QR@Height)/\OMR@Diameter}
         \draw 
           (current page.south east)
-          node[above left, text width=2.5cm, xshift=-1cm, yshift=1cm] {\qrcode[height=2.5cm,level=H]{\OMR@Sizes,\thepage,0-0}};
+          node[above left, text width=\OMR@BarcodeWidth, xshift=-1cm, yshift=1cm] %
+          %{\qrcode[height=\OMR@BarcodeHeight,level=H]{\OMR@Sizes,\thepage,0-0}};
+          {
+            \begin{pspicture}(\OMR@BarcodeWidth,\OMR@BarcodeHeight)
+              \psbarcode{\OMR@Sizes,\thepage,0-0}{width=\OMR@lengthtoinches{\OMR@BarcodeWidth} height=\OMR@lengthtoinches{\OMR@BarcodeHeight}}{qrcode}
+            \end{pspicture}
+          };
       }
       {
         \pgfmathsetmacro\OMR@questions@currentpage@start{int(max(0, min(\OMR@questions@pagelist)))}
@@ -208,11 +255,17 @@ rectangle/.default={0.2cm}}
         }{}
 
   %      \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@TopLeft@YCoord)-(\OMR@BottomRight@XCoord, \OMR@BottomRight@YCoord)/(\QR@Width, \QR@Height)/\OMR@Diameter}
-        \def\OMR@Sizes{(\OMR@TopLeft@XCoord, \OMR@questions@minyposition)-(\OMR@BottomRight@XCoord, \OMR@questions@maxyposition)/(\QR@Width, \QR@Height)/\OMR@Diameter}
+        \def\OMR@Sizes{(\OMR@TopLeft@XCoord,\OMR@questions@minyposition)-(\OMR@BottomRight@XCoord,\OMR@questions@maxyposition)/(\QR@Width,\QR@Height)/\OMR@Diameter}
         \draw 
           (current page.south east)
-          node[above left, text width=2.5cm, xshift=-1cm, yshift=1cm] {%         
-          \qrcode[height=2.5cm,level=H]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
+          node[above left, text width=\OMR@BarcodeWidth, xshift=-1cm, yshift=1cm] %
+          % {%         
+          % \qrcode[height=\OMR@BarcodeHeight,level=H]{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}%
+          % };
+          {
+            \begin{pspicture}(\OMR@BarcodeWidth,\OMR@BarcodeHeight)
+              \psbarcode{\OMR@Sizes,\thepage,\OMR@questions@currentpage@start-\OMR@questions@currentpage@end}{width=\OMR@lengthtoinches{\OMR@BarcodeWidth} height=\OMR@lengthtoinches{\OMR@BarcodeHeight}}{qrcode}
+            \end{pspicture}
           };
       }
     }
