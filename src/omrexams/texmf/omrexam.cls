@@ -372,6 +372,6 @@ rectangle/.default={0.2cm}}
 % FIXME: only for testing (in order to prevent transparent background), it shoudl be removed later
 %\usepackage{xcolor}
 %\pagecolor[HTML]{FEFEFE}
-\newfontfamily\monaco{Monaco}
+%\newfontfamily\monaco{Monaco}
 
 \endinput
