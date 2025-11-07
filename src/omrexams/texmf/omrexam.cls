@@ -41,8 +41,6 @@
 \usetikzlibrary{decorations.markings}
 \usepackage{amsmath,amssymb}
 \usepackage{expl3}
-\usepackage{fontspec}
-\defaultfontfeatures{Ligatures=TeX}
 \usepackage[unicode]{hyperref}
 \hypersetup{pageanchor=false}
 
