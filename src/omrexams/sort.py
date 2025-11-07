@@ -9,14 +9,14 @@ import multiprocessing as mp
 import click
 import cv2
 import numpy as np
-import re
-import pandas as pd
 import math
-from . utils import image_utils as iu
 from . utils.colors import *
 from tinydb import TinyDB, Query
 import copy
 from shutil import rmtree
+import logging
+
+logger = logging.getLogger("omrexams")
 
 class Sort:
     """
@@ -146,9 +146,14 @@ class Sort:
                 width, height = br - tl
                 detected_diag_angle = math.atan(height / width) * 360 / (2 * math.pi) 
                 expected_diag_angle = math.atan(metadata['height'] / metadata['width']) * 360 / (2 * math.pi)
+                logger.debug(f"Correcting rotation by {detected_diag_angle - expected_diag_angle} degrees")
                 rows, cols = image.shape[:2]
-                rotation = cv2.getRotationMatrix2D(tuple(map(int, tl)),
-                    detected_diag_angle - expected_diag_angle, 1.0)
+                # FIXME: for some reason the angle is not correctly detected, so we skip the check
+                if True or np.isclose(detected_diag_angle, expected_diag_angle):
+                    rotation = np.array([[1, 0, 0], [0, 1, 0]], dtype=np.float64)
+                else:
+                    rotation = cv2.getRotationMatrix2D(tuple(map(int, tl)),
+                        detected_diag_angle - expected_diag_angle, 1.0)                    
                 image = cv2.warpAffine(image, rotation, (cols, rows), borderValue=WHITE)
 
                 # the image could be flipped, therefore here we restore the right qrcode order

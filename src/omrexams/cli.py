@@ -146,21 +146,23 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
             click.secho('Reading excel file', fg='red', underline=True)
             skip = 0
             # check whether the file needs to be partially skipped
-            if 'data_marker' in config['excel']:
+            if config['excel'].get('data_marker') is not None:
                 marker = config['excel']['data_marker'].get('skip_until')
-                column = config['excel'].get('on_column', 0)
+                column = config['excel']['data_marker'].get('on_column', 0)
                 click.secho(f'Searching for data marker "{marker} in column {column}"', fg='cyan')
                 wb = xlrd.open_workbook(students)
                 sheet = wb.sheet_by_index(0)
                 for i in range(sheet.nrows):
                     row = sheet.row(i)
                     cell = row[column]
-                    if re.match(marker, cell.value):
-                        skip = i + 1
+                    value = cell.value if isinstance(cell.value, str) else str(cell.value)
+                    if re.match(marker, value):
+                        skip = i
                         break
             if skip > 0:
                 click.secho(f'Skipping {skip} rows', fg='cyan')
-            student_list = pd.read_excel(students, skiprows=skip)
+            student_list = pd.read_excel(students, skiprows=skip + 1)
+            click.secho(f'Columns found: {student_list.columns.tolist()}', fg='cyan')
             fields = config['excel']['fields']
             student_list[fields.get('fullname', 'Full Name')] = student_list[fields.get('name')] + ' ' + student_list[fields.get('surname')]
             student_list.reset_index(inplace=True)

@@ -34,7 +34,7 @@ dependencies = [
     "openpyxl",
     "scikit-image",
     "tinydb",
-    "Wand",
+    "wand",
     "img2pdf",
     "pyyaml",
     "pylatex",
@@ -49,7 +49,7 @@ dependencies = [
     "inflect",
     "pyzbar",
     "tabulate",
-    "zxing-cpp"
+    "zxing-cpp",
 ]
 
 [project.optional-dependencies]

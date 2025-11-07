@@ -39,8 +39,12 @@
 \usetikzlibrary{calc}
 \usetikzlibrary{positioning}
 \usetikzlibrary{decorations.markings}
-\usepackage{amsmath, amssymb}
+\usepackage{amsmath,amssymb}
 \usepackage{expl3}
+\usepackage{fontspec}
+\defaultfontfeatures{Ligatures=TeX}
+\usepackage[unicode]{hyperref}
+\hypersetup{pageanchor=false}
 
 % to compute the geometry
 \newlength{\OMR@BarcodeWidth}
@@ -86,7 +90,7 @@
 \usepackage{listings}
 \lstset{
   escapeinside={\%*}{*)},
-  inputencoding=utf8,
+%  inputencoding=utf8,
   basicstyle=\ttfamily\scriptsize,
   tabsize=1,columns=fullflexible,
   aboveskip=5pt,
