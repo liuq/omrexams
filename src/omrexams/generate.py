@@ -178,7 +178,7 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                digits = math.ceil(math.log10(len(pdf_files) + 1))
+                digits = math.ceil(math.log10(len(pdf_files) / self.split + 1)) if self.split is not None else 1
                 for i, exam in enumerate(pdf_files):
                     if self.split is not None and i > 0 and i % self.split == 0:
                             with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
@@ -201,7 +201,7 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                digits = math.ceil(math.log10(len(pdf_files) + 1))
+                digits = math.ceil(math.log10(len(pdf_files) / self.split + 1)) if self.split is not None else 1
                 for i, exam in enumerate(pdf_files):
                     if self.split is not None and i > 0 and i % self.split == 0:
                             with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
