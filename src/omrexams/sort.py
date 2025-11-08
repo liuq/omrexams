@@ -144,18 +144,17 @@ class Sort:
                 tl = metadata['top_left_rect'][0]
                 br = metadata['bottom_right_rect'][2]
                 width, height = br - tl
-                detected_diag_angle = math.atan(height / width) * 360 / (2 * math.pi) 
-                expected_diag_angle = math.atan(metadata['height'] / metadata['width']) * 360 / (2 * math.pi)
-                logger.debug(f"Correcting rotation by {detected_diag_angle - expected_diag_angle} degrees")
+                rotation = np.array([[1, 0, 0], [0, 1, 0]], dtype=np.float64)
+                # FIXME: currently the rotation is not working properly, possibly because the stored precision is not enough
+                if False and metadata.get('qrheight') is not None and metadata.get('qrwidth') is not None:
+                    detected_diag_angle = math.atan(height / width) * 360 / (2 * math.pi) 
+                    expected_diag_angle = math.atan(metadata['qrheight'] / metadata['qrwidth']) * 360 / (2 * math.pi)
+                    if not np.isclose(detected_diag_angle, expected_diag_angle):
+                        logger.debug(f"Correcting rotation by {detected_diag_angle - expected_diag_angle} degrees")
+                        rotation = cv2.getRotationMatrix2D(tuple(map(int, tl)),
+                            detected_diag_angle - expected_diag_angle, 1.0)          
                 rows, cols = image.shape[:2]
-                # FIXME: for some reason the angle is not correctly detected, so we skip the check
-                if True or np.isclose(detected_diag_angle, expected_diag_angle):
-                    rotation = np.array([[1, 0, 0], [0, 1, 0]], dtype=np.float64)
-                else:
-                    rotation = cv2.getRotationMatrix2D(tuple(map(int, tl)),
-                        detected_diag_angle - expected_diag_angle, 1.0)                    
                 image = cv2.warpAffine(image, rotation, (cols, rows), borderValue=WHITE)
-
                 # the image could be flipped, therefore here we restore the right qrcode order
                 cv2.imwrite(os.path.join(self.sorted, f'{metadata["student_id"]}-{metadata["page"]}.png'), image)
                 return metadata

@@ -422,7 +422,7 @@ class Correct:
         circles = []
         empty_circles = []
         scaling = metadata['scaling']
-        bubble_radius = np.max(np.dot(metadata['size'], scaling) / 2.0)
+        bubble_radius = np.max(np.dot(metadata['bsize'], scaling) / 2.0)
         # for each detcted contour
         for contour in contours:
             perimeter = cv2.arcLength(contour, True)
@@ -471,7 +471,7 @@ class Correct:
         pivot = circles[0]
         # the reference circles are those whose center is almost in the same column as the pivot
         reference_circles = [c for c in circles if abs(c[0] - pivot[0]) <= pivot[2]]
-        reference_radius = np.max(np.dot(metadata['size'], metadata['scaling']) / 2)
+        reference_radius = np.max(np.dot(metadata['bsize'], metadata['scaling']) / 2)
         reference_area = reference_radius * reference_radius * math.pi
         # all the other are the answer circles
         other_circles = [c for c in circles if abs(c[0] - pivot[0]) > pivot[2]]
@@ -589,7 +589,7 @@ class Correct:
         
         params = cv2.SimpleBlobDetector_Params()
         scaling = metadata['scaling']
-        bubble_radius = np.max(np.dot(metadata['size'], scaling) / 2.0)
+        bubble_radius = np.max(np.dot(metadata['bsize'], scaling) / 2.0)
         params.minDistBetweenBlobs = bubble_radius * 2.0
         #params.filterByColor = False
         #blobColor = 0 
@@ -662,7 +662,7 @@ class Correct:
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if len(roi.shape) > 2 else roi
         gray = cv2.GaussianBlur(gray, (11, 11), 2)
         
-        s = np.max(np.dot(metadata['size'], metadata['scaling']) / 2.0)
+        s = np.max(np.dot(metadata['bsize'], metadata['scaling']) / 2.0)
 
         s1 = s / 1.4142 # stretto
         # some denoising
@@ -703,7 +703,7 @@ class Correct:
         gray = cv2.GaussianBlur(gray, (9, 9), 2)
 
         scaling = metadata['scaling']
-        bubble_radius = np.max(np.dot(metadata['size'], scaling) / 2.0)
+        bubble_radius = np.max(np.dot(metadata['bsize'], scaling) / 2.0)
 
         # Set parameters for Hough Circle Transform
         min_radius = int(bubble_radius * 0.8)

@@ -67,24 +67,27 @@ class Generate:
     or an overall testing document for checking the questions and their answers.
     """    
 
-    def __init__(self, config, questions, output_prefix, **kwargs):
+    def __init__(self, config, questions, output_prefix, test=False, paper='A4', students=None, exam_date=dt.now(), seed=42, split=None, folded=True, rotated=False):
         self.config = config
         self.questions_path = questions
-        self.output_pdf_filename = f"{output_prefix}.pdf"
-        self.test = kwargs.get('test', False)
-        self.paper = kwargs.get('paper', 'A4')
+        self.output_prefix = output_prefix
+        self.test = test
+        self.paper = paper.upper()
         if self.paper not in ('A4', 'A3'):
             raise AttributeError('paper value should be either "A3" or "A4"')
         # TODO: emit logging if these parameters are not set
         if not self.test:
             self.output_list_filename = f"{output_prefix}.json"
-            self.students = kwargs.get('students', [])
-            self.exam_date = kwargs.get('date', dt.now())
+            self.students = students or []
+            self.exam_date = exam_date
             self.topics = {}   
-            self.seed = kwargs.get('seed', 0)
+            self.seed = seed
             with TinyDB(self.output_list_filename) as db:
                 db.drop_table('metadata')
                 db.table('metadata').insert({ 'seed': self.seed, 'generation_date': dt.now().strftime("%F") })
+            self.folded = folded
+            self.rotated = rotated
+            self.split = split
 
     def load_rules(self):
         rules = self.config.get('questions', [{ "from": "*.md", "use": 1 }])
@@ -161,6 +164,7 @@ class Generate:
                 bar.update(self.results.value - prev)
                 prev = self.results.value
                 self.results_mutex.release()
+
         click.secho('Collating PDF', fg='red', underline=True)
         if self.paper == "A4":
             # This is for A4 management            
@@ -174,14 +178,20 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                for exam in pdf_files:
+                digits = math.ceil(math.log10(len(pdf_files) + 1))
+                for i, exam in enumerate(pdf_files):
+                    if self.split is not None and i > 0 and i % self.split == 0:
+                            with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
+                                merger.write(f)
+                            merger = PdfWriter()
                     pdf = PdfReader(open(exam, 'rb'), strict=False)  
                     merger.append(pdf)
                     if len(pdf.pages) % 2 == 1:
                         merger.append(blank)
                     bar.update(1)
-            with open(self.output_pdf_filename, 'wb') as f:
-                merger.write(f)
+            if merger.pages:
+                with open(f"{self.output_prefix}.pdf" if self.split is None else f"{self.output_prefix}-{len(pdf_files) // self.split:0{digits}d}.pdf", 'wb') as f:
+                    merger.write(f)
         else:
             # This is for A3 management
             writer = PdfWriter()
@@ -191,35 +201,65 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-                for exam in pdf_files:
+                digits = math.ceil(math.log10(len(pdf_files) + 1))
+                for i, exam in enumerate(pdf_files):
+                    if self.split is not None and i > 0 and i % self.split == 0:
+                            with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
+                                writer.write(f)
+                            writer = PdfWriter()
                     pdf = PdfReader(open(exam, 'rb'), strict=False)
-                    a3page = PageObject.create_blank_page(**A3SIZE)                    
-                    left = True
-                    sheets = math.ceil(len(pdf.pages) / 4) 
-                    booklet = next(make_book(range(1, len(pdf.pages) + 1), sheets * 4))
-                    for p in booklet:
-                        if p is not None:
-                            page = pdf.pages[p - 1]
-                        else:
-                            page = None
-                        if left:
-                            # page left
-                            if page is not None:
-                                a3page.merge_page(page) 
-                            left = False
-                        else:
-                            # page right
-                            if page is not None:
+                    a3page = PageObject.create_blank_page(**A3SIZE)        
+                    rotate = False            
+                    if self.folded:
+                        # Create a booklet
+                        sheets = math.ceil(len(pdf.pages) / 4) 
+                        booklet = next(make_book(range(1, len(pdf.pages) + 1), sheets * 4))
+                        left = True
+                        for p in booklet:
+                            if p is not None:
+                                page = pdf.pages[p - 1]
+                            else:
+                                page = PageObject.create_blank_page(**A4SIZE)
+                            if left:
+                                # page left
+                                if self.rotated and rotate:
+                                    transformation = Transformation().rotate(180).translate(A3SIZE['width'] / 2,  A3SIZE['height'])
+                                else:
+                                    transformation = Transformation().translate(0, 0)
+                                left = False
+                            else:
+                                # page right
+                                if self.rotated and rotate:
+                                    transformation = Transformation().rotate(180).translate(A3SIZE['width'], A3SIZE['height'])
+                                else:
+                                    transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
+                                left = True
+                            a3page.merge_transformed_page(page, transformation, expand=False) 
+                            if left:
+                                # add page 
+                                writer.add_page(a3page)
+                                a3page = PageObject.create_blank_page(**A3SIZE)  
+                                rotate = not rotate
+                    else:
+                        # normal A3, two A4 per A3
+                        for p, page in enumerate(pdf.pages):
+                            if p % 2 == 0:
+                                # page left
+                                transformation = Transformation().translate(0, 0)
+                                a3page.merge_transformed_page(page, transformation, expand=False) 
+                            else:
+                                # page right
                                 transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
                                 a3page.merge_transformed_page(page, transformation, expand=False) 
-                            left = True
-                        if left:
-                            # add page 
-                            writer.add_page(a3page)
-                            a3page = PageObject.create_blank_page(**A3SIZE)  
+                                # add page 
+                                writer.add_page(a3page)
+                                a3page = PageObject.create_blank_page(**A3SIZE)  
+
                     bar.update(1)
-            with open(self.output_pdf_filename, 'wb') as f:
-                writer.write(f)
+            # there are still pages to write
+            if writer.pages:
+                with open(f"{self.output_prefix}.pdf" if self.split is None else f"{self.output_prefix}-{len(pdf_files) // self.split:0{digits}d}.pdf", 'wb') as f:
+                    writer.write(f)
         
         if not self.error.value:
             click.secho('Removing tmp', fg='yellow')

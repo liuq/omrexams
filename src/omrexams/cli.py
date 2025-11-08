@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import platform
 from ctypes.util import find_library
 import os
@@ -102,18 +103,43 @@ def cli(ctx, debug):
 @click.option('--seed', '-r', type=int, default=int(dt.now().strftime('%s')))
 @click.option('--additional', '-a', type=int, required=False, default=0, help='Number of additional exam sheets')
 @click.option('--paper', '-p', type=click.Choice(['A4', 'A3'], case_sensitive=False), default='A4', required=False)
+@click.option('--folded/--no-folded', is_flag=True, default=None, help='State whether the exam sheets are folded (only for A3 paper)')
+@click.option('--rotated/--no-rotated', is_flag=True, default=None, help='State whether the exam folded sheets are alternatively rotated (only for A3 paper)')
+@click.option('--split', type=int, help='Divide the output into multiple files by splitting', required=False)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
 @click.pass_context
-def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, paper, yes):
+def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, paper, folded, rotated, split, yes):
     """
     Generates the set of exams for the given amount of students (either personalized or anonymous).
     """
+    if split is not None and split < 0:
+        click.secho("The --split option must be a positive integer", fg='red')
+        sys.exit(-1)
+
+    if folded is None and paper.upper() == 'A3':
+        folded = True
+    
+    if folded and rotated is None:
+        rotated = True
+
+    if folded and paper.upper() != 'A3':
+        click.secho("The --folded option can be used only with A3 paper", fg='red')
+        sys.exit(-1)
+
+    if rotated and not folded:
+        click.secho("The --rotated option can be used only when --folded is set", fg='red')
+        sys.exit(-1)
+
+    if rotated and paper.upper() != 'A3':
+        click.secho("The --rotated option can be used only with A3 paper", fg='red')
+        sys.exit(-1)
+
     config_file = config
     with open(config_file, 'r') as f:
         config = yaml.load(f, Loader=yaml.Loader)
     config['basedir'] = os.path.dirname(config_file)
 
-    if not output_prefix:
+    if not output_prefix:        
         output_prefix = f'exam-{date.strftime("%Y-%m-%d")}'
 
     if additional is None and students is not None:
@@ -123,9 +149,16 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         paper = config.get('paper', 'A4')
     paper = paper.upper()    
 
-    if os.path.exists(f"{output_prefix}.pdf"):
+    if split is None and os.path.exists(f"{output_prefix}.pdf"):
         if yes or click.confirm(f"Data output {output_prefix}.pdf exists, overwrite it?", default=True):
             os.remove(f"{output_prefix}.pdf")
+        else:
+            click.secho("Nothing done", fg='bright_yellow')
+            sys.exit(0)
+    elif split is not None and glob.glob(f"{output_prefix}-*.pdf"):
+        if yes or click.confirm(f"Data output {output_prefix}-*.pdf exist, overwrite the split files?", default=True):
+            for f in glob.glob(f"{output_prefix}-*.pdf"):
+                os.remove(f)
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
@@ -139,7 +172,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
 
     if not students and not count:
         click.secho("You should provide either an excel file with the student list or the number of exams to generate", fg='red')
-        sys.exit(0)
+        sys.exit(-1)
 
     if students:
         try:    
@@ -182,7 +215,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         click.secho(f'Seed used for the random generator {seed}', fg='magenta')
 
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 
-                         date=date, seed=seed, paper=paper)
+                         exam_date=date, seed=seed, paper=paper, folded=folded, rotated=rotated, split=split)
     generator.process()
 
 @cli.command()

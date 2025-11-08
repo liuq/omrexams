@@ -2,23 +2,23 @@ import re
 import numpy as np
 import cv2
 from . crypt import binary_decrypt
-import math
 from . colors import *
 from . image_utils import order_points
 from ctypes.util import find_library
 import logging
 import click
-import sys
+
+logger = logging.getLogger("omrexams")
 
 
 TOP_LEFT_REGEX = r'^(?P<id>[\d-]+),(?P<sequence>.+)$'
-BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),\s*(?P<y0>\d+)\)-\((?P<x1>\d+),\s*(?P<y1>\d+)\)/\((?P<width>\d+),\s*(?P<height>\d+)\)/(?P<size>\d+(?:\.\d+)?),\s*(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
+BOTTOM_RIGHT_REGEX = r'^\((?P<x0>\d+),\s*(?P<y0>\d+)\)-\((?P<x1>\d+),\s*(?P<y1>\d+)\)/\((?P<qrwidth>\d+),\s*(?P<qrheight>\d+)\)/(?P<bsize>\d+(?:\.\d+)?),\s*(?P<page>\d+)(?:,(?P<start>\d+)-(?P<end>\d+))?$'
 
 available_libraries = ['openCV']
 try:
     import zxingcpp
     available_libraries.append('zxingcpp')
-except:
+except: 
     pass
 try:
     from pyzbar import pyzbar
@@ -40,15 +40,15 @@ def decode_bottom_right(data):
             return None
             
         p0, p1 = np.array([m.group('x0'), m.group('y0')], dtype=int), np.array([m.group('x1'), m.group('y1')], dtype=int)
-        width = int(m.group('width'))
-        height = int(m.group('height'))
-        size = float(m.group('size'))
+        qrwidth = int(m.group('qrwidth'))
+        qrheight = int(m.group('qrheight'))
+        bsize = float(m.group('bsize'))
         
         return { 'p0': p0, 
                  'p1': p1, 
-                 'width': width, 
-                 'height': height,
-                 'size': size,
+                 'qrwidth': qrwidth, 
+                 'qrheight': qrheight,
+                 'bsize': bsize,
                  'page': int(m.group('page')), 
                  'range': (int(m.group('start')), int(m.group('end')))
                }
@@ -73,6 +73,40 @@ def decode_top_left(data):
     }
 
 
+# Preprocess the image to improve QR code detection
+# Not used yet, but could be useful in some cases, to be cheked
+def prepare_image_for_decoding(image):
+    if len(image.shape) > 2:
+        g = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        g = image
+    # 1. Adaptive contrast equalization (CLAHE)
+    clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    g = clahe.apply(g)
+
+    # 2. Light correction (division normalization)
+    blur = cv2.GaussianBlur(g, (61,61), 0)
+    blur = np.clip(blur, 1, 255).astype(np.float32)
+    norm = (g.astype(np.float32) / blur) * 128
+    g = np.clip(norm, 0, 255).astype(np.uint8)
+
+    # 3. Micro-contrast boosting (unsharp mask)
+    sharp = cv2.GaussianBlur(g, (0,0), sigmaX=1.0)
+    g = cv2.addWeighted(g, 1.5, sharp, -0.5, 0)
+
+    # 4. Adaptive threshold and merge (useful when QR too light)
+    bw1 = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 35, 10)
+    bw2 = cv2.adaptiveThreshold(g, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 35, 7)
+    bw = cv2.bitwise_and(bw1, bw2)
+
+    # 5. Morph close for removing small holes 
+    # TODO: check if needed
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+    bw = cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+    return bw
+
+
 def decode(image, highlight=False, offset=5):   
     def search_qrcodes_opencv(image):
         ret_code, decoded_text, qrcodes, _ = cv2.QRCodeDetector().detectAndDecodeMulti(image)     
@@ -83,12 +117,12 @@ def decode(image, highlight=False, offset=5):
                 return None, None        
         # adaptively change threshold to detect the qrcode
         t = 255
-        while t > 0 and (not ret_code or qrcodes.shape[0] < 2 or not all(d for d in decoded_text)):
+        while not np.isclose(t, 0.0) and (not ret_code or qrcodes.shape[0] < 2 or not all(d for d in decoded_text)):
             t = int(t / 1.61803398875)
-            _retval, binary = cv2.threshold(image, 255 - t, 255, cv2.THRESH_BINARY)
+            _, binary = cv2.threshold(image, 255 - t, 255, cv2.THRESH_BINARY)
             ret_code, decoded_text, qrcodes, _ = cv2.QRCodeDetector().detectAndDecodeMulti(binary)
 
-        if t == 0 or qrcodes is None:
+        if qrcodes is None:
             raise RuntimeError(f"Cannot find qrcodes in page")
 
         if qrcodes.shape[0] < 2:
@@ -152,7 +186,7 @@ def decode(image, highlight=False, offset=5):
             'rotated': rotated
         }
         s = image[tl[1]:br[1], tl[0]:br[0]].shape
-        scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
+        scaling = np.diag([s[1] / metadata['qrwidth'], s[0] / metadata['qrheight']])
         metadata['scaling'] = scaling
         if metadata['range'][0] is not None and metadata['range'][1] is not None:
             metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
@@ -226,7 +260,7 @@ def decode(image, highlight=False, offset=5):
             'rotated': rotated
         }
         s = image[tl[1]:br[1], tl[0]:br[0]].shape
-        scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
+        scaling = np.diag([s[1] / metadata['qrwidth'], s[0] / metadata['qrheight']])
         metadata['scaling'] = scaling
         if metadata['range'][0] is not None and metadata['range'][1] is not None:
             metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
@@ -278,7 +312,7 @@ def decode(image, highlight=False, offset=5):
             'rotated': rotated
         }
         s = image[tl[1]:br[1], tl[0]:br[0]].shape
-        scaling = np.diag([s[1] / metadata['width'], s[0] / metadata['height']])
+        scaling = np.diag([s[1] / metadata['qrwidth'], s[0] / metadata['qrheight']])
         metadata['scaling'] = scaling
         if metadata['range'][0] is not None and metadata['range'][1] is not None:
             metadata['page_correction'] = metadata['correct'][metadata['range'][0] - 1:metadata['range'][1]]
@@ -296,11 +330,12 @@ def decode(image, highlight=False, offset=5):
             return pyzbar_decode(image, highlight, offset)
         except:
             pass
-    if 'opencv' in available_libraries:
-        try:
-            return opencv_decode(image, highlight, offset)
-        except:
-            pass
+    # FALLBACK to opencv
+    assert 'openCV' in available_libraries, "OpenCV should be always available"
+    try:
+        return opencv_decode(image, highlight, offset)
+    except:
+        pass
     # FALLBACK
     if len(image.shape) > 2:
         gray_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
