@@ -136,9 +136,12 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
     with open(config_file, 'r') as f:
         config = yaml.load(f, Loader=yaml.Loader)
     config['basedir'] = os.path.dirname(config_file)
+    dyslexia = config.get('dyslexia', False)
 
-    if not output_prefix:        
+    if not output_prefix and not dyslexia:
         output_prefix = f'exam-{date.strftime("%Y-%m-%d")}'
+    elif not output_prefix and dyslexia:
+        output_prefix = f'exam-dyslexia-{date.strftime("%Y-%m-%d")}'
 
     if additional is None and students is not None:
         additional = click.prompt("Generate a number of additional exams?", default=5)

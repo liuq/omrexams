@@ -402,7 +402,7 @@ class Generate:
                               footer=footer,
                               packages=self.config.get('packages', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
-                              dyslexia=self.config.get('choices', {}).get('dyslexia', False),
+                              dyslexia=self.config.get('dyslexia', False),
                               circled=self.config.get('choices', {}).get('circled', False),
                               usesf=self.config.get('choices', {}).get('usesf', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
@@ -491,7 +491,7 @@ class Generate:
                               basedir=os.path.realpath(self.questions_path)) as renderer:
             document = renderer.render(Document(questions)) 
         click.secho('Generating PDF with all corrected questions', fg='red', underline=True)
-        filename = ".".join(os.path.basename(self.output_pdf_filename).split(".")[:-1])
+        filename = ".".join(os.path.basename(f"{self.output_prefix}.pdf").split(".")[:-1])
         document.generate_pdf(filepath=os.path.join("tmp", filename), 
                               compiler='latexmk', 
                               compiler_args=['-xelatex'])
