@@ -117,17 +117,15 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         sys.exit(-1)
 
     if folded is None and paper.upper() == 'A3':
+        click.secho("The --folded option with A3 format is not specified, assuming folded sheets", fg='yellow')
         folded = True
     
-    if folded and rotated is None:
-        rotated = True
+    if paper.upper() == 'A3' and rotated is None:
+        click.secho("The --rotated option with A3 format is not specified, assuming not rotated sheets", fg='yellow')
+        rotated = False
 
     if folded and paper.upper() != 'A3':
         click.secho("The --folded option can be used only with A3 paper", fg='red')
-        sys.exit(-1)
-
-    if rotated and not folded:
-        click.secho("The --rotated option can be used only when --folded is set", fg='red')
         sys.exit(-1)
 
     if rotated and paper.upper() != 'A3':
