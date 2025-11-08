@@ -176,12 +176,12 @@ class Generate:
                 tasks.append((f"{self.output_prefix}-{(i // self.split) + 1:0{digits}d}.pdf", pdf_files[i:i + self.split]))
 
             chunksize = max(1, len(tasks) // mp.cpu_count())                
-            with mp.Pool(mp.cpu_count()) as pool, click.progressbar(length=num_chunks, label='Exam files',
+            with mp.Pool(mp.cpu_count()) as pool, click.progressbar(length=num_chunks, label='Chunks of exam files',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:  
                 for _ in pool.imap_unordered(partial(_collate_star, paper=self.paper, rotated=self.rotated, folded=self.folded), tasks, chunksize=chunksize):
-                    bar.update()
+                    bar.update(1)
         else:
             with click.progressbar(length=len(pdf_files), label='Exam files',
                                bar_template='%(label)s |%(bar)s| %(info)s',
