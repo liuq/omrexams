@@ -15,7 +15,7 @@ import dateparser as dp
 import yaml
 from omrexams import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected, MarkdownConverter, __version__ #, main_ui
 import pandas as pd
-import xlrd
+from openpyxl import load_workbook
 import re
 import logging
 import click_log
@@ -181,13 +181,14 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                 marker = config['excel']['data_marker'].get('skip_until')
                 column = config['excel']['data_marker'].get('on_column', 0)
                 click.secho(f'Searching for data marker "{marker} in column {column}"', fg='cyan')
-                wb = xlrd.open_workbook(students)
-                sheet = wb.sheet_by_index(0)
-                for i in range(sheet.nrows):
-                    row = sheet.row(i)
-                    cell = row[column]
-                    value = cell.value if isinstance(cell.value, str) else str(cell.value)
-                    if re.match(marker, value):
+                wb = load_workbook(students, read_only=True, data_only=True)
+                sheet = wb.worksheets[0]
+                for i, row in enumerate(sheet.iter_rows(values_only=True)):
+                    cell = row[column] if column < len(row) else None
+                    if cell is None:
+                        continue
+                    value = cell if isinstance(cell, str) else str(cell)
+                    if re.match(marker, value.strip()):
                         skip = i
                         break
             if skip > 0:
