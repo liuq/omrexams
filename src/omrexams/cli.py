@@ -153,9 +153,9 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
-    elif split is not None and glob.glob(f"{output_prefix}-*.pdf"):
-        if yes or click.confirm(f"Data output {output_prefix}-*.pdf exist, overwrite the split files?", default=True):
-            for f in glob.glob(f"{output_prefix}-*.pdf"):
+    elif split is not None and glob.glob(f"{output_prefix}*.pdf"):
+        if yes or click.confirm(f"Data output {output_prefix}*.pdf exist, overwrite the split files?", default=True):
+            for f in glob.glob(f"{output_prefix}*.pdf"):
                 os.remove(f)
         else:
             click.secho("Nothing done", fg='bright_yellow')

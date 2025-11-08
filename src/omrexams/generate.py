@@ -146,129 +146,60 @@ class Generate:
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:
-            self.tasks_queue = mp.JoinableQueue()
+            self.generate_tasks_queue = mp.JoinableQueue()
             self.results_mutex = mp.RLock()
-            self.task_done = mp.Condition(self.results_mutex)
+            self.generate_task_done = mp.Condition(self.results_mutex)
             self.results = mp.Value('i', 0, lock=self.results_mutex)
             self.error = mp.Value('b', False, lock=self.results_mutex)
             for i, student in enumerate(self.students):
-                self.tasks_queue.put((i, student))
+                self.generate_tasks_queue.put((i, student))
             for _ in range(mp.cpu_count()):
-                self.tasks_queue.put((None, None))
-            pool = mp.Pool(mp.cpu_count(), self.worker_main)
+                self.generate_tasks_queue.put((None, None))
+            pool = mp.Pool(mp.cpu_count(), self.worker_main_generate)
             pool.close()
             prev = 0
-            while not self.tasks_queue.empty():
+            while not self.generate_tasks_queue.empty():
                 self.results_mutex.acquire()
-                self.task_done.wait_for(lambda: prev <= self.results.value)
+                self.generate_task_done.wait_for(lambda: prev <= self.results.value)
                 bar.update(self.results.value - prev)
                 prev = self.results.value
                 self.results_mutex.release()
 
         click.secho('Collating PDF', fg='red', underline=True)
-        if self.paper == "A4":
-            # This is for A4 management            
-            merger = PdfWriter()
-            _blank = PdfWriter()
-            _blank.add_blank_page(**A4SIZE)    
-            blank = io.BytesIO()
-            _blank.write(blank)   
-            pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
+        pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
+        if self.split is not None:
+            num_chunks = (len(pdf_files) + self.split - 1) // self.split            
+            click.secho(f'Splitting output files every {self.split} exams, chunks {num_chunks}', fg='yellow')    
+            digits = max(1, len(str(num_chunks)))
+            tasks = []
+            for i in range(0, len(pdf_files), self.split):
+                tasks.append((f"{self.output_prefix}-{(i // self.split) + 1:0{digits}d}.pdf", pdf_files[i:i + self.split]))
+
+            chunksize = max(1, len(tasks) // mp.cpu_count())                
+            with mp.Pool(mp.cpu_count()) as pool, click.progressbar(length=len(pdf_files), label='Exam files',
+                               bar_template='%(label)s |%(bar)s| %(info)s',
+                               fill_char=click.style(u'█', fg='cyan'),
+                               empty_char=' ', show_pos=True) as bar:  
+                for _ in pool.imap_unordered(partial(_collate_star, paper=self.paper, rotated=self.rotated, folded=self.folded), tasks, chunksize=chunksize):
+                    bar.update(1)
+        else:
             with click.progressbar(length=len(pdf_files), label='Exam files',
                                bar_template='%(label)s |%(bar)s| %(info)s',
                                fill_char=click.style(u'█', fg='cyan'),
-                               empty_char=' ', show_pos=True) as bar:
-                digits = math.ceil(math.log10(len(pdf_files) / self.split + 1)) if self.split is not None else 1
-                for i, exam in enumerate(pdf_files):
-                    if self.split is not None and i > 0 and i % self.split == 0:
-                            with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
-                                merger.write(f)
-                            merger = PdfWriter()
-                    pdf = PdfReader(open(exam, 'rb'), strict=False)  
-                    merger.append(pdf)
-                    if len(pdf.pages) % 2 == 1:
-                        merger.append(blank)
-                    bar.update(1)
-            if merger.pages:
-                with open(f"{self.output_prefix}.pdf" if self.split is None else f"{self.output_prefix}-{len(pdf_files) // self.split:0{digits}d}.pdf", 'wb') as f:
-                    merger.write(f)
-        else:
-            # This is for A3 management
-            writer = PdfWriter()
-            a3page = None
-            pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
-            with click.progressbar(length=len(pdf_files), label='Collating files ',
-                               bar_template='%(label)s |%(bar)s| %(info)s',
-                               fill_char=click.style(u'█', fg='cyan'),
-                               empty_char=' ', show_pos=True) as bar:
-                digits = math.ceil(math.log10(len(pdf_files) / self.split + 1)) if self.split is not None else 1
-                for i, exam in enumerate(pdf_files):
-                    if self.split is not None and i > 0 and i % self.split == 0:
-                            with open(f"{self.output_prefix}-{i // self.split:0{digits}d}.pdf", 'wb') as f:
-                                writer.write(f)
-                            writer = PdfWriter()
-                    pdf = PdfReader(open(exam, 'rb'), strict=False)
-                    a3page = PageObject.create_blank_page(**A3SIZE)        
-                    rotate = False            
-                    if self.folded:
-                        # Create a booklet
-                        sheets = math.ceil(len(pdf.pages) / 4) 
-                        booklet = next(make_book(range(1, len(pdf.pages) + 1), sheets * 4))
-                        left = True
-                        for p in booklet:
-                            if p is not None:
-                                page = pdf.pages[p - 1]
-                            else:
-                                page = PageObject.create_blank_page(**A4SIZE)
-                            if left:
-                                # page left
-                                if self.rotated and rotate:
-                                    transformation = Transformation().rotate(180).translate(A3SIZE['width'] / 2,  A3SIZE['height'])
-                                else:
-                                    transformation = Transformation().translate(0, 0)
-                                left = False
-                            else:
-                                # page right
-                                if self.rotated and rotate:
-                                    transformation = Transformation().rotate(180).translate(A3SIZE['width'], A3SIZE['height'])
-                                else:
-                                    transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
-                                left = True
-                            a3page.merge_transformed_page(page, transformation, expand=False) 
-                            if left:
-                                # add page 
-                                writer.add_page(a3page)
-                                a3page = PageObject.create_blank_page(**A3SIZE)  
-                                rotate = not rotate
-                    else:
-                        # normal A3, two A4 per A3
-                        for p, page in enumerate(pdf.pages):
-                            if p % 2 == 0:
-                                # page left
-                                transformation = Transformation().translate(0, 0)
-                                a3page.merge_transformed_page(page, transformation, expand=False) 
-                            else:
-                                # page right
-                                transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
-                                a3page.merge_transformed_page(page, transformation, expand=False) 
-                                # add page 
-                                writer.add_page(a3page)
-                                a3page = PageObject.create_blank_page(**A3SIZE)  
-
-                    bar.update(1)
-            # there are still pages to write
-            if writer.pages:
-                with open(f"{self.output_prefix}.pdf" if self.split is None else f"{self.output_prefix}-{len(pdf_files) // self.split:0{digits}d}.pdf", 'wb') as f:
-                    writer.write(f)
+                               empty_char=' ', show_pos=True) as bar:  
+                if self.paper == 'A4':
+                    Generate.collate_exams_a4(f"{self.output_prefix}.pdf", pdf_files, bar=bar)
+                else:
+                    Generate.collate_exams_a3(f"{self.output_prefix}.pdf", pdf_files, bar=bar, folded=self.folded, rotated=self.rotated)
         
         if not self.error.value:
             click.secho('Removing tmp', fg='yellow')
             rmtree('tmp')
         click.secho('Finished', fg='red', underline=True)
 
-    def worker_main(self):
+    def worker_main_generate(self):
         while True:
-            task, student = self.tasks_queue.get()
+            task, student = self.generate_tasks_queue.get()
             if task is None:
                 break
             logger.info(f'Started processing student {student[0]} {student[1]}')
@@ -314,11 +245,88 @@ class Generate:
                 # append to list of exams
                 if done:
                     self.append_exam(student, questions, answers)
-                self.task_done.notify()
+                self.generate_task_done.notify()
                 self.results_mutex.release()
-                self.tasks_queue.task_done()
+                self.generate_tasks_queue.task_done()
 
 
+    @staticmethod
+    def collate_exams_a4(filename, pdf_files, bar=None):
+        # This is for A4 management            
+        merger = PdfWriter()
+        _blank = PdfWriter()
+        _blank.add_blank_page(**A4SIZE)    
+        blank = io.BytesIO()
+        _blank.write(blank)   
+        for exam in pdf_files:
+            pdf = PdfReader(open(exam, 'rb'), strict=False)  
+            merger.append(pdf)
+            if len(pdf.pages) % 2 == 1:
+                merger.append(blank)
+            if bar:
+                bar.update(1)
+        with open(filename, 'wb') as f:
+            merger.write(f)
+
+    @staticmethod
+    def collate_exams_a3(filename, pdf_files, folded=True, rotated=False, bar=None):
+        # This is for A3 management
+        writer = PdfWriter()
+        a3page = None
+        for exam in pdf_files:
+            pdf = PdfReader(open(exam, 'rb'), strict=False)
+            a3page = PageObject.create_blank_page(**A3SIZE)        
+            rotate = False            
+            if folded:
+                # Create a booklet
+                sheets = math.ceil(len(pdf.pages) / 4) 
+                booklet = next(make_book(range(1, len(pdf.pages) + 1), sheets * 4))
+                left = True
+                for p in booklet:
+                    if p is not None:
+                        page = pdf.pages[p - 1]
+                    else:
+                        page = PageObject.create_blank_page(**A4SIZE)
+                    if left:
+                        # page left
+                        if rotated and rotate:
+                            transformation = Transformation().rotate(180).translate(A3SIZE['width'] / 2,  A3SIZE['height'])
+                        else:
+                            transformation = Transformation().translate(0, 0)
+                        left = False
+                    else:
+                        # page right
+                        if rotated and rotate:
+                            transformation = Transformation().rotate(180).translate(A3SIZE['width'], A3SIZE['height'])
+                        else:
+                            transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
+                        left = True
+                    a3page.merge_transformed_page(page, transformation, expand=False) 
+                    if left:
+                        # add page 
+                        writer.add_page(a3page)
+                        a3page = PageObject.create_blank_page(**A3SIZE)  
+                        rotate = not rotate
+            else:
+                # normal A3, two A4 per A3
+                for p, page in enumerate(pdf.pages):
+                    if p % 2 == 0:
+                        # page left
+                        transformation = Transformation().translate(0, 0)
+                        a3page.merge_transformed_page(page, transformation, expand=False) 
+                    else:
+                        # page right
+                        transformation = Transformation().translate(A3SIZE['width'] / 2, 0)
+                        a3page.merge_transformed_page(page, transformation, expand=False) 
+                        # add page 
+                        writer.add_page(a3page)
+                        a3page = PageObject.create_blank_page(**A3SIZE)  
+
+            if bar:
+                bar.update(1)
+        with open(filename, 'wb') as f:
+            writer.write(f)
+        
     def draw_questions(self, Q):
         questions = []
         for filename, topic in Q:
@@ -489,4 +497,14 @@ class Generate:
                               compiler_args=['-xelatex'])
         copy2(os.path.join('tmp',  f"{filename}.pdf"), '.')
 
+
+def _collate_star(args, paper, rotated=False, folded=True):
+    """
+    Helper for multiprocessing collate_exams
+    """
+    out_path, files = args
+    if paper == "A4":
+        return Generate.collate_exams_a4(out_path, files)
+    else:
+        return Generate.collate_exams_a3(out_path, files, folded=folded, rotated=rotated)                    
 
