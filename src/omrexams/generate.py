@@ -181,7 +181,7 @@ class Generate:
                                fill_char=click.style(u'█', fg='cyan'),
                                empty_char=' ', show_pos=True) as bar:  
                 for _ in pool.imap_unordered(partial(_collate_star, paper=self.paper, rotated=self.rotated, folded=self.folded), tasks, chunksize=chunksize):
-                    bar.update(1)
+                    bar.update(chunksize)
         else:
             with click.progressbar(length=len(pdf_files), label='Exam files',
                                bar_template='%(label)s |%(bar)s| %(info)s',
