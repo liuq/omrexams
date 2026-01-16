@@ -7,7 +7,7 @@ import os
 
 # This hack is needed to take care of non-export of DYLD_LIBRARY_PATH using the env 
 if platform.system() == 'Darwin' and platform.processor() == 'arm' and not find_library('zbar'):
-    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = '/opt/homebrew/lib'
+    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = ":".join(os.environ.get('DYLD_FALLBACK_LIBRARY_PATH', '').split(':') + ['/opt/homebrew/lib'])
 
 import click
 from datetime import datetime as dt
@@ -15,7 +15,6 @@ import dateparser as dp
 import yaml
 from omrexams import Generate, Sort, Correct, Mark, MoodleConverter, UpdateCorrected, MarkdownConverter, __version__ #, main_ui
 import pandas as pd
-from openpyxl import load_workbook
 import re
 import logging
 import click_log
@@ -107,8 +106,9 @@ def cli(ctx, debug):
 @click.option('--rotated/--no-rotated', is_flag=True, default=None, help='State whether the exam folded sheets are alternatively rotated (only for A3 paper)')
 @click.option('--split', type=int, help='Divide the output into multiple files by splitting', required=False)
 @click.option('--yes', '-y', is_flag=True, type=bool, required=False, default=False, help='Answer yes to all prompt requests')
+@click.option('--dry-run', is_flag=True, type=bool, required=False, help='If set, the generation is not performed', default=False)
 @click.pass_context
-def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, paper, folded, rotated, split, yes):
+def generate(ctx, config, students, questions_dir, count, serial, output_prefix, date, seed, additional, paper, folded, rotated, split, yes, dry_run):
     """
     Generates the set of exams for the given amount of students (either personalized or anonymous).
     """
@@ -150,13 +150,13 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         paper = config.get('paper', 'A4')
     paper = paper.upper()    
 
-    if split is None and os.path.exists(f"{output_prefix}.pdf"):
+    if split is None and os.path.exists(f"{output_prefix}.pdf") and not dry_run:
         if yes or click.confirm(f"Data output {output_prefix}.pdf exists, overwrite it?", default=True):
             os.remove(f"{output_prefix}.pdf")
         else:
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
-    elif split is not None and glob.glob(f"{output_prefix}*.pdf"):
+    elif split is not None and glob.glob(f"{output_prefix}*.pdf") and not dry_run:
         if yes or click.confirm(f"Data output {output_prefix}*.pdf exist, overwrite the split files?", default=True):
             for f in glob.glob(f"{output_prefix}*.pdf"):
                 os.remove(f)
@@ -164,7 +164,7 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
             click.secho("Nothing done", fg='bright_yellow')
             sys.exit(0)
     
-    if os.path.exists(f"{output_prefix}.json"):
+    if os.path.exists(f"{output_prefix}.json") and not dry_run:
         if yes or click.confirm(f"Data output {output_prefix}.json exists, overwrite it?", default=True):
             os.remove(f"{output_prefix}.json")
         else:
@@ -184,16 +184,30 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
                 marker = config['excel']['data_marker'].get('skip_until')
                 column = config['excel']['data_marker'].get('on_column', 0)
                 click.secho(f'Searching for data marker "{marker} in column {column}"', fg='cyan')
-                wb = load_workbook(students, read_only=True, data_only=True)
-                sheet = wb.worksheets[0]
-                for i, row in enumerate(sheet.iter_rows(values_only=True)):
-                    cell = row[column] if column < len(row) else None
-                    if cell is None:
-                        continue
-                    value = cell if isinstance(cell, str) else str(cell)
-                    if re.match(marker, value.strip()):
-                        skip = i
-                        break
+                if students.lower().endswith('.xls'):
+                    import xlrd
+                    wb = xlrd.open_workbook(students)
+                    sheet = wb.sheet_by_index(0)
+                    for i in range(sheet.nrows):
+                        cell = sheet.cell_value(i, column) if column < sheet.ncols else None
+                        if cell is None:
+                            continue
+                        value = cell if isinstance(cell, str) else str(cell)
+                        if re.match(marker, value.strip()):
+                            skip = i
+                            break
+                else:
+                    from openpyxl import load_workbook
+                    wb = load_workbook(students, read_only=True, data_only=True)
+                    sheet = wb.worksheets[0]
+                    for i, row in enumerate(sheet.iter_rows(values_only=True)):
+                        cell = row[column] if column < len(row) else None
+                        if cell is None:
+                            continue
+                        value = cell if isinstance(cell, str) else str(cell)
+                        if re.match(marker, value.strip()):
+                            skip = i
+                            break
             if skip > 0:
                 click.secho(f'Skipping {skip} rows', fg='cyan')
             student_list = pd.read_excel(students, skiprows=skip + 1)
@@ -216,6 +230,9 @@ def generate(ctx, config, students, questions_dir, count, serial, output_prefix,
         student_list = list(map(lambda s: (f.format(s), ""), range(serial, serial + count)))
         click.secho(f'Seed used for the random generator {seed}', fg='magenta')
 
+    if dry_run:
+        click.secho("Dry run selected, exam generation not performed", fg='yellow')
+        sys.exit(0)
     generator = Generate(config, questions_dir, output_prefix, students=student_list, 
                          exam_date=date, seed=seed, paper=paper, folded=folded, rotated=rotated, split=split)
     generator.process()
@@ -443,7 +460,7 @@ def force_answers(ctx, datafile, student_id):
 @cli.command()
 @click.argument('question_files', type=click.Path(exists=True, file_okay=True, resolve_path=True), required=True, nargs=-1)
 @click.option('--datafile', '-d', type=click.Path(exists=True, file_okay=True, dir_okay=False, resolve_path=True, writable=True), required=True)
-@click.option('--dry-run/--exec', type=bool, required=False, help='If set, choices are constrained to be in the same paragraph', default=True)
+@click.option('--dry-run', type=bool, required=False, help='If set, choices are constrained to be in the same paragraph', default=True)
 @click.pass_context
 def update_corrected(ctx, question_files, datafile, dry_run):
     """
@@ -461,6 +478,7 @@ def students_with_question(ctx, datafile, question_file, question):
     """
     Returns the ids of the students having a specific question
     """
+    question_file = os.path.basename(question_file)
     with TinyDB(datafile) as db:
         for e in db.table('exams'):
             for q in e['questions']:

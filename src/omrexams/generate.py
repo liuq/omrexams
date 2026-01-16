@@ -168,7 +168,7 @@ class Generate:
         click.secho('Collating PDF', fg='red', underline=True)
         pdf_files = sorted(glob.glob(os.path.join('tmp', '*.pdf')))
         if self.split is not None:
-            num_chunks = (len(pdf_files) + self.split - 1) // self.split            
+            num_chunks = math.ceil(len(pdf_files) / self.split)
             click.secho(f'Splitting output files every {self.split} exams, chunks {num_chunks}', fg='yellow')    
             digits = max(1, len(str(num_chunks)))
             tasks = []
@@ -376,7 +376,7 @@ class Generate:
         if self.config['exam'].get('shuffle_questions', False):
             random.shuffle(open_questions)
         if self.config['exam'].get('max_open_questions', False):
-            open_questions = open_questions[:self.config['exam'].get('max_open_questions')]        
+            open_questions = open_questions[:self.config['exam'].get('max_open_questions')]                
 
         if self.config.get('header'):
             with DocumentStripRenderer(basedir=self.config.get('basedir')) as renderer:
@@ -401,6 +401,7 @@ class Generate:
                               preamble=preamble,
                               footer=footer,
                               packages=self.config.get('packages', {}),
+                              commands=self.config.get('commands', {}),
                               shuffle=self.config['exam'].get('shuffle_answers', True),
                               dyslexia=self.config.get('dyslexia', False),
                               circled=self.config.get('choices', {}).get('circled', False),
@@ -464,6 +465,7 @@ class Generate:
                               preamble=preamble,
                               footer=footer,
                               packages=self.config.get('packages', {}),
+                              commands=self.config.get('commands', {}),
                               test=True,
                               circled=self.config.get('choices', {}).get('circled', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:
@@ -486,6 +488,7 @@ class Generate:
                               preamble=preamble,
                               footer=footer,
                               packages=self.config.get('packages', {}),
+                              commands=self.config.get('commands', {}),
                               test=True,
                               circled=self.config.get('choices', {}).get('circled', False),
                               basedir=os.path.realpath(self.questions_path)) as renderer:

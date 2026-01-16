@@ -86,7 +86,7 @@ class QuestionList(block_token.List):
     Summary:
 
     - [ ] paragraph
-    + [ ] paragran
+    + [ ] paragraph
     * [ ] inline
     1. [ ] paragraph, not shuffled
     1) [ ] inline, not shuffled
@@ -281,6 +281,7 @@ class QuestionRenderer(LaTeXRenderer):
             return self.render_test(token)
 
     def render_exam(self, token):
+        self.packages['listings'] = []
         self.footnotes.update(token.footnotes)
         inner = self.render_inner(token)    
         solutions = []
@@ -321,7 +322,6 @@ class QuestionRenderer(LaTeXRenderer):
                 doc.preamble.append(pylatex.Package(package))
             else:
                 doc.preamble.append(pylatex.Package(package, options=options))
-        doc.preamble.append(pylatex.Package('listings'))
         doc.preamble.append(pylatex.Command('examname', self.parameters.get('exam', '')))
         doc.preamble.append(pylatex.Command('student', 
             arguments=[self.parameters['student_no'], self.parameters['student_name']]))
@@ -330,6 +330,8 @@ class QuestionRenderer(LaTeXRenderer):
         doc.preamble.append(pylatex.Command('header', pylatex.NoEscape(self.parameters.get('header', ''))))
         doc.preamble.append(pylatex.Command('footer', pylatex.NoEscape(self.parameters.get('footer', ''))))
         doc.preamble.append(pylatex.Command('lstset', pylatex.NoEscape(r"basicstyle=\ttfamily,breaklines=true")))
+        if self.parameters.get('commands'):
+            doc.preamble.append(pylatex.NoEscape(self.parameters.get('commands', '')))
         doc.append("\n")
         with doc.create(PreambleEnvironment()):
             doc.append(self.parameters.get('preamble', ''))
@@ -341,6 +343,7 @@ class QuestionRenderer(LaTeXRenderer):
         return doc
 
     def render_test(self, token):
+        self.packages['listings'] = []
         self.footnotes.update(token.footnotes)
         self.parameters['shuffle'] = False
         inner = self.render_inner(token)                
@@ -358,7 +361,8 @@ class QuestionRenderer(LaTeXRenderer):
                 doc.preamble.append(pylatex.Package(package))
             else:
                 doc.preamble.append(pylatex.Package(package, options=options))
-        doc.preamble.append(pylatex.Package('listings'))
+        if self.parameters.get('commands'):
+            doc.preamble.append(pylatex.NoEscape(self.parameters.get('commands', '')))
         doc.preamble.append(pylatex.Command('examname', self.parameters['exam']))
         doc.preamble.append(pylatex.Command('student', arguments=["00000", "Student Name"]))
         doc.preamble.append(pylatex.Command('date', self.parameters['date'].strftime('%d/%m/%Y')))

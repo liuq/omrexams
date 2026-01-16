@@ -107,7 +107,7 @@
 }
 \ExplSyntaxOff
 
-\CorrectChoiceEmphasis{\bfseries\boldmath\color{red}}
+\CorrectChoiceEmphasis{\bfseries\boldmath\color{darkgray}$\checkmark$}
 
 \newcommand\Warning{%
  \makebox[1.4em][c]{%

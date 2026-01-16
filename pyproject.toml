@@ -70,9 +70,6 @@ dev = [
 [project.scripts]
 omrexams = "omrexams.cli:main_cli"
 
-[project.entry-points.scripts]
-omrexams= "omrexams.cli:main_cli"
-
 [project.urls]
 Homepage = "https://iolab.uniud.it"
 
